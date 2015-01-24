@@ -29,12 +29,12 @@ suitable for linking into a web page, or just fetch
 
 To run tests for the JavaScript library:
 
-    make testjs
+    make test
 
 To run benchmarks against some other JavaScript converters:
 
-    npm install showdown marked markdown-it
-    make benchjs
+    npm install benchmark showdown marked markdown-it
+    make bench
 
 To start an interactive dingus that you can use to try out
 the library:
