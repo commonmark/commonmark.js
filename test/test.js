@@ -2,7 +2,9 @@
 "use strict";
 
 var fs = require('fs');
-var commonmark = require('./lib/index.js');
+var commonmark = require('../lib/index.js');
+
+var testfile = process.argv[2] || 'test/spec.txt';
 
 // Home made mini-version of the npm ansi module:
 var escSeq = function(s) {
@@ -75,7 +77,7 @@ var pathologicalTest = function(testcase, res) {
     console.timeEnd('  elapsed time');
 };
 
-fs.readFile('spec.txt', 'utf8', function(err, data) {
+fs.readFile(testfile, 'utf8', function(err, data) {
     if (err) {
         return console.log(err);
     }
@@ -102,7 +104,7 @@ fs.readFile('spec.txt', 'utf8', function(err, data) {
 
     current_section = "";
 
-    cursor.write('Spec tests:\n\n');
+    cursor.write('Spec tests [' + testfile + ']:\n\n');
     console.time("Elapsed time");
 
     for (i = 0; i < examples.length; i++) {
