@@ -9,9 +9,9 @@
      "stmd" ],
   "repository":
    { "type": "git",
-     "url": "https://github.com/jgm/CommonMark.git" },
+     "url": "https://github.com/jgm/commonmark.js.git" },
   "author": "John MacFarlane",
-  "bugs": { "url": "https://github.com/jgm/CommonMark/issues" },
+  "bugs": { "url": "https://github.com/jgm/commonmark.js/issues" },
   "license": "BSD-3-Clause",
   "main": "./lib/index.js",
   "bin": { "commonmark": "./bin/commonmark" },
