@@ -36,6 +36,6 @@ npm:
 	cd js; npm publish
 
 dingus: dist/commonmark.js
-	echo "Starting dingus server at http://localhost:9000/dingus.html" && python -m SimpleHTTPServer 9000 || http-server -p 9000
+	echo "Starting dingus server at http://localhost:9000/dingus.html" && http-server -p 9000 || python -m SimpleHTTPServer 9000
 
 clean:
