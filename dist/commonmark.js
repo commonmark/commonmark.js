@@ -233,17 +233,11 @@ var closeUnmatchedBlocks = function() {
 // and 2 for "we've dealt with this line completely, go to next."
 var blocks = {
     Document: {
-        continue: function(parser, container, next_nonspace) {
-            return 0;
-        },
-        finalize: function(parser, block) {
-            return;
-        }
+        continue: function() { return 0; },
+        finalize: function() { return; }
     },
     List: {
-        continue: function(parser, container, next_nonspace) {
-            return 0;
-        },
+        continue: function() { return 0; },
         finalize: function(parser, block) {
             var item = block._firstChild;
             while (item) {
@@ -281,9 +275,7 @@ var blocks = {
             }
             return 0;
         },
-        finalize: function(parser, block) {
-            return;
-        }
+        finalize: function() { return; }
     },
     Item: {
         continue: function(parser, container, next_nonspace) {
@@ -299,12 +291,10 @@ var blocks = {
             }
             return 0;
         },
-        finalize: function(parser, block) {
-            return;
-        }
+        finalize: function() { return; }
     },
     Header: {
-        continue: function(parser, container, next_nonspace) {
+        continue: function() {
             // a header can never container > 1 line, so fail to match:
             return 1;
         },
@@ -313,13 +303,11 @@ var blocks = {
         }
     },
     HorizontalRule: {
-        continue: function(parser, container, next_nonspace) {
+        continue: function() {
             // an hrule can never container > 1 line, so fail to match:
             return 1;
         },
-        finalize: function(parser, block) {
-            return;
-        }
+        finalize: function() { return; }
     },
     CodeBlock: {
         continue: function(parser, container, next_nonspace) {
@@ -3274,15 +3262,15 @@ var entityToChar = function(m) {
     if (isNumeric) {
         var num;
         if (isHex) {
-            num = parseInt(m.slice(3, -1), 16);
+            num = parseInt(m.slice(3, m.length - 1), 16);
         } else {
-            num = parseInt(m.slice(2, -1), 10);
+            num = parseInt(m.slice(2, m.length - 1), 10);
         }
         uchar = fromCodePoint(num);
     } else {
-        ucode = entities[m.slice(1, -1)];
+        ucode = entities[m.slice(1, m.length - 1)];
         if (ucode) {
-            uchar = fromCodePoint(entities[m.slice(1, -1)]);
+            uchar = fromCodePoint(entities[m.slice(1, m.length - 1)]);
         }
     }
     return (uchar || m);
@@ -3506,7 +3494,7 @@ var parseAutolink = function(block) {
     var dest;
     var node;
     if ((m = this.match(reEmailAutolink))) {
-        dest = m.slice(1, -1);
+        dest = m.slice(1, m.length - 1);
         node = new Node('Link');
         node._destination = normalizeURI('mailto:' + dest);
         node._title = '';
@@ -3514,7 +3502,7 @@ var parseAutolink = function(block) {
         block.appendChild(node);
         return true;
     } else if ((m = this.match(reAutolink))) {
-        dest = m.slice(1, -1);
+        dest = m.slice(1, m.length - 1);
         node = new Node('Link');
         node._destination = normalizeURI(dest);
         node._title = '';
