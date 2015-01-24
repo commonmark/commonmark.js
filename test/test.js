@@ -144,20 +144,30 @@ fs.readFile(testfile, 'utf8', function(err, data) {
     var cases = [
         { name: 'U+0000 in input',
           input: 'abc\u0000xyz\u0000\n',
-          expected: '<p>abc\ufffdxyz\ufffd</p>\n' },
-        { name: 'nested strong emph 10000 deep',
-          input: repeat('*a **a ', 10000) + 'b' + repeat(' a** a*', 10000),
-          expected: '<p>' + repeat('<em>a <strong>a ', 10000) + 'b' +
-          repeat(' a</strong> a</em>', 10000) + '</p>\n' },
-        { name: 'nested brackets 10000 deep',
-          input: repeat('[', 10000) + 'a' + repeat(']', 10000),
-          expected: '<p>' + repeat('[', 10000) + 'a' + repeat(']', 10000) +
-          '</p>\n' },
-        { name: 'nested block quote 10000 deep',
-          input: repeat('> ', 10000) + 'a\n',
-          expected: repeat('<blockquote>\n', 10000) + '<p>a</p>\n' +
-                    repeat('</blockquote>\n', 10000) }
-    ];
+          expected: '<p>abc\ufffdxyz\ufffd</p>\n' }
+        ];
+
+    for (var x = 1000; x <= 10000; x *= 10) {
+        cases.push(
+            { name: 'nested strong emph ' + x + ' deep',
+              input: repeat('*a **a ', x) + 'b' + repeat(' a** a*', x),
+              expected: '<p>' + repeat('<em>a <strong>a ', x) + 'b' +
+              repeat(' a</strong> a</em>', x) + '</p>\n' });
+    }
+    for (var x = 1000; x <= 10000; x *= 10) {
+        cases.push(
+            { name: 'nested brackets ' + x + ' deep',
+              input: repeat('[', x) + 'a' + repeat(']', x),
+              expected: '<p>' + repeat('[', x) + 'a' + repeat(']', x) +
+              '</p>\n' });
+    }
+    for (var x = 1000; x <= 10000; x *= 10) {
+        cases.push(
+            { name: 'nested block quote ' + x + ' deep',
+              input: repeat('> ', x) + 'a\n',
+              expected: repeat('<blockquote>\n', x) + '<p>a</p>\n' +
+              repeat('</blockquote>\n', x) });
+    }
 
     for (i = 0; i < cases.length; i++) {
         pathologicalTest(cases[i], results);
