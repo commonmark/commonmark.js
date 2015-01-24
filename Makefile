@@ -1,6 +1,6 @@
 SPEC=test/spec.txt
 SPECVERSION=$(shell perl -ne 'print $$1 if /^version: *([0-9.]+)/' $(SPEC))
-BENCHINP?=README.md
+BENCHINP?=bench/samples/README.md
 JSMODULES=$(wildcard lib/*.js)
 VERSION?=$(SPECVERSION)
 
