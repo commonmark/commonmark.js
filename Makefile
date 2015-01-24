@@ -30,7 +30,7 @@ bench:
 bench-detailed:
 	sudo renice 99 $$$$; \
 	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
-	tee out | awk -f bench/format_benchmarks.awk
+	awk -f bench/format_benchmarks.awk
 
 npm:
 	cd js; npm publish
