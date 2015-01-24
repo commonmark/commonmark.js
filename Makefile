@@ -27,6 +27,11 @@ lint:
 bench:
 	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
 
+bench-detailed: bench/samples
+	sudo renice 99 $$$$; \
+	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
+	tee out | awk -f bench/format_benchmarks.awk
+
 npm:
 	cd js; npm publish
 

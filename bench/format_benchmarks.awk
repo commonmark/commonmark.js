@@ -5,9 +5,9 @@ BEGIN {
     print "|------------------------|---------:|---------:|---------:|----------:|"
 }
 {
-        if (/samples\//) {
-                sub(/samples\//, "");
-                printf "|%-24s|", $7;
+        if (/^bench\/samples\//) {
+                sub(/bench\/samples\//, "");
+                printf "|%-24s|", $0;
         } else if (/^showdown/) {
                 sub(/,/, "");
                 showdown = $4;
