@@ -4,7 +4,7 @@ BENCHINP?=README.md
 JSMODULES=$(wildcard lib/*.js)
 VERSION?=$(SPECVERSION)
 
-.PHONY: dingus dist test bench npm lint clean update-spec
+.PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
 
 dist: dist/commonmark.js dist/commonmark.min.js
 
@@ -27,7 +27,7 @@ lint:
 bench:
 	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
 
-bench-detailed: bench/samples
+bench-detailed:
 	sudo renice 99 $$$$; \
 	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
 	tee out | awk -f bench/format_benchmarks.awk
