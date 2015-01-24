@@ -1,7 +1,7 @@
 var Benchmark = require('benchmark').Benchmark;
 var suite = new Benchmark.Suite();
 var fs = require('fs');
-var commonmark = require('./lib/index.js');
+var commonmark = require('../lib/index.js');
 // npm install showdown
 var Showdown = require('showdown').converter;
 // npm install marked
