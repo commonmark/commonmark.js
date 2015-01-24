@@ -150,7 +150,7 @@ a hundred times faster than Python Markdown, and more than
 a thousand times faster than `Markdown.pl`.
 
 Here are some focused benchmarks of four JavaScript libraries
-(using versions available on 17 Jan 2015). They test performance
+(using versions available on 24 Jan 2015). They test performance
 on different kinds of Markdown texts.  (Most of these samples
 are taken from the
 [markdown-it](https://github.com/markdown-it/markdown-it)
@@ -159,31 +159,32 @@ against the slowest implementation (always showdown).
 
 | Sample                 |showdown  |commonmark|marked    |markdown-it|
 |------------------------|---------:|---------:|---------:|----------:|
-|README.md               |         1|       3.2|       3.1|        4.4|
-|block-bq-flat.md        |         1|       8.0|      12.8|       11.3|
-|block-bq-nested.md      |         1|      10.8|       9.9|       12.6|
-|block-code.md           |         1|      24.9|      58.4|       83.2|
-|block-fences.md         |         1|      16.4|      66.5|       65.5|
-|block-heading.md        |         1|      10.7|      11.0|       17.5|
-|block-hr.md             |         1|      14.4|      14.6|       37.7|
-|block-html.md           |         1|       7.9|       2.8|       14.8|
-|block-lheading.md       |         1|      14.4|      17.7|       26.1|
-|block-list-flat.md      |         1|       4.3|       4.3|       10.4|
-|block-list-nested.md    |         1|       7.4|       5.7|       19.1|
-|block-ref-flat.md       |         1|       1.8|       1.1|        1.5|
-|block-ref-nested.md     |         1|       1.5|       1.4|        2.4|
-|inline-autolink.md      |         1|       4.1|       7.0|        4.5|
-|inline-backticks.md     |         1|      15.8|      13.7|       30.7|
-|inline-em-flat.md       |         1|       4.1|       3.8|        8.7|
-|inline-em-nested.md     |         1|       5.2|       4.6|        8.3|
-|inline-em-worst.md      |         1|       5.3|       4.9|        3.4|
-|inline-entity.md        |         1|       4.8|       9.7|        7.7|
-|inline-escape.md        |         1|       4.6|       2.9|       12.4|
-|inline-html.md          |         1|       3.6|       5.2|        5.0|
-|inline-links-flat.md    |         1|       3.7|       4.0|        4.1|
-|inline-links-nested.md  |         1|       3.8|       1.0|        1.5|
-|inline-newlines.md      |         1|       6.9|       6.5|       13.1|
-|rawtabs.md              |         1|       8.9|       9.7|       13.4|
+|README.md               |         1|       3.3|       3.1|        4.3|
+|block-bq-flat.md        |         1|       9.3|      13.6|       13.7|
+|block-bq-nested.md      |         1|      12.5|      10.6|       13.2|
+|block-code.md           |         1|      28.8|      64.7|       95.4|
+|block-fences.md         |         1|      20.7|      67.9|       72.9|
+|block-heading.md        |         1|      11.1|      11.8|       19.6|
+|block-hr.md             |         1|      15.0|      16.0|       41.4|
+|block-html.md           |         1|       8.2|       3.0|       15.9|
+|block-lheading.md       |         1|      15.3|      19.2|       16.8|
+|block-list-flat.md      |         1|       4.6|       4.4|       10.7|
+|block-list-nested.md    |         1|       7.7|       6.0|       19.3|
+|block-ref-flat.md       |         1|       2.0|       1.3|        1.7|
+|block-ref-nested.md     |         1|       1.7|       1.6|        2.9|
+|inline-autolink.md      |         1|       4.4|       7.4|        4.7|
+|inline-backticks.md     |         1|      16.3|      14.3|       30.5|
+|inline-em-flat.md       |         1|       4.1|       3.5|        9.2|
+|inline-em-nested.md     |         1|       5.2|       5.1|        7.9|
+|inline-em-worst.md      |         1|       5.7|       5.4|        3.7|
+|inline-entity.md        |         1|       5.3|      10.5|        8.5|
+|inline-escape.md        |         1|       4.8|       3.1|       13.1|
+|inline-html.md          |         1|       3.6|       5.4|        5.1|
+|inline-links-flat.md    |         1|       3.5|       4.2|        4.1|
+|inline-links-nested.md  |         1|       4.1|       1.1|        1.6|
+|inline-newlines.md      |         1|       7.6|       7.3|       15.3|
+|lorem1.md               |         1|       8.9|       5.1|        5.7|
+|rawtabs.md              |         1|       9.7|      10.6|       15.4|
 
 To generate this table,
 
