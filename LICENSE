@@ -104,3 +104,12 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+The CommonMark spec (spec.txt) in test/ is
+
+Copyright (C) 2014-15 John MacFarlane
+
+Released under the Creative Commons CC-BY-SA 4.0 license:
+<http://creativecommons.org/licenses/by-sa/4.0/>.
