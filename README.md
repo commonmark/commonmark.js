@@ -58,7 +58,7 @@ could transform emphasis into ALL CAPS.
 
 Here's a basic usage example:
 
-    var reader = new commonmark.Parser();
+    var reader = new commonmark.DocParser();
     var writer = new commonmark.HtmlRenderer();
     var parsed = reader.parse("Hello *world*"); // parsed is a 'Node' tree
     // transform parsed if you like...
