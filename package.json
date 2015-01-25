@@ -15,7 +15,7 @@
   "license": "BSD-3-Clause",
   "main": "./lib/index.js",
   "bin": { "commonmark": "./bin/commonmark" },
-  "scripts": { "test": "node ./test.js" },
+  "scripts": { "test": "node ./test/test.js ./test/spec.txt" },
   "directories": {
       "lib": "./lib"
   },
