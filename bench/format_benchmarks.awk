@@ -1,13 +1,14 @@
 #!/bin/sh env awk
 BEGIN {
     CONVFMT="%2.1f";
-    print "| Sample                 |showdown  |commonmark|marked    |markdown-it|"
-    print "|------------------------|---------:|---------:|---------:|----------:|"
+    print "| Sample                   |showdown  |commonmark|marked    |markdown-it|"
+    print "|--------------------------|---------:|---------:|---------:|----------:|"
 }
 {
         if (/^bench\/samples\//) {
                 sub(/bench\/samples\//, "");
-                printf "|%-24s|", $0;
+                printf "|%-26s|", "[" $0 "]";
+                samples[$0] = "bench/samples/" $0;
         } else if (/^showdown/) {
                 sub(/,/, "");
                 showdown = $4;
@@ -32,4 +33,10 @@ BEGIN {
         } else {
                 next;
         }
+}
+END {
+    printf "\n";
+    for (sample in samples) {
+        printf "[%s]: %s\n", sample, samples[sample];
+    }
 }
