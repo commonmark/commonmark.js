@@ -1,3 +1,61 @@
+[0.17]
+
+  * Renamed `DocParser` -> `Parser`.
+    Note: library users should update their code or it will break.
+  * Added `normalize-reference.js`. This does a proper unicode case
+    fold instead of just using `toUpperCase`.  It is also faster,
+    partly because we can do one pass for space and case normalization.
+  * Removed artificial distinction btw FencedCode, IndentedCode
+    in `blocks.js`.
+  * Removed vestigial `ReferenceDef` node type.
+  * Added getters and (in some cases) setters for "public" properties
+    of Nodes.  Renamed non-public properties to start with underscore.
+    This will allow us to keep the API stable while changing the
+    underlying data structure.  And it will avoid exposing properties
+    that have only an instrumental value in parsing.
+  * Removed `Node.toObject()`.
+  * Rename `bullet_char` -> `bulletChar`.
+  * Check for blank line before checking indent in Item.
+  * Removed unnecessary setting of default `tight=true` in `finalize`.
+    We do that when the `listData` object is initialized.
+  * Performance optimization - avoid repeating scan for nonspace.
+  * Moved check for closing fence to close-block-check section.
+    This is a more logical arrangement and addresses jgm/CommonMark#285.
+  * Added `offset` property to `DocParser`.  Use this in `addLine`,
+    instead of `offset` parameter, which has been removed.
+  * Implemented new spec for emphasis and strong emphasis with `_`.
+  * `html.js` - explicitly specify second parameter of `escapeXml`.
+  * Fixed escaping error in CDATA regex.
+  * Removed some dead code and fixed incorrect call to `addChild`
+    with three arguments (Robin Stocker).
+  * Adjust `lastLineLength` before returning after close fence.
+  * Propagate `lastLineBlank` up through parents.
+    Previously we just kept it set on the bottom child.
+    But this will give a quicker determination of `lastLineBlank`.
+  * Moved continuation checks & finalizers into `blocks` property
+    of `Parser`. This is a first step towards keeping the code for
+    each kind of block in a central place, rather than spread all over
+    the code base. This is preparatory for a more modular structure,
+    where each type of block has a record describing how it is parsed and
+    finalized. Eventually this will also contain functions for checking for
+    a block start, and metadata that determines how line data
+    should be handled.
+  * Added `currentLine` property to `Parser`.
+  * Renamed `first_nonspace` -> `next_nonspace`.
+  * Put generated `commonmark.js` in `dist/` rather than `js/`.
+  * Miscellaneous code cleanup.
+  * Split JS code into (this) independent repository.
+  * Added detailed benchmark with samples (`make bench-detailed`).
+  * Added `dist/commonmark.js` to repo (for bower).
+  * Added `bower.json` (jgm/CommonMark#288).
+  * Updated test suite. Now shows how performance depends on length in
+    pathological cases.
+  * Don't use -1 as second param for .slice. This seems to cause a
+    deoptimization, as reported by `node --trace-deopt`.
+  * Added `CONTRIBUTING.md`.
+  * Added `.travis.yml` to test against various node versions.
+  * Renamed `changelog.js.txt` -> `changelog.txt`.
+
 [0.16]
 
   * Improved regex for HTML comments (#263).
