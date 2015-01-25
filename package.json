@@ -12,7 +12,7 @@
      "url": "https://github.com/jgm/commonmark.js.git" },
   "author": "John MacFarlane",
   "bugs": { "url": "https://github.com/jgm/commonmark.js/issues" },
-  "license": "BSD-3-Clause",
+  "license": "BSD-2-Clause",
   "main": "./lib/index.js",
   "bin": { "commonmark": "./bin/commonmark" },
   "scripts": { "test": "node ./test/test.js ./test/spec.txt" },
