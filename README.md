@@ -59,55 +59,114 @@ could transform emphasis into ALL CAPS.
 
 Here's a basic usage example:
 
-    var reader = new commonmark.Parser();
-    var writer = new commonmark.HtmlRenderer();
-    var parsed = reader.parse("Hello *world*"); // parsed is a 'Node' tree
-    // transform parsed if you like...
-    var result = writer.render(parsed);  // result is a string
+``` js
+var reader = new commonmark.Parser();
+var writer = new commonmark.HtmlRenderer();
+var parsed = reader.parse("Hello *world*"); // parsed is a 'Node' tree
+// transform parsed if you like...
+var result = writer.render(parsed); // result is a String
+```
 
-**A note on security:**
-THe library does not attempt to sanitize link attributes or
-raw HTML.  If you use this library in applications that accept
-untrusted user input, you must run the output through an HTML
-sanitizer to protect against
-[XSS attacks](http://en.wikipedia.org/wiki/Cross-site_scripting).
+The constructors for `Parser` and `HtmlRenderer` take an optional
+`options` parameter:
+
+``` js
+var writer = new commonmark.HtmlRenderer({sourcepos: true});
+```
+
+THe following options are currently supported:
+
+- `sourcepos`:  if `true`, source position information for block-level
+  elements will be rendered in the `data-sourcepos` attribute (for
+  HTML) or the `sourcepos` attribute (for XML).
+
+It is also possible to override the `escape` and `softbreak`
+properties of a renderer.  So, to make soft breaks render as hard
+breaks in HTML:
+
+``` js
+var writer = new commonmark.HtmlRenderer;
+writer.softbreak = "<br />";
+```
+
+To make them render as spaces:
+
+``` js
+writer.softbreak = " ";
+```
+
+To override `escape`, pass it a function with two parameters:
+the first is the string to be escaped, the second is a boolean
+that is `true` if the escaped string is to be included in an
+attribute.
+
+In addition to the `HtmlRenderer`, there is an `XmlRenderer`, which
+will produce an XML representation of the AST:
+
+``` js
+var writer = new commonmark.XmlRenderer({sourcepos: true});
+```
+
+The parser returns a Node.  The following public properties are defined
+(those marked "read-only" have only a getter, not a setter):
+
+- `type` (read-only):  a String, one of
+  `Text`, `Softbreak`, `Hardbreak`, `Emph`, `Strong`,
+  `Html`, `Link`, `Image`, `Code`, `Document`, `Paragraph`,
+  `BlockQuote`, `Item`, `List`, `Header`, `CodeBlock`,
+  `HtmlBlock` `HorizontalRule`.
+- `firstChild` (read-only):  a Node or null.
+- `lastChild` (read-only): a Node or null.
+- `next` (read-only): a Node or null.
+- `prev` (read-only): a Node or null.
+- `parent` (read-only): a Node or null.
+- `sourcepos` (read-only): an Array with the following form:
+  `[[startline, startcolumn], [endline, endcolumn]]`.
+- `isContainer` (read-only): `true` if the Node can contain other
+   Nodes as children.
+- `literal`: the literal String content of the node or null.
+- `destination`: link or image destination (String) or null.
+- `title`: link or image title (String) or null.
+- `info`: fenced code block info string (String) or null.
+- `level`: header level (Number).
+- `listType`: a String, either `Bullet` or `Ordered`.
+- `listTight`: `true` if list is tight.
+- `listStart`: a Number, the starting number of an ordered list.
+- `listDelimiter`: a String, either `)` or `.` for an ordered list.
+
+Nodes have the following public methods:
+
+- `appendChild(child)`:  Append a Node `child` to the end of the
+  Node's children.
+- `prependChild(child)`:  Prepend a Node `child` to the end of the
+  Node's children.
+- `unlink()`:  Remove the Node from the tree, severing its links
+  with siblings and parents, and closing up gaps as needed.
+- `insertAfter(sibling)`: Insert a Node `sibling` after the Node.
+- `insertBefore(sibling)`: Insert a Node `sibling` before the Node.
+- `walker()`: Returns a NodeWalker that can be used to iterate through
+  the Node tree rooted in the Node.
+
+The NodeWalker returned by `walker()` has two methods:
+
+- `next()`: Returns an object with properties `entering` (a boolean,
+  which is `true` when we enter a Node from a parent or sibling, and
+  `false` when we reenter it from a child).
+- `resumeAt(node, entering)`: Resets the iterator to resume at the
+  specified node and setting for `entering`.  (Normally this isn't
+  needed unless you do destructive updates to the Node tree.)
+
+Here is an example of the use of a NodeWalker to iterate through
+the tree, making transformations.  This simple example converts
+the contents of all `Text` nodes to ALL CAPS:
+
+``` js
+TODO
+```
+
+
 
 <!-- TODO
-
-Public API
-----------
-
-### Parser
-
-constructor takes options param
-explain what can go into options
-
-public
-properties: options
-methods:  parse
-
-?? should we add a filters [] option?
-a filter could be a function that transforms a node,
-and the parser could automatically run a walker with
-each filter
-
-### Node
-
-getters:  type, firstChild, lastChild,,
-  next, prev, parent, sourcepos, isContainer
-getters+setters: literal, destination, title,
-  info, level, listType, listTight, listStart,
-  listDelimiter
-methods: appendChild(child),
-  prependChild(child),
-  unlink(),
-  insertAfter(sibling),
-  insertBefore(sibling),
-  walker()
-
-walker returns NodeWalker object with methods:
-  resumeAt(node, entering)
-  next() - returns an objcet with properties 'entering' and 'node'
 
 examples:
   capitalize every string
@@ -120,30 +179,16 @@ examples:
 and have people do walker = new NodeWalker(node)?
 probably.
 
-### HtmlRenderer
-
-constructor takes options param
-document relevant options
-
-methods:
-  escapeXml(string, isAttribute)
-  render(node)
-properties:
-  options
-
-
-### XmlRenderer
-
-constructor takes options param
-document relevant options
-
-methods:
-  escapeXml(string, isAttribute)
-  render(node)
-properties:
-  options
-
 -->
+
+A note on security
+------------------
+
+The library does not attempt to sanitize link attributes or
+raw HTML.  If you use this library in applications that accept
+untrusted user input, you must run the output through an HTML
+sanitizer to protect against
+[XSS attacks](http://en.wikipedia.org/wiki/Cross-site_scripting).
 
 Performance
 -----------
