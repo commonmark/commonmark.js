@@ -151,7 +151,8 @@ The NodeWalker returned by `walker()` has two methods:
 
 - `next()`: Returns an object with properties `entering` (a boolean,
   which is `true` when we enter a Node from a parent or sibling, and
-  `false` when we reenter it from a child).
+  `false` when we reenter it from a child).  Returns `null` when
+  we have finished walking the tree.
 - `resumeAt(node, entering)`: Resets the iterator to resume at the
   specified node and setting for `entering`.  (Normally this isn't
   needed unless you do destructive updates to the Node tree.)
@@ -161,25 +162,53 @@ the tree, making transformations.  This simple example converts
 the contents of all `Text` nodes to ALL CAPS:
 
 ``` js
-TODO
+var walker = parsed.walker();
+var event, node;
+
+while ((event = walker.next())) {
+  node = event.node;
+  if (event.entering && node.type === 'Text') {
+    node.literal = node.literal.toUpperCase();
+  }
+}
 ```
 
+This more complex example converts emphasis to ALL CAPS:
 
+``` js
+var walker = parsed.walker();
+var event, node;
+var inEmph = false;
 
-<!-- TODO
+while ((event = walker.next())) {
+  node = event.node;
+  if (node.type === 'Emph') {
+    if (event.entering) {
+      inEmph = true;
+    } else {
+      inEmph = false;
+      // add Emph node's children as siblings
+      while (node.firstChild) {
+        node.insertBefore(node.firstChild);
+      }
+      // remove the empty Emph node
+      node.unlink()
+    }
+  } else if (inEmph && node.type === 'Text') {
+      node.literal = node.literal.toUpperCase();
+  }
+}
+```
 
-examples:
-  capitalize every string
-  changing emphasis to ALL CAPS
-  de-linkifying
-  running all the code samples through a highlighter or other
-  transform (svg?)
+Exercises for the reader:  write a transform to
 
-?? would it be better to include NodeWalker in the API
-and have people do walker = new NodeWalker(node)?
-probably.
-
--->
+1. De-linkify a document, transforming links to regular text.
+2. Remove all raw HTML (`Html` and `HtmlBlock` nodes).
+3. Run fenced code blocks marked with a language name through
+   a syntax highlighting library, replacing them with an `HtmlBlock`
+   containing the highlighted code.
+4. Print warnings to the console for images without image
+   descriptions or titles.
 
 A note on security
 ------------------
