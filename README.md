@@ -64,6 +64,13 @@ Here's a basic usage example:
     // transform parsed if you like...
     var result = writer.render(parsed);  // result is a string
 
+**A note on security:**
+THe library does not attempt to sanitize link attributes or
+raw HTML.  If you use this library in applications that accept
+untrusted user input, you must run the output through an HTML
+sanitizer to protect against
+[XSS attacks](http://en.wikipedia.org/wiki/Cross-site_scripting).
+
 <!-- TODO
 
 Public API
