@@ -147,21 +147,22 @@ fs.readFile(testfile, 'utf8', function(err, data) {
           expected: '<p>abc\ufffdxyz\ufffd</p>\n' }
         ];
 
-    for (var x = 1000; x <= 10000; x *= 10) {
+    var x;
+    for (x = 1000; x <= 10000; x *= 10) {
         cases.push(
             { name: 'nested strong emph ' + x + ' deep',
               input: repeat('*a **a ', x) + 'b' + repeat(' a** a*', x),
               expected: '<p>' + repeat('<em>a <strong>a ', x) + 'b' +
               repeat(' a</strong> a</em>', x) + '</p>\n' });
     }
-    for (var x = 1000; x <= 10000; x *= 10) {
+    for (x = 1000; x <= 10000; x *= 10) {
         cases.push(
             { name: 'nested brackets ' + x + ' deep',
               input: repeat('[', x) + 'a' + repeat(']', x),
               expected: '<p>' + repeat('[', x) + 'a' + repeat(']', x) +
               '</p>\n' });
     }
-    for (var x = 1000; x <= 10000; x *= 10) {
+    for (x = 1000; x <= 10000; x *= 10) {
         cases.push(
             { name: 'nested block quote ' + x + ' deep',
               input: repeat('> ', x) + 'a\n',
