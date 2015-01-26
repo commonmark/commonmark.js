@@ -241,32 +241,32 @@ against the slowest implementation (always showdown).
 
 | Sample                   |showdown  |commonmark|marked    |markdown-it|
 |--------------------------|---------:|---------:|---------:|----------:|
-|[README.md]               |         1|       3.1|       2.9|        4.1|
-|[block-bq-flat.md]        |         1|       9.0|      13.5|       12.8|
-|[block-bq-nested.md]      |         1|      12.3|       9.9|       12.6|
-|[block-code.md]           |         1|      27.9|      67.0|       91.5|
-|[block-fences.md]         |         1|      20.5|      71.7|       71.6|
-|[block-heading.md]        |         1|      11.4|      12.3|       19.6|
-|[block-hr.md]             |         1|      15.5|      15.9|       43.8|
-|[block-html.md]           |         1|       8.4|       3.0|       16.3|
-|[block-lheading.md]       |         1|      15.4|      18.4|       16.8|
-|[block-list-flat.md]      |         1|       4.6|       4.5|       11.2|
-|[block-list-nested.md]    |         1|       7.9|       6.0|       20.0|
-|[block-ref-flat.md]       |         1|       1.9|       1.2|        1.6|
-|[block-ref-nested.md]     |         1|       1.7|       1.6|        2.9|
-|[inline-autolink.md]      |         1|       4.4|       7.4|        4.8|
-|[inline-backticks.md]     |         1|      17.2|      14.8|       31.4|
-|[inline-em-flat.md]       |         1|       4.0|       3.9|        9.1|
-|[inline-em-nested.md]     |         1|       5.2|       4.5|        8.1|
-|[inline-em-worst.md]      |         1|       5.6|       4.9|        3.3|
-|[inline-entity.md]        |         1|       5.1|      10.8|        8.2|
-|[inline-escape.md]        |         1|       5.1|       3.2|       13.6|
-|[inline-html.md]          |         1|       3.8|       5.6|        5.7|
-|[inline-links-flat.md]    |         1|       3.8|       4.1|        4.2|
-|[inline-links-nested.md]  |         1|       4.3|       1.1|        1.6|
-|[inline-newlines.md]      |         1|       7.7|       7.2|       15.2|
-|[lorem1.md]               |         1|       9.3|       5.4|        5.8|
-|[rawtabs.md]              |         1|       9.4|      10.3|       14.6|
+|[README.md]               |         1|       3.5|       3.2|        4.4|
+|[block-bq-flat.md]        |         1|       9.6|      12.3|       12.2|
+|[block-bq-nested.md]      |         1|      14.1|      10.1|       13.0|
+|[block-code.md]           |         1|      22.3|      56.5|       89.4|
+|[block-fences.md]         |         1|      20.4|      66.2|       69.6|
+|[block-heading.md]        |         1|      11.6|      10.9|       17.3|
+|[block-hr.md]             |         1|      15.1|      15.0|       40.1|
+|[block-html.md]           |         1|       7.5|       2.7|       14.4|
+|[block-lheading.md]       |         1|      15.4|      17.1|       14.6|
+|[block-list-flat.md]      |         1|       4.6|       4.4|       10.8|
+|[block-list-nested.md]    |         1|       7.6|       5.7|       17.9|
+|[block-ref-flat.md]       |         1|       1.9|       1.1|        1.6|
+|[block-ref-nested.md]     |         1|       1.6|       1.4|        2.6|
+|[inline-autolink.md]      |         1|       4.4|       7.4|        4.6|
+|[inline-backticks.md]     |         1|      17.0|      13.2|       30.9|
+|[inline-em-flat.md]       |         1|       4.4|       3.6|        8.2|
+|[inline-em-nested.md]     |         1|       5.4|       4.2|        7.6|
+|[inline-em-worst.md]      |         1|       5.9|       4.8|        3.3|
+|[inline-entity.md]        |         1|       5.5|      10.2|        7.8|
+|[inline-escape.md]        |         1|       5.0|       2.8|       12.8|
+|[inline-html.md]          |         1|       4.0|       5.5|        5.4|
+|[inline-links-flat.md]    |         1|       3.8|       3.9|        3.9|
+|[inline-links-nested.md]  |         1|       4.1|       1.0|        1.4|
+|[inline-newlines.md]      |         1|       6.8|       6.6|       13.3|
+|[lorem1.md]               |         1|       9.4|       4.9|        5.5|
+|[rawtabs.md]              |         1|       9.6|       9.1|       14.0|
 
 [block-html.md]: bench/samples/block-html.md
 [inline-links-nested.md]: bench/samples/inline-links-nested.md
