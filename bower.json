@@ -1,6 +1,5 @@
 {
     "name": "commonmark",
-    "version": "0.17.0",
     "main": "dist/commonmark.js",
     "homepage": "https://github.com/jgm/commonmark.js",
     "description": "CommonMark parsing and rendering library",
