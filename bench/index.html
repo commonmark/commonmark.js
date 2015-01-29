@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+ <script src="bower_components/benchmark/benchmark.js"></script>
+ <script src="bower_components/marked/lib/marked.js"></script>
+ <script src="bower_components/markdown-it/dist/markdown-it.js"></script>
+ <script src="bower_components/commonmark/dist/commonmark.js"></script>
+ <script src="bower_components/showdown/Compressed/Showdown.js"></script>
+<script>
+
+var suite = new Benchmark.Suite();
+runBenchmarks = function() {
+
+var results = document.getElementById("results");
+
+results.innerText = "";
+
+var contents = "1. > > test *test* test";
+
+suite.add('commonmark.js markdown->html', function() {
+  var doc = new commonmark.Parser().parse(contents);
+  var renderer = new commonmark.HtmlRenderer();
+  renderer.render(doc);
+})
+
+.add('showdown.js markdown->html', function() {
+  var converter = new Showdown.converter();
+  converter.makeHtml(contents);
+})
+
+.add('marked.js markdown->html', function() {
+  marked(contents);
+})
+
+.add('markdown-it markdown->html', function() {
+  markdownit('commonmark').render(contents);
+})
+
+.on('cycle', function(event) {
+  results.innerText += String(event.target) + '\n';
+})
+.run();
+
+};
+</script>
+
+</head>
+<body>
+<h1>Benchmarks</h1>
+<pre id="results">
+</pre>
+<script>
+window.onload = runBenchmarks();
+</script>
+</body>
+</html>
