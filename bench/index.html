@@ -5,6 +5,8 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <title></title>
+  <link rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
   <style type="text/css">
     pre.sample {background-color: #ddd;}
   </style>
@@ -53,6 +55,7 @@ var showdown = new Showdown.converter();
 var markdown_it = markdownit('commonmark');
 var parser = new commonmark.Parser();
 var renderer = new commonmark.HtmlRenderer();
+var results = {};
 
 var runBenchmarks = function() {
 
@@ -60,13 +63,13 @@ var runBenchmarks = function() {
 
     var suite = new Benchmark.Suite(name);
     var contents = benchmarks[name];
-    suite.add('commonmark.js', function() {
+    suite.add('commonmark', function() {
       renderer.render(parser.parse(contents));
     })
-    .add('showdown.js', function() {
+    .add('showdown', function() {
       showdown.makeHtml(contents);
     })
-    .add('marked.js', function() {
+    .add('marked', function() {
       marked(contents);
     })
     .add('markdown-it', function() {
@@ -74,19 +77,37 @@ var runBenchmarks = function() {
     })
     .on('start', function(event) {
       console.log('Starting ' + name);
-      $("#results").append('<h2>' + name + '</h2>');
-      $("#results").append('<pre class="sample" id="sample_' + name + '"></pre>');
-      $("#sample_" + name).text(contents);
-      $("#results").append('<pre class="results" id="results_' + name + '"></pre>');
+      results[name] = {};
     })
     .on('cycle', function(event) {
       console.log(String(event.target));
-      $("#results_" + name).append(String(event.target) + '\n');
+      results[name][event.target.name] = {hz: event.target.hz};
     })
     .on('complete', function(event) {
-      $("#results_" + name).show();
+      for (imp in results[name]) {
+         results[name][imp]['ratio'] =
+              results[name][imp]['hz'] / results[name]['showdown']['hz'];
+      }
     })
     .run();
+  }
+
+  $("#results").append('<table class="table" id="ratios"></table>');
+  $("#ratios").append('<tr id="ratios_header"></tr>');
+  $("#ratios_header").append('<td></td>');
+  var first = true;
+  for (name in results) {
+    $("#ratios").append('<tr id="ratios_' + name + '"></tr>');
+    $("#ratios_" + name).append('<th>' + name + '</td>');
+    for (impl in results[name]) {
+       if (first) {
+         $("#ratios_header").append('<th>' + impl + '</th>');
+       }
+       $("#ratios_" + name).append('<td>' + results[name][impl]['ratio'].toFixed(1) + '</td>');
+    }
+    if (first) {
+       first = false;
+    }
   }
 };
 
