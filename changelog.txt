@@ -1,4 +1,28 @@
-[0.17]
+[0.17.1]
+
+  * Reorganized block parsing in a more modular way. There is now
+    a `blocks` property of the parser that contains information
+    about each type of block, which is used in parsing.  Ultimately
+    this will make it easier to extend the library, but the project
+    is still only partially completed.
+  * Code cleanup and simplification, with some performance optimizations.
+  * Removed version from `bower.json`.  Bower takes version from tags.
+  * Initialize some properties at beginning of 'parse'.
+    This fixes some mistakes in source position when the
+    same Parser object was used to parse multiple times (#3).
+  * Made parsing of backslash escapes a bit more efficient.
+  * Removed refmap parameter of InlineParser.parse().
+    Instead, set the refmap property before running the parser.
+  * Set `_string_content` to null after using, allowing it to be GCd.
+  * Removed `_strings`; just append to `_string_content`.
+    This gives better performance with v8.
+  * Format benchmarks so that samples are linked.
+  * Added in-browser benchmark.
+  * Added API documentation to README.
+  * xml renderer:  use `sourcepos` attribute, not `data-sourcepos`.
+  * Changed license to 2-clause BSD.  Added clause for spec.
+
+[0.17.0]
 
   * Renamed `DocParser` -> `Parser`.
     Note: library users should update their code or it will break.
