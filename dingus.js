@@ -1,8 +1,9 @@
 "use strict";
 
 /*eslint-env browser*/
-/*global $, commonmark*/
+/*global $ */
 
+var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var xmlwriter = new commonmark.XmlRenderer({ sourcepos: true });
 var reader = new commonmark.Parser();
