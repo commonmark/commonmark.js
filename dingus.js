@@ -49,7 +49,7 @@ $(document).ready(function() {
         if (elt.offset()) {
             var curTop = $("#preview").scrollTop();
             $("#preview").animate({
-                scrollTop: curTop + elt.offset().top - 150
+                scrollTop: curTop + elt.offset().top - 100
             }, 50);
         }
     }
