@@ -75,7 +75,7 @@ $(document).ready(function() {
       $("#parsetime").text(parseTime);
       $(".timing").css('visibility', 'visible');
       render();
-      syncScroll();
+      markSelection();
     }, 0); // ms delay
   };
   var initial_text = getQueryVariable("text");
