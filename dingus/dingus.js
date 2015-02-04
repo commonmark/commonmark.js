@@ -61,14 +61,6 @@ OTHER DEALINGS IN THE SOFTWARE.
       xmlRenderer = new window.commonmark.XmlRenderer({sourcepos: true});
   }
 
-  function setHighlightedlContent(selector, content, lang) {
-    if (window.hljs) {
-      $(selector).html(window.hljs.highlight(lang, content).value);
-    } else {
-      $(selector).text(content);
-    }
-  }
-
   function updateResult() {
     var source = $('.source').val();
 
@@ -80,9 +72,9 @@ OTHER DEALINGS IN THE SOFTWARE.
     $('.result-html').html(rendered);
     $('.result-src-content').text(rendered);
     $('.result-debug-content').text(xmlRenderer.render(parsed));
-    if (window.hljs) {
+    if (hljs) {
       $('pre > code').each(function(i, block) {
-        window.hljs.highlightBlock(block);
+        hljs.highlightBlock(block);
       });
     }
 
@@ -180,7 +172,7 @@ OTHER DEALINGS IN THE SOFTWARE.
   }
 
   function syncScroll() {
-    var textarea   = $('.source'),
+    var textarea = $('.source'),
         lineHeight = parseFloat(textarea.css('line-height')),
         lineNo, posTo;
 
@@ -197,9 +189,9 @@ OTHER DEALINGS IN THE SOFTWARE.
   //
   $(function() {
     // highlight snippet
-    if (window.hljs) {
+    if (hljs) {
       $('pre code').each(function(i, block) {
-        window.hljs.highlightBlock(block);
+        hljs.highlightBlock(block);
       });
     }
 
