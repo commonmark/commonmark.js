@@ -16,7 +16,7 @@ and rendering the document to HTML or to an XML representation of the
 AST.
 
 To play with this library without installing it, see
-the live dingus at <http://spec.commonmark.org/dingus.html>.
+the live dingus at <http://try.commonmark.org/>.
 
 Installing
 ----------
