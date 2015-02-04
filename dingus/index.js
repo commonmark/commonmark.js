@@ -4,16 +4,9 @@
   /*eslint-env browser*/
   /*global $, _*/
 
-  var mdHtml, mdSrc, permalink, scrollMap;
+  var parser, htmlRenderer, xmlRenderer, permalink, scrollMap, parsed;
 
   var defaults = {
-    html:         false,        // Enable HTML tags in source
-    xhtmlOut:     false,        // Use '/' to close single tags (<br />)
-    breaks:       false,        // Convert '\n' in paragraphs into <br>
-    langPrefix:   'language-',  // CSS language prefix for fenced blocks
-    linkify:      true,         // autoconvert URL-like texts to links
-    typographer:  true,         // Enable smartypants and other sweet transforms
-
     // options below are for demo only
     _highlight: true,
     _strict: false,
@@ -54,63 +47,9 @@
   }
 
   function mdInit() {
-    if (defaults._strict) {
-      mdHtml = window.markdownit('commonmark');
-      mdSrc = window.markdownit('commonmark');
-    } else {
-      mdHtml = window.markdownit(defaults)
-                  .use(window.markdownitAbbr)
-                  .use(window.markdownitDeflist)
-                  .use(window.markdownitEmoji)
-                  .use(window.markdownitFootnote)
-                  .use(window.markdownitIns)
-                  .use(window.markdownitMark)
-                  .use(window.markdownitSub)
-                  .use(window.markdownitSup);
-      mdSrc = window.markdownit(defaults)
-                  .use(window.markdownitAbbr)
-                  .use(window.markdownitDeflist)
-                  .use(window.markdownitEmoji)
-                  .use(window.markdownitFootnote)
-                  .use(window.markdownitIns)
-                  .use(window.markdownitMark)
-                  .use(window.markdownitSub)
-                  .use(window.markdownitSup);
-    }
-
-    // Beautify output of parser for html content
-    mdHtml.renderer.rules.table_open = function () {
-      return '<table class="table table-striped">\n';
-    };
-    // Replace emoji codes with images
-    mdHtml.renderer.rules.emoji = function(token, idx) {
-      return window.twemoji.parse(token[idx].to);
-    };
-
-    //
-    // Inject line numbers for sync scroll. Notes:
-    //
-    // - We track only headings and paragraphs on first level. That's enougth.
-    // - Footnotes content causes jumps. Level limit filter it automatically.
-    //
-
-    mdHtml.renderer.rules.paragraph_open = function (tokens, idx) {
-      var line;
-      if (tokens[idx].lines && tokens[idx].level === 0) {
-        line = tokens[idx].lines[0];
-        return '<p class="line" data-line="' + line + '">';
-      }
-      return '<p>';
-    };
-
-    mdHtml.renderer.rules.heading_open = function (tokens, idx) {
-      var line;
-      if (tokens[idx].lines && tokens[idx].level === 0) {
-        line = tokens[idx].lines[0];
-        return '<h' + tokens[idx].hLevel + ' class="line" data-line="' + line + '">';
-      }
-      return '<h' + tokens[idx].hLevel + '>';
-    };
+      parser = new window.commonmark.Parser({});
+      htmlRenderer = new window.commonmark.HtmlRenderer({sourcepos: true});
+      xmlRenderer = new window.commonmark.XmlRenderer({sourcepos: true});
   }
 
   function setHighlightedlContent(selector, content, lang) {
@@ -126,19 +65,9 @@
 
     // Update only active view to avoid slowdowns
     // (debug & src view with highlighting are a bit slow)
-    if (defaults._view === 'src') {
-      setHighlightedlContent('.result-src-content', mdSrc.render(source), 'html');
-
-    } else if (defaults._view === 'debug') {
-      setHighlightedlContent(
-        '.result-debug-content',
-        JSON.stringify(mdSrc.parse(source, { references: {} }), null, 2),
-        'json'
-      );
-
-    } else { /*defaults._view === 'html'*/
-      $('.result-html').html(mdHtml.render(source));
-    }
+    /*defaults._view === 'html'*/
+    parsed = parser.parse(source);
+    $('.result-html').html(htmlRenderer.render(parsed));
 
     // reset lines mapping cache on content update
     scrollMap = null;
