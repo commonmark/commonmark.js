@@ -31,9 +31,7 @@ html
   body
     .container
       - var s = self.self.demo;
-      h1 commonmark.js
-        |  
-        small demo
+      h1#title commonmark.js
 
     .container.full-height
       .row.full-height
@@ -44,11 +42,11 @@ html
           textarea.source.full-height= s.source
         section.col-xs-6.full-height
           .demo-control
-            a(href='#' data-result-as='html') html
-            a(href='#' data-result-as='src') source
-            a(href='#' data-result-as='debug') debug
+            a(href='#' data-result-as='html') preview
+            a(href='#' data-result-as='src') html
+            a(href='#' data-result-as='debug') xml
           .result-html.full-height
           pre.result-src.full-height
-            code.result-src-content.full-height
+            code.result-src-content.full-height.language-html
           pre.result-debug.full-height
-            code.result-debug-content.full-height
+            code.result-debug-content.full-height.language-xml

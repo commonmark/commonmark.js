@@ -51,9 +51,12 @@
     // (debug & src view with highlighting are a bit slow)
     /*defaults._view === 'html'*/
     parsed = parser.parse(source);
-    $('.result-html').html(htmlRenderer.render(parsed));
+    var rendered = htmlRenderer.render(parsed);
+    $('.result-html').html(rendered);
+    $('.result-src-content').text(rendered);
+    $('.result-debug-content').text(xmlRenderer.render(parsed));
     if (window.hljs) {
-      $('.result-html pre > code').each(function(i, block) {
+      $('pre > code').each(function(i, block) {
         window.hljs.highlightBlock(block);
       });
     }
