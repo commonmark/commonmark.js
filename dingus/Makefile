@@ -27,5 +27,5 @@ $(APP)/index.js: index.js
 sample.json: sample.md
 	node demodata.js > $@
 
-demo:
+demo: $(ALL)
 	python -m SimpleHTTPServer

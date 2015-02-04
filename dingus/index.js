@@ -5,29 +5,13 @@
   /*global $, _*/
 
   var parser, htmlRenderer, xmlRenderer, permalink, scrollMap, parsed;
+  var hljs = window.hljs;
 
   var defaults = {
     // options below are for demo only
     _highlight: true,
     _strict: false,
     _view: 'html'               // html / src / debug
-  };
-
-  defaults.highlight = function (str, lang) {
-    if (!defaults._highlight || !window.hljs) { return ''; }
-
-    var hljs = window.hljs;
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(lang, str).value;
-      } catch (__) {}
-    }
-
-    try {
-      return hljs.highlightAuto(str).value;
-    } catch (__) {}
-
-    return '';
   };
 
   function setOptionClass(name, val) {
@@ -68,6 +52,11 @@
     /*defaults._view === 'html'*/
     parsed = parser.parse(source);
     $('.result-html').html(htmlRenderer.render(parsed));
+    if (window.hljs) {
+      $('.result-html pre > code').each(function(i, block) {
+        window.hljs.highlightBlock(block);
+      });
+    }
 
     // reset lines mapping cache on content update
     scrollMap = null;
