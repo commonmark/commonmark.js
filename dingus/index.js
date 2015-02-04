@@ -261,7 +261,7 @@
     permalink = document.getElementById('permalink');
 
     // Setup listeners
-    $('.source').on('keyup paste cut mouseup', _.debounce(updateResult, 300, { maxWait: 500 }));
+    $('.source').on('keyup paste cut mouseup', _.debounce(updateResult, 50, { maxWait: 50 }));
     $('.source').on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
 
     $('.source-clear').on('click', function (event) {
