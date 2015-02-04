@@ -52,7 +52,7 @@
     $('.result-html').html(rendered);
     $('.result-src-content').text(rendered);
     $('.result-debug-content').text(xmlRenderer.render(parsed));
-    if (hljs) {
+    if (defaults._highlight) {
       $('pre > code').each(function(i, block) {
         hljs.highlightBlock(block);
       });
@@ -125,9 +125,9 @@
     nonEmptyList.push(0);
     _scrollMap[0] = 0;
 
-    $('.line').each(function(n, el) {
-      var $el = $(el), t = $el.data('line');
-      if (t === '') { return; }
+    $('.result-html p, .result-html h1, .result-html h2, .result-html h3, .result-html h4, .result-html h5, .result-html h6, .result-html li').each(function(n, el) {
+      var $el = $(el), sourcepos = $el.data('sourcepos');
+      var t = sourcepos.replace(/:.*$/,'');
       t = lineHeightMap[t];
       if (t !== 0) { nonEmptyList.push(t); }
       _scrollMap[t] = Math.round($el.offset().top + offset);
@@ -169,7 +169,7 @@
   //
   $(function() {
     // highlight snippet
-    if (hljs) {
+    if (defaults._highlight) {
       $('pre code').each(function(i, block) {
         hljs.highlightBlock(block);
       });
