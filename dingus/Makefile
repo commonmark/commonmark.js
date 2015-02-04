@@ -28,4 +28,6 @@ sample.json: sample.md
 	node demodata.js > $@
 
 demo: $(ALL)
-	python -m SimpleHTTPServer
+	echo "Starting dingus server at http://localhost:9000/"; \
+	cd dingus && \
+	http-server -p 9000 || python -m SimpleHTTPServer 9000

@@ -3,6 +3,7 @@ SPECVERSION=$(shell perl -ne 'print $$1 if /^version: *([0-9.]+)/' $(SPEC))
 BENCHINP?=bench/samples/README.md
 JSMODULES=$(wildcard lib/*.js)
 VERSION?=$(SPECVERSION)
+DINGUS=dingus
 
 .PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
 
@@ -22,7 +23,7 @@ test: $(SPEC)
 	node test/test.js $<
 
 lint:
-	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus.js
+	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js $(DINGUS)/dingus.js
 
 bench:
 	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
@@ -35,7 +36,7 @@ bench-detailed:
 npm:
 	cd js; npm publish
 
-dingus: dist/commonmark.js
-	echo "Starting dingus server at http://localhost:9000/dingus.html" && http-server -p 9000 || python -m SimpleHTTPServer 9000
+dingus:
+	make -C $(DINGUS) demo
 
 clean:
