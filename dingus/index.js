@@ -204,10 +204,20 @@ OTHER DEALINGS IN THE SOFTWARE.
     }
 
     // Restore content if opened by permalink
+
+    // first check for the legacy query-style permalinks, ?text=foo
+    var cfg = {};
+    var parts = location.search.substr(1).split("&");
+    for (var i = 0; i < parts.length; i++) {
+        // set 'source' with value of 'text' if found
+        var item = parts[i];
+        if (item.split("=")[0] === 'text') {
+            $('.source').val(decodeURIComponent(item.split("=")[1]));
+        }
+    }
+    // now check hash-style permalinks
     if (location.hash && /^(#md=|#md64=)/.test(location.hash)) {
       try {
-        var cfg;
-
         if (/^#md64=/.test(location.hash)) {
           cfg = JSON.parse(window.atob(location.hash.slice(6)));
         } else {
