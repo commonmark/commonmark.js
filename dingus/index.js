@@ -181,7 +181,7 @@
   $(function() {
     // highlight snippet
     if (window.hljs) {
-      $('pre.code-sample code').each(function(i, block) {
+      $('pre code').each(function(i, block) {
         window.hljs.highlightBlock(block);
       });
     }
