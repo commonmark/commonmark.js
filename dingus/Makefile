@@ -1,5 +1,5 @@
 APP=dingus
-ALL=$(APP)/index.html $(APP)/index.css $(APP)/commonmark.js $(APP)/index.js
+ALL=$(APP)/index.html $(APP)/dingus.css $(APP)/commonmark.js $(APP)/dingus.js
 
 all: $(ALL)
 
@@ -18,10 +18,10 @@ $(APP)/commonmark.js: ../lib/index.js
 $(APP)/index.html: index.jade sample.json $(APP)
 	jade $< --pretty --obj sample.json --out $(APP)
 
-$(APP)/index.css: index.styl $(APP)
+$(APP)/dingus.css: dingus.styl $(APP)
 	stylus -u autoprefixer-stylus < $< > $@
 
-$(APP)/index.js: index.js
+$(APP)/dingus.js: dingus.js
 	cp $< $@
 
 sample.json: sample.md
