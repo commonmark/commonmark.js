@@ -13,7 +13,6 @@ Some inline code: `x >>= y`.
 Fenced code:
 
 ``` haskell
--- Fibonnaci sequence as an infinite list
 fibs :: [Int]
 fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
 ```
