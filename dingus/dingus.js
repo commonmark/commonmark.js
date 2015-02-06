@@ -168,13 +168,6 @@
   // Init on page load
   //
   $(function() {
-    // highlight snippet
-    if (defaults._highlight) {
-      $('pre code').each(function(i, block) {
-        hljs.highlightBlock(block);
-      });
-    }
-
     // Restore content if opened by permalink
 
     // first check for the legacy query-style permalinks, ?text=foo
