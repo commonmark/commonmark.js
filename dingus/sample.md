@@ -13,7 +13,7 @@ Some inline code: `x >>= y`.
 Fenced code:
 
 ``` haskell
-fibs = 0 : 1 : next fibs
-  where
-      next (a : t@(b:_)) = (a+b) : next t
+-- Fibonnaci sequence as an infinite list
+fibs :: [Int]
+fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
 ```
