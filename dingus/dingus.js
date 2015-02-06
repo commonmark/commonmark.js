@@ -19,6 +19,24 @@
     _view: 'html'               // html / src / debug
   };
 
+  defaults.highlight = function (str, lang) {
+    if (!defaults._highlight || !window.hljs) { return ''; }
+
+    var hljs = window.hljs;
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(lang, str).value;
+      } catch (__) {}
+    }
+
+    try {
+      return hljs.highlightAuto(str).value;
+    } catch (__) {}
+
+    return '';
+  };
+
+
   function setOptionClass(name, val) {
     if (val) {
       $('body').addClass('opt_' + name);
@@ -49,13 +67,18 @@
     /*defaults._view === 'html'*/
     parsed = parser.parse(source);
     var rendered = htmlRenderer.render(parsed);
+    var xml = xmlRenderer.render(parsed);
     $('.result-html').html(rendered);
-    $('.result-src-content').text(rendered);
-    $('.result-debug-content').text(xmlRenderer.render(parsed));
     if (defaults._highlight) {
-      $('pre > code').each(function(i, block) {
-        hljs.highlightBlock(block);
+      $('.result-src-content').html(defaults.highlight(rendered, 'xml'));
+      $('.result-debug-content').html(defaults.highlight(xml, 'xml'));
+      $('.result-html pre > code').each(function(i, block) {
+        var lang = block.className.replace(/language-/, '');
+        block.innerHTML = defaults.highlight(block.innerText, lang);
       });
+    } else {
+      $('.result-src-content').text(rendered);
+      $('.result-debug-content').text(xml);
     }
 
     // reset lines mapping cache on content update
