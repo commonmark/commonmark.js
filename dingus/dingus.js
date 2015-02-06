@@ -19,7 +19,7 @@
     _view: 'html'               // html / src / debug
   };
 
-  defaults.highlight = function (str, lang) {
+  var highlight = function (str, lang) {
     if (!defaults._highlight || !window.hljs) { return ''; }
 
     var hljs = window.hljs;
@@ -70,11 +70,11 @@
     var xml = xmlRenderer.render(parsed);
     $('.result-html').html(rendered);
     if (defaults._highlight) {
-      $('.result-src-content').html(defaults.highlight(rendered, 'xml'));
-      $('.result-debug-content').html(defaults.highlight(xml, 'xml'));
+      $('.result-src-content').html(highlight(rendered, 'xml'));
+      $('.result-debug-content').html(highlight(xml, 'xml'));
       $('.result-html pre > code').each(function(i, block) {
         var lang = block.className.replace(/language-/, '');
-        block.innerHTML = defaults.highlight(block.innerText, lang);
+        block.innerHTML = highlight(block.innerText, lang);
       });
     } else {
       $('.result-src-content').text(rendered);
