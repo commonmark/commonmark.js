@@ -44,7 +44,6 @@ $(document).ready(function() {
   var syncScroll = function(e) {
     var lineHeight = editor.renderer.lineHeight;
     var lineNumber = Math.round(e / lineHeight) + 1;
-    console.log('line ', lineNumber);
     var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         if (elt.offset()) {
