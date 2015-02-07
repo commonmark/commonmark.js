@@ -1,5 +1,5 @@
 ALL=commonmark.js
-COMPONENTS=lodash.min.js jquery.min.js bootstrap.min.js bootstrap.min.css ace.js
+COMPONENTS=lodash.min.js jquery.min.js jquery.min.map bootstrap.min.js bootstrap.min.css ace.js
 
 all: $(ALL) components
 
@@ -14,6 +14,9 @@ lodash.min.js: bower_components/lodash
 	cp $</lodash.min.js $@
 
 jquery.min.js: bower_components/jquery
+	cp $</dist/$@ $@
+
+jquery.min.map: bower_components/jquery
 	cp $</dist/$@ $@
 
 bootstrap.min.js: bower_components/bootstrap
