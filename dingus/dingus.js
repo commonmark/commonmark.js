@@ -22,7 +22,7 @@ function getQueryVariable(variable) {
 
 $(document).ready(function() {
   var editor = window.ace.edit("text");
-  editor.getSession().setUseWrapMode(false);
+  editor.getSession().setUseWrapMode(true);
   editor.renderer.setShowGutter(false);
   // editor.setBehavioursEnabled(false);
   var timer;
@@ -43,7 +43,7 @@ $(document).ready(function() {
   };
   var syncScroll = function(e) {
     var lineHeight = editor.renderer.lineHeight;
-    var lineNumber = Math.round(e / lineHeight) + 1;
+    var lineNumber = editor.getSession().screenToDocumentRow(Math.floor(e / lineHeight) + 1);
     var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         if (elt.offset()) {
