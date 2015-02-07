@@ -1,7 +1,7 @@
 "use strict";
 
 /*eslint-env browser*/
-/*global $ */
+/*global $, _ */
 
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer({ sourcepos: true });
@@ -60,7 +60,6 @@ $(document).ready(function() {
     if (elt.length > 0) {
         $("#preview .selected").removeClass("selected");
         elt.addClass("selected");
-        var curTop = $("#preview").scrollTop();
         syncScroll(editor.getSession().getScrollTop());
     }
   };
@@ -94,8 +93,8 @@ $(document).ready(function() {
     window.location.pathname = "/index.html";
     window.location.search = "text=" + encodeURIComponent(editor.getValue());
   });
-  editor.getSession().on('change', parseAndRender);
-  editor.getSession().on('changeScrollTop', syncScroll);
-  editor.getSession().selection.on('changeCursor', markSelection);
+  editor.getSession().on('change', _.debounce(parseAndRender, 50, { maxWait: 100 }));
+  editor.getSession().on('changeScrollTop', _.debounce(syncScroll, 50, { maxWait: 50 }));
+  editor.getSession().selection.on('changeCursor', _.debounce(markSelection, 50, { maxWait: 100}));
   $(".option").change(render);
 });
