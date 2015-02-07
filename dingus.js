@@ -1,7 +1,7 @@
 "use strict";
 
 /*eslint-env browser*/
-/*global $ */
+/*global $,_ */
 
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer({ sourcepos: true });
@@ -21,10 +21,6 @@ function getQueryVariable(variable) {
 }
 
 $(document).ready(function() {
-  var editor = window.ace.edit("text");
-  editor.getSession().setUseWrapMode(false);
-  editor.renderer.setShowGutter(false);
-  // editor.setBehavioursEnabled(false);
   var timer;
   var x;
   var parsed;
@@ -41,9 +37,10 @@ $(document).ready(function() {
     $("#ast").text(xmlwriter.render(parsed));
     $("#rendertime").text(renderTime);
   };
-  var syncScroll = function(e) {
-    var lineHeight = editor.renderer.lineHeight;
-    var lineNumber = Math.floor(e / lineHeight);
+  var syncScroll = function() {
+    var textarea = $("#text");
+    var lineHeight = parseFloat(textarea.css('line-height'));
+    var lineNumber = Math.floor(textarea.scrollTop() / lineHeight);
     var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         if (elt.offset()) {
@@ -54,48 +51,36 @@ $(document).ready(function() {
         }
     }
   };
-  var markSelection = function() {
-    var lineNumber = editor.selection.getCursor().row + 1;
-    var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
-    if (elt.length > 0) {
-        $("#preview .selected").removeClass("selected");
-        elt.addClass("selected");
-        var curTop = $("#preview").scrollTop();
-        syncScroll(editor.getSession().getScrollTop());
-    }
-  };
   var parseAndRender = function() {
     if (x) { x.abort(); } // If there is an existing XHR, abort it.
     clearTimeout(timer); // Clear the timer so we don't end up with dupes.
     timer = setTimeout(function() { // assign timer a new timeout
       var startTime = new Date().getTime();
-      parsed = reader.parse(editor.getValue());
+      parsed = reader.parse($("#text").val());
       var endTime = new Date().getTime();
       var parseTime = endTime - startTime;
       $("#parsetime").text(parseTime);
       $(".timing").css('visibility', 'visible');
       render();
-      markSelection();
     }, 0); // ms delay
   };
   var initial_text = getQueryVariable("text");
   if (initial_text) {
-    editor.setValue(initial_text);
+    $("#text").val(initial_text);
     // show HTML tab if text is from query
     $('#result-tabs a[href="#result"]').tab('show');
   }
 
   parseAndRender();
   $("#clear-text-box").click(function() {
-    editor.setValue('');
+    $("#text").val("");
     parseAndRender();
   });
   $("#permalink").click(function() {
     window.location.pathname = "/index.html";
-    window.location.search = "text=" + encodeURIComponent(editor.getValue());
+    window.location.search = "text=" + encodeURIComponent($("#text").val());
   });
-  editor.getSession().on('change', parseAndRender);
-  editor.getSession().on('changeScrollTop', syncScroll);
-  editor.getSession().selection.on('changeCursor', markSelection);
+  $("#text").on('keyup paste cut mouseup', _.debounce(parseAndRender, 50, {maxwait: 50}));
+  $("#text").on('scroll', _.debounce(syncScroll, 50, {maxwait: 50}));
   $(".option").change(render);
 });
