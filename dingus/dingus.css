@@ -1,5 +1,4 @@
 h1.title { font-family: monospace; font-size: 120%; font-weight: bold; margin-top: 0.5em; margin-bottom: 0; }
-pre code#html { font-size: 92%; font-family: monospace; }
 pre#htmlpre { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
 div#astpre  { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
 div#preview { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
