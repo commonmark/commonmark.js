@@ -7,10 +7,12 @@
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"
         rel="stylesheet">
-  <link href="dingus.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/lodash/2.4.1/lodash.js"></script>
+  <link href="dingus.css" type="text/css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js"
+  rel="stylesheet"></script>
   <script src="dist/commonmark.js"></script>
   <script src="dingus.js"></script>
+  </style>
 </head>
 <body>
 <div class="container">
@@ -23,7 +25,7 @@
     <div class="col-md-6">
       <p id="text-controls"><a id="clear-text-box">clear</a>&nbsp;<a
       id="permalink">permalink</a></p>
-      <textarea id="text">## Try CommonMark
+      <div id="text">## Try CommonMark
 
 You can try CommonMark here.  This dingus is powered by
 [commonmark.js](https://github.com/jgm/commonmark.js), the
@@ -34,7 +36,7 @@ JavaScript reference implementation.
    - sublist
    - sublist
 
-</textarea>
+      </div>
       <ul id="warnings"></ul>
     </div>
     <div class="col-md-6">
