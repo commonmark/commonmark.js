@@ -96,5 +96,8 @@ $(document).ready(function() {
   editor.getSession().on('change', _.debounce(parseAndRender, 50, { maxWait: 100 }));
   editor.getSession().on('changeScrollTop', _.debounce(syncScroll, 50, { maxWait: 50 }));
   editor.getSession().selection.on('changeCursor', _.debounce(markSelection, 50, { maxWait: 100}));
-  $(".option").change(render);
+  $("#smart").click(function() {
+      reader = new commonmark.Parser({smart: $("#smart").is(":checked")});
+      parseAndRender();
+  });
 });
