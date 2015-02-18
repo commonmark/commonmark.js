@@ -20,6 +20,8 @@ for (i = 2; i < process.argv.length; i++) {
         format = 'xml';
     } else if (arg === '--time') {
         options.time = true;
+    } else if (arg === '--smart') {
+        options.smart = true;
     } else if (arg === '--sourcepos') {
         options.sourcepos = true;
     } else if (/^--/.test(arg)) {
