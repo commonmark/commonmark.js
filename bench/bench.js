@@ -13,25 +13,30 @@ var markdownit = require('markdown-it')('commonmark');
 
 var showdown = new Showdown.converter();
 var parser = new commonmark.Parser();
+var parserSmart = new commonmark.Parser({smart: true});
 var renderer = new commonmark.HtmlRenderer();
 
 var benchfile = process.argv[2];
 
 var contents = fs.readFileSync(benchfile, 'utf8');
 
-suite.add('commonmark.js markdown->html', function() {
+suite.add('commonmark.js', function() {
   renderer.render(parser.parse(contents));
 })
 
-.add('showdown.js markdown->html', function() {
+suite.add('commonmark.js +smart', function() {
+  renderer.render(parserSmart.parse(contents));
+})
+
+.add('showdown.js', function() {
   showdown.makeHtml(contents);
 })
 
-.add('marked.js markdown->html', function() {
+.add('marked.js', function() {
   marked(contents);
 })
 
-.add('markdown-it markdown->html', function() {
+.add('markdown-it', function() {
   markdownit.render(contents);
 })
 
