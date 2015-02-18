@@ -22,7 +22,7 @@ test: $(SPEC)
 	node test/test.js $<
 
 lint:
-	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus.js
+	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
 
 bench:
 	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
