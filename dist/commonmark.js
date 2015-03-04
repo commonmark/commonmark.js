@@ -24,7 +24,7 @@ var reHrule = /^(?:(?:\* *){3,}|(?:_ *){3,}|(?:- *){3,}) *$/;
 
 var reMaybeSpecial = /^[#`~*+_=<>0-9-]/;
 
-var reNonSpace = /[^ \t\n]/;
+var reNonSpace = /[^ \t\f\v\r\n]/;
 
 var reBulletListMarker = /^[*+-]( +|$)/;
 
@@ -764,7 +764,7 @@ function Parser(options){
         lastMatchedContainer: this.doc,
         refmap: {},
         lastLineLength: 0,
-        inlineParser: new InlineParser(),
+        inlineParser: new InlineParser(options),
         findNextNonspace: findNextNonspace,
         breakOutOfLists: breakOutOfLists,
         addLine: addLine,
@@ -1096,7 +1096,7 @@ var renderNodes = function(block) {
             tagname = node.listType === 'Bullet' ? 'ul' : 'ol';
             if (entering) {
                 var start = node.listStart;
-                if (start && start > 1) {
+                if (start !== null && start !== 1) {
                     attrs.push(['start', start.toString()]);
                 }
                 cr();
@@ -3371,6 +3371,8 @@ var C_AMPERSAND = 38;
 var C_OPEN_PAREN = 40;
 var C_CLOSE_PAREN = 41;
 var C_COLON = 58;
+var C_SINGLEQUOTE = 39;
+var C_DOUBLEQUOTE = 34;
 
 // Some regexps used in inline parser:
 
@@ -3421,6 +3423,10 @@ var reTicks = /`+/;
 
 var reTicksHere = /^`+/;
 
+var reEllipses = /\.\.\./g;
+
+var reDash = /---?/g;
+
 var reEmailAutolink = /^<([a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)>/;
 
 var reAutolink = /^<(?:coap|doi|javascript|aaa|aaas|about|acap|cap|cid|crid|data|dav|dict|dns|file|ftp|geo|go|gopher|h323|http|https|iax|icap|im|imap|info|ipp|iris|iris.beep|iris.xpc|iris.xpcs|iris.lwz|ldap|mailto|mid|msrp|msrps|mtqp|mupdate|news|nfs|ni|nih|nntp|opaquelocktoken|pop|pres|rtsp|service|session|shttp|sieve|sip|sips|sms|snmp|soap.beep|soap.beeps|tag|tel|telnet|tftp|thismessage|tn3270|tip|tv|urn|vemmi|ws|wss|xcon|xcon-userid|xmlrpc.beep|xmlrpc.beeps|xmpp|z39.50r|z39.50s|adiumxtra|afp|afs|aim|apt|attachment|aw|beshare|bitcoin|bolo|callto|chrome|chrome-extension|com-eventbrite-attendee|content|cvs|dlna-playsingle|dlna-playcontainer|dtn|dvb|ed2k|facetime|feed|finger|fish|gg|git|gizmoproject|gtalk|hcp|icon|ipn|irc|irc6|ircs|itms|jar|jms|keyparc|lastfm|ldaps|magnet|maps|market|message|mms|ms-help|msnim|mumble|mvn|notes|oid|palm|paparazzi|platform|proxy|psyc|query|res|resource|rmi|rsync|rtmp|secondlife|sftp|sgn|skype|smb|soldat|spotify|ssh|steam|svn|teamspeak|things|udp|unreal|ut2004|ventrilo|view-source|webcal|wtai|wyciwyg|xfire|xri|ymsgr):[^<>\x00-\x20]*>/i;
@@ -3438,7 +3444,7 @@ var reInitialSpace = /^ */;
 var reLinkLabel = /^\[(?:[^\\\[\]]|\\[\[\]]){0,1000}\]/;
 
 // Matches a string of non-special characters.
-var reMain = /^[^\n`\[\]\\!<&*_]+/m;
+var reMain = /^[^\n`\[\]\\!<&*_'"]+/m;
 
 var text = function(s) {
     var node = new Node('Text');
@@ -3583,9 +3589,14 @@ var scanDelims = function(cc) {
     char_before = this.pos === 0 ? '\n' :
         this.subject.charAt(this.pos - 1);
 
-    while (this.peek() === cc) {
+    if (cc === C_SINGLEQUOTE || cc === C_DOUBLEQUOTE) {
         numdelims++;
         this.pos++;
+    } else {
+        while (this.peek() === cc) {
+            numdelims++;
+            this.pos++;
+        }
     }
 
     cc_after = this.peek();
@@ -3618,18 +3629,26 @@ var scanDelims = function(cc) {
              can_close: can_close };
 };
 
-// Attempt to parse emphasis or strong emphasis.
-var parseEmphasis = function(cc, block) {
+// Handle a delimiter marker for emphasis or a quote.
+var handleDelim = function(cc, block) {
     var res = this.scanDelims(cc);
     var numdelims = res.numdelims;
     var startpos = this.pos;
+    var contents;
 
     if (numdelims === 0) {
         return false;
     }
 
     this.pos += numdelims;
-    var node = text(this.subject.slice(startpos, this.pos));
+    if (cc === C_SINGLEQUOTE) {
+        contents = "\u2019";
+    } else if (cc === C_DOUBLEQUOTE) {
+        contents = "\u201D";
+    } else {
+        contents = this.subject.slice(startpos, this.pos);
+    }
+    var node = text(contents);
     block.appendChild(node);
 
     // Add entry to stack for this opener
@@ -3675,7 +3694,11 @@ var processEmphasis = function(block, stack_bottom) {
     }
     // move forward, looking for closers, and handling each
     while (closer !== null) {
-        if (closer.can_close && (closer.cc === C_UNDERSCORE || closer.cc === C_ASTERISK)) {
+        var closercc = closer.cc;
+        if (closer.can_close && (closercc === C_UNDERSCORE ||
+                                 closercc === C_ASTERISK ||
+                                 closercc === C_SINGLEQUOTE ||
+                                 closercc === C_DOUBLEQUOTE)) {
             // found emphasis closer. now look back for first matching opener:
             opener = closer.previous;
             while (opener !== null && opener !== stack_bottom) {
@@ -3684,64 +3707,81 @@ var processEmphasis = function(block, stack_bottom) {
                 }
                 opener = opener.previous;
             }
-            if (opener !== null && opener !== stack_bottom) {
-                // calculate actual number of delimiters used from this closer
-                if (closer.numdelims < 3 || opener.numdelims < 3) {
-                    use_delims = closer.numdelims <= opener.numdelims ?
-                        closer.numdelims : opener.numdelims;
+            if (closercc === C_ASTERISK || closercc === C_UNDERSCORE) {
+                if (opener !== null && opener !== stack_bottom) {
+                    // calculate actual number of delimiters used from closer
+                    if (closer.numdelims < 3 || opener.numdelims < 3) {
+                        use_delims = closer.numdelims <= opener.numdelims ?
+                            closer.numdelims : opener.numdelims;
+                    } else {
+                        use_delims = closer.numdelims % 2 === 0 ? 2 : 1;
+                    }
+
+                    opener_inl = opener.node;
+                    closer_inl = closer.node;
+
+                    // remove used delimiters from stack elts and inlines
+                    opener.numdelims -= use_delims;
+                    closer.numdelims -= use_delims;
+                    opener_inl._literal =
+                        opener_inl._literal.slice(0,
+                                                  opener_inl._literal.length - use_delims);
+                    closer_inl._literal =
+                        closer_inl._literal.slice(0,
+                                                  closer_inl._literal.length - use_delims);
+
+                    // build contents for new emph element
+                    var emph = new Node(use_delims === 1 ? 'Emph' : 'Strong');
+
+                    tmp = opener_inl._next;
+                    while (tmp && tmp !== closer_inl) {
+                        next = tmp._next;
+                        tmp.unlink();
+                        emph.appendChild(tmp);
+                        tmp = next;
+                    }
+
+                    opener_inl.insertAfter(emph);
+
+                    // remove elts btw opener and closer in delimiters stack
+                    tempstack = closer.previous;
+                    while (tempstack !== null && tempstack !== opener) {
+                        nextstack = tempstack.previous;
+                        this.removeDelimiter(tempstack);
+                        tempstack = nextstack;
+                    }
+
+                    // if opener has 0 delims, remove it and the inline
+                    if (opener.numdelims === 0) {
+                        opener_inl.unlink();
+                        this.removeDelimiter(opener);
+                    }
+
+                    if (closer.numdelims === 0) {
+                        closer_inl.unlink();
+                        tempstack = closer.next;
+                        this.removeDelimiter(closer);
+                        closer = tempstack;
+                    }
+
                 } else {
-                    use_delims = closer.numdelims % 2 === 0 ? 2 : 1;
+                    closer = closer.next;
                 }
 
-                opener_inl = opener.node;
-                closer_inl = closer.node;
-
-                // remove used delimiters from stack elts and inlines
-                opener.numdelims -= use_delims;
-                closer.numdelims -= use_delims;
-                opener_inl._literal =
-                    opener_inl._literal.slice(0,
-                                     opener_inl._literal.length - use_delims);
-                closer_inl._literal =
-                    closer_inl._literal.slice(0,
-                                     closer_inl._literal.length - use_delims);
-
-                // build contents for new emph element
-                var emph = new Node(use_delims === 1 ? 'Emph' : 'Strong');
-
-                tmp = opener_inl._next;
-                while (tmp && tmp !== closer_inl) {
-                    next = tmp._next;
-                    tmp.unlink();
-                    emph.appendChild(tmp);
-                    tmp = next;
+            } else if (closercc === C_SINGLEQUOTE) {
+                closer.node._literal = "\u2019";
+                if (opener !== null && opener !== stack_bottom) {
+                    opener.node._literal = "\u2018";
                 }
-
-                opener_inl.insertAfter(emph);
-
-                // remove elts btw opener and closer in delimiters stack
-                tempstack = closer.previous;
-                while (tempstack !== null && tempstack !== opener) {
-                    nextstack = tempstack.previous;
-                    this.removeDelimiter(tempstack);
-                    tempstack = nextstack;
-                }
-
-                // if opener has 0 delims, remove it and the inline
-                if (opener.numdelims === 0) {
-                    opener_inl.unlink();
-                    this.removeDelimiter(opener);
-                }
-
-                if (closer.numdelims === 0) {
-                    closer_inl.unlink();
-                    tempstack = closer.next;
-                    this.removeDelimiter(closer);
-                    closer = tempstack;
-                }
-
-            } else {
                 closer = closer.next;
+
+            } else if (closercc === C_DOUBLEQUOTE) {
+                closer.node._literal = "\u201D";
+                if (opener !== null && opener !== stack_bottom) {
+                    opener.node.literal = "\u201C";
+                }
+                closer = closer.next;
+
             }
 
         } else {
@@ -3975,7 +4015,7 @@ var parseCloseBracket = function(block) {
 
 };
 
-// Attempt to parse an entity, return Entity object if successful.
+// Attempt to parse an entity.
 var parseEntity = function(block) {
     var m;
     if ((m = this.match(reEntityHere))) {
@@ -3991,7 +4031,15 @@ var parseEntity = function(block) {
 var parseString = function(block) {
     var m;
     if ((m = this.match(reMain))) {
-        block.appendChild(text(m));
+        if (this.options.smart) {
+            block.appendChild(text(
+                m.replace(reEllipses, "\u2026")
+                    .replace(reDash, function(chars) {
+                        return (chars.length === 3) ? "\u2014" : "\u2013";
+                    })));
+        } else {
+            block.appendChild(text(m));
+        }
         return true;
     } else {
         return false;
@@ -4096,7 +4144,11 @@ var parseInline = function(block) {
         break;
     case C_ASTERISK:
     case C_UNDERSCORE:
-        res = this.parseEmphasis(c, block);
+        res = this.handleDelim(c, block);
+        break;
+    case C_SINGLEQUOTE:
+    case C_DOUBLEQUOTE:
+        res = this.options.smart && this.handleDelim(c, block);
         break;
     case C_OPEN_BRACKET:
         res = this.parseOpenBracket(block);
@@ -4138,10 +4190,10 @@ var parseInlines = function(block) {
 };
 
 // The InlineParser object.
-function InlineParser(){
+function InlineParser(options){
     return {
         subject: '',
-        delimiters: null,  // used by parseEmphasis method
+        delimiters: null,  // used by handleDelim method
         pos: 0,
         refmap: {},
         match: match,
@@ -4152,7 +4204,7 @@ function InlineParser(){
         parseAutolink: parseAutolink,
         parseHtmlTag: parseHtmlTag,
         scanDelims: scanDelims,
-        parseEmphasis: parseEmphasis,
+        handleDelim: handleDelim,
         parseLinkTitle: parseLinkTitle,
         parseLinkDestination: parseLinkDestination,
         parseLinkLabel: parseLinkLabel,
@@ -4166,6 +4218,7 @@ function InlineParser(){
         parseInline: parseInline,
         processEmphasis: processEmphasis,
         removeDelimiter: removeDelimiter,
+        options: options || {},
         parse: parseInlines
     };
 }
@@ -4262,9 +4315,9 @@ var Node = function(nodeType, sourcepos) {
 
 var proto = Node.prototype;
 
-Node.prototype.isContainer = function() {
-    return isContainer(this);
-};
+Object.defineProperty(proto, 'isContainer', {
+    get: function () { return isContainer(this); }
+});
 
 Object.defineProperty(proto, 'type', {
     get: function() { return this._type; }
@@ -4423,7 +4476,7 @@ module.exports = Node;
  var event;
 
  while (event = walker.next()) {
- console.log(event.entering, event.node.type());
+ console.log(event.entering, event.node.type);
  }
 
  */
@@ -4549,7 +4602,7 @@ var renderNodes = function(block) {
         node = event.node;
         nodetype = node.type;
 
-        container = node.isContainer();
+        container = node.isContainer;
         selfClosing = nodetype === 'HorizontalRule' || nodetype === 'Hardbreak' ||
             nodetype === 'Softbreak' || nodetype === 'Image';
         unescapedContents = nodetype === 'Html' || nodetype === 'HtmlInline';
