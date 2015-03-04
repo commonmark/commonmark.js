@@ -1,3 +1,7 @@
+[0.18.1]
+
+  * Updated `dist/commonmark.js`.
+
 [0.18.0]
 
   * Added `nextNonspace`, `blank`, `indent` properties to `Parser`.
