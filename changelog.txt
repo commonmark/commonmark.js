@@ -1,3 +1,48 @@
+[0.18.0]
+
+  * Added `nextNonspace`, `blank`, `indent` properties to `Parser`.
+  * Factored out advance-to-nonspace code into `findNextNonspace`.
+  * Put block starts into `blockStarts` property of `Parser`. Now
+    almost all block-specific material has been moved out of
+    `incorporateLine`.
+  * Removed parameter from `addLine`.
+  * Simplified code, removed `matchAt`.
+  * Small optimization in `entityToChar`
+  * Use `charCodeAt` in a few places where `charAt` was used.
+  * Added `peek()` function in blocks. This ensures we check bounds
+    before calling `charCodeAt`.
+  * Use `peek` instead of raw `charCodeAt` in `inlines.js`.
+  * Dingus improvements:
+    + Use ACE editor in dingus. Implemented L->R sync scroll. Also,
+      the block containing the cursor is highlighted on the right.
+    + Split code from `dingus.html` into separate file `dingus.js`.
+    + Split CSS into separate file, `dingus.css`.
+    + Added debounce.
+    + Moved dingus code to `dingus/` directory. `dingus/Makefile`
+      builds `commonmark.js` in the dingus directory. So to deploy,
+      you just need to copy the dingus directory.
+    + Use local copies of js dependencies. Instead of including these in
+      the repository, though, we have the Makefile install them with bower.
+    + Fixed one-off error in line number calculation.
+    + XML and HTML are now same font size.
+    + Allow line wrapping in editor.
+    + AST window now scrolls like HTML window.
+  * Updated `reNonSpace` for new whitespace definition in spec.
+  * Added smart punctuation parsing option.
+    + Added `options` param to InlineParser.  `options.smart` triggers
+      smart punctuation parsing.
+    + Added `--smart` option to bin/commonmark.
+    + Implemented "smart" parsing of dashes, ellipses, quotes.  The
+      algorithm is the same as in cmark.
+    + Renamed `handleEmphasis` -> `handleDelims`.
+    + Added benchmark with `smart`.
+    + Added checkbox for `smart` to dingus.
+  * Fixed code example for walk.
+  * Made `isContainer` a getter to conform to README (#7).
+  * Allow list start number of 0 in HTML writer (#10).
+  * Fixed use of `isContainer` in XML writer.
+    `isContainer` is now a getter, not a function.
+
 [0.17.1]
 
   * Reorganized block parsing in a more modular way. There is now
