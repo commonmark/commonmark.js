@@ -4,8 +4,6 @@
 var fs = require('fs');
 var commonmark = require('../lib/index.js');
 
-var testfile = process.argv[2] || 'test/spec.txt';
-
 // Home made mini-version of the npm ansi module:
 var escSeq = function(s) {
     return function (){
@@ -41,8 +39,8 @@ var cursor = {
 };
 
 var writer = new commonmark.HtmlRenderer();
-var smartwriter = new commonmark.HtmlRenderer({smart: true});
 var reader = new commonmark.Parser();
+var readerSmart = new commonmark.Parser({smart: true});
 
 var results = {
     passed: 0,
@@ -53,50 +51,6 @@ var showSpaces = function(s) {
     var t = s;
     return t.replace(/\t/g, '→')
         .replace(/ /g, '␣');
-};
-
-var specTest = function(testcase, res, converter) {
-    var actual = converter(testcase.markdown.replace(/→/g, '\t'));
-    if (actual === testcase.html) {
-        res.passed++;
-        cursor.green().write('✓').reset();
-    } else {
-        res.failed++;
-        cursor.write('\n');
-
-        cursor.red().write('✘ Example ' + testcase.number + '\n');
-        cursor.cyan();
-        cursor.write('=== markdown ===============\n');
-        cursor.write(showSpaces(testcase.markdown));
-        cursor.write('=== expected ===============\n');
-        cursor.write(showSpaces(testcase.html));
-        cursor.write('=== got ====================\n');
-        cursor.write(showSpaces(actual));
-        cursor.reset();
-    }
-};
-
-var pathologicalTest = function(testcase, res, converter) {
-    cursor.write(testcase.name + ' ');
-    console.time('  elapsed time');
-    var actual = converter(testcase.input);
-    if (actual === testcase.expected) {
-        cursor.green().write('✓\n').reset();
-        res.passed += 1;
-    } else {
-        cursor.red().write('✘\n');
-        cursor.cyan();
-        cursor.write('=== markdown ===============\n');
-        cursor.write(showSpaces(testcase.input));
-        cursor.write('=== expected ===============\n');
-        cursor.write(showSpaces(testcase.expected));
-        cursor.write('=== got ====================\n');
-        cursor.write(showSpaces(actual));
-        cursor.write('\n');
-        cursor.reset();
-        res.failed += 1;
-    }
-    console.timeEnd('  elapsed time');
 };
 
 var extractSpecTests = function(testfile) {
@@ -124,34 +78,83 @@ tests.replace(/^\.\n([\s\S]*?)^\.\n([\s\S]*?)^\.$|^#{1,6} *(.*)$/gm,
     return examples;
 };
 
-var examples = extractSpecTests(testfile);
+var specTest = function(testcase, res, converter) {
+    var actual = converter(testcase.markdown.replace(/→/g, '\t'));
+    if (actual === testcase.html) {
+        res.passed++;
+        cursor.green().write('✓').reset();
+    } else {
+        res.failed++;
+        cursor.write('\n');
 
-cursor.write('Spec tests [' + testfile + ']:\n\n');
-console.time("Elapsed time");
-
-var current_section = "";
-
-for (i = 0; i < examples.length; i++) {
-    var testcase = examples[i];
-    if (testcase.section !== current_section) {
-        if (current_section !== '') {
-            cursor.write('\n');
-        }
-        current_section = testcase.section;
-        cursor.reset().write(current_section).reset().write('  ');
+        cursor.red().write('✘ Example ' + testcase.number + '\n');
+        cursor.cyan();
+        cursor.write('=== markdown ===============\n');
+        cursor.write(showSpaces(testcase.markdown));
+        cursor.write('=== expected ===============\n');
+        cursor.write(showSpaces(testcase.html));
+        cursor.write('=== got ====================\n');
+        cursor.write(showSpaces(actual));
+        cursor.reset();
     }
-    specTest(testcase, results, function(x) {
-        return writer.render(reader.parse(x));
-    });
+};
+
+var specTests = function(testfile, res, converter) {
+    cursor.write('Spec tests [' + testfile + ']:\n');
+
+    var current_section = "";
+    var examples = extractSpecTests(testfile);
+
+    console.time("Elapsed time");
+    for (i = 0; i < examples.length; i++) {
+        var testcase = examples[i];
+        if (testcase.section !== current_section) {
+            if (current_section !== '') {
+                cursor.write('\n');
+            }
+            current_section = testcase.section;
+            cursor.reset().write(current_section).reset().write('  ');
+        }
+        specTest(testcase, results, converter);
+    }
+    cursor.write('\n');
+    console.timeEnd("Elapsed time");
+    cursor.write('\n');
 }
 
+var pathologicalTest = function(testcase, res, converter) {
+    cursor.write(testcase.name + ' ');
+    console.time('  elapsed time');
+    var actual = converter(testcase.input);
+    if (actual === testcase.expected) {
+        cursor.green().write('✓\n').reset();
+        res.passed += 1;
+    } else {
+        cursor.red().write('✘\n');
+        cursor.cyan();
+        cursor.write('=== markdown ===============\n');
+        cursor.write(showSpaces(testcase.input));
+        cursor.write('=== expected ===============\n');
+        cursor.write(showSpaces(testcase.expected));
+        cursor.write('=== got ====================\n');
+        cursor.write(showSpaces(actual));
+        cursor.write('\n');
+        cursor.reset();
+        res.failed += 1;
+    }
+    console.timeEnd('  elapsed time');
+};
 
+specTests('test/spec.txt', results, function(x) {
+        return writer.render(reader.parse(x));
+    });
 
-cursor.write('\n');
-console.timeEnd("Elapsed time");
+specTests('test/smart_punct.txt', results, function(x) {
+        return writer.render(readerSmart.parse(x));
+    });
 
 // pathological cases
-cursor.write('\nPathological cases:\n');
+cursor.write('Pathological cases:\n');
 
 var cases = [
     { name: 'U+0000 in input',

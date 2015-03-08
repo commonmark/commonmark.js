@@ -1,0 +1,96 @@
+## Smart punctuation
+
+.
+"Hello," said the spider.
+"'Shelob' is my name."
+.
+<p>“Hello,” said the spider.
+“‘Shelob’ is my name.”</p>
+.
+
+.
+'A', 'B', and 'C' are letters.
+.
+<p>‘A’, ‘B’, and ‘C’ are letters.</p>
+.
+
+.
+'Oak,' 'elm,' and 'beech' are names of trees.
+So is 'pine.'
+.
+<p>‘Oak,’ ‘elm,’ and ‘beech’ are names of trees.
+So is ‘pine.’</p>
+.
+
+.
+'He said, "I want to go."'
+.
+<p>‘He said, “I want to go.”’</p>
+.
+
+.
+Were you alive in the 70's?
+.
+<p>Were you alive in the 70’s?</p>
+.
+
+.
+Here is some quoted '`code`' and a "[quoted link](url)".
+.
+<p>Here is some quoted ‘<code>code</code>’ and a “<a href="url">quoted link</a>”.</p>
+.
+
+.
+'tis the season to be 'jolly'
+.
+<p>’tis the season to be ‘jolly’</p>
+.
+
+.
+"A paragraph with no closing quote.
+
+"Second paragraph by same speaker, in fiction."
+.
+<p>“A paragraph with no closing quote.</p>
+<p>“Second paragraph by same speaker, in fiction.”</p>
+.
+
+.
+\"This is not smart.\"
+This isn\'t either.
+.
+<p>&quot;This is not smart.&quot;
+This isn't either.</p>
+.
+
+.
+Some dashes:  one---two ---
+three---four --- five.
+.
+<p>Some dashes:  one—two —
+three—four — five.</p>
+.
+
+.
+Escaped dashes: \-- \-\-\-.
+.
+<p>Escaped dashes: -- ---.</p>
+.
+
+.
+Dashes between numbers: 5--7, 255--66, 1987--1999.
+.
+<p>Dashes between numbers: 5–7, 255–66, 1987–1999.</p>
+.
+
+.
+Ellipses...and...and....
+.
+<p>Ellipses…and…and….</p>
+.
+
+.
+No ellipses\.\.\.
+.
+<p>No ellipses...</p>
+.

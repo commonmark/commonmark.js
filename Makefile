@@ -19,7 +19,7 @@ update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
 
 test: $(SPEC)
-	node test/test.js $<
+	node test/test.js
 
 lint:
 	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
