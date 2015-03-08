@@ -54,6 +54,27 @@ var showSpaces = function(s) {
         .replace(/ /g, '␣');
 };
 
+var specTest = function(testcase, res) {
+        var actual = writer.render(reader.parse(testcase.markdown.replace(/→/g, '\t')));
+        if (actual === testcase.html) {
+            results.passed++;
+            cursor.green().write('✓').reset();
+        } else {
+            results.failed++;
+            cursor.write('\n');
+
+            cursor.red().write('✘ Example ' + testcase.number + '\n');
+            cursor.cyan();
+            cursor.write('=== markdown ===============\n');
+            cursor.write(showSpaces(testcase.markdown));
+            cursor.write('=== expected ===============\n');
+            cursor.write(showSpaces(testcase.html));
+            cursor.write('=== got ====================\n');
+            cursor.write(showSpaces(actual));
+            cursor.reset();
+        }
+};
+
 var pathologicalTest = function(testcase, res) {
     cursor.write(testcase.name + ' ');
     console.time('  elapsed time');
@@ -108,32 +129,15 @@ fs.readFile(testfile, 'utf8', function(err, data) {
     console.time("Elapsed time");
 
     for (i = 0; i < examples.length; i++) {
-        var example = examples[i];
-        if (example.section !== current_section) {
+        var testcase = examples[i];
+        if (testcase.section !== current_section) {
             if (current_section !== '') {
                 cursor.write('\n');
             }
-            current_section = example.section;
+            current_section = testcase.section;
             cursor.reset().write(current_section).reset().write('  ');
         }
-        var actual = writer.render(reader.parse(example.markdown.replace(/→/g, '\t')));
-        if (actual === example.html) {
-            results.passed++;
-            cursor.green().write('✓').reset();
-        } else {
-            results.failed++;
-            cursor.write('\n');
-
-            cursor.red().write('✘ Example ' + example.number + '\n');
-            cursor.cyan();
-            cursor.write('=== markdown ===============\n');
-            cursor.write(showSpaces(example.markdown));
-            cursor.write('=== expected ===============\n');
-            cursor.write(showSpaces(example.html));
-            cursor.write('=== got ====================\n');
-            cursor.write(showSpaces(actual));
-            cursor.reset();
-        }
+        specTest(testcase, results);
     }
     cursor.write('\n');
     console.timeEnd("Elapsed time");
