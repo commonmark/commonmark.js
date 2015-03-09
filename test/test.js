@@ -194,3 +194,5 @@ cursor.write('\n');
 
 cursor.write(results.passed.toString() + ' tests passed, ' +
              results.failed.toString() + ' failed.\n');
+
+process.exit(results.failed);
