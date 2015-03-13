@@ -11,16 +11,16 @@ BEGIN {
                 samples[$0] = "bench/samples/" $0;
         } else if (/^showdown/) {
                 sub(/,/, "");
-                showdown = $4;
+                showdown = $3;
         } else if (/^commonmark/) {
                 sub(/,/, "");
-                commonmark = $4;
+                commonmark = $3;
         } else if (/^marked/) {
                 sub(/,/, "");
-                marked = $4;
+                marked = $3;
         } else if (/^markdown-it/) {
                 sub(/,/, "");
-                markdownit = $4;
+                markdownit = $3;
                 printf "%10s|%10s|%10s|%11s|\n",
                        (showdown / showdown),
                        (commonmark / showdown),

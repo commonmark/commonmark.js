@@ -24,10 +24,6 @@ suite.add('commonmark.js', function() {
   renderer.render(parser.parse(contents));
 })
 
-suite.add('commonmark.js +smart', function() {
-  renderer.render(parserSmart.parse(contents));
-})
-
 .add('showdown.js', function() {
   showdown.makeHtml(contents);
 })
