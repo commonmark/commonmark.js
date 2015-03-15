@@ -10,6 +10,10 @@ var Showdown = require('showdown');
 var marked = require('marked');
 // npm install markdown-it
 var markdownit = require('markdown-it')('commonmark');
+// disable expensive IDNa links encoding:
+var markdownit_encode = markdownit.utils.lib.mdurl.encode;
+markdownit.normalizeLink = function(url) { return markdownit_encode(url); };
+markdownit.normalizeLinkText = function(str) { return str; };
 
 var showdown = new Showdown.converter();
 var parser = new commonmark.Parser();
