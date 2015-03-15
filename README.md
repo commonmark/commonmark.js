@@ -243,32 +243,32 @@ showdown 0.4.0, marked 0.3.3, with node 0.12.
 
 | Sample                   |showdown  |commonmark|marked    |markdown-it|
 |--------------------------|---------:|---------:|---------:|----------:|
-|[README.md]               |         1|       3.0|       2.9|        2.2|
-|[block-bq-flat.md]        |         1|       3.7|       4.0|        2.2|
-|[block-bq-nested.md]      |         1|       9.9|       6.2|        4.3|
-|[block-code.md]           |         1|       2.7|       8.1|       11.7|
-|[block-fences.md]         |         1|       3.2|      13.4|       10.9|
-|[block-heading.md]        |         1|       2.5|       3.3|        4.2|
-|[block-hr.md]             |         1|       1.4|       2.1|        2.0|
-|[block-html.md]           |         1|       1.6|       0.7|        2.5|
-|[block-lheading.md]       |         1|       2.1|       3.3|        2.5|
-|[block-list-flat.md]      |         1|       3.2|       3.2|        4.1|
-|[block-list-nested.md]    |         1|       7.0|       4.9|       10.9|
-|[block-ref-flat.md]       |         1|       0.5|       0.4|        0.4|
+|[README.md]               |         1|       2.7|       2.5|        3.3|
+|[block-bq-flat.md]        |         1|       3.0|       3.6|        3.0|
+|[block-bq-nested.md]      |         1|       8.2|       6.1|        6.1|
+|[block-code.md]           |         1|       3.0|       7.4|       10.8|
+|[block-fences.md]         |         1|       4.3|      13.4|       11.0|
+|[block-heading.md]        |         1|       2.8|       3.1|        3.9|
+|[block-hr.md]             |         1|       1.8|       2.0|        2.6|
+|[block-html.md]           |         1|       1.6|       0.6|        3.0|
+|[block-lheading.md]       |         1|       2.6|       3.1|        2.1|
+|[block-list-flat.md]      |         1|       2.7|       2.9|        4.7|
+|[block-list-nested.md]    |         1|       5.5|       4.6|       10.8|
+|[block-ref-flat.md]       |         1|       0.6|       0.3|        0.5|
 |[block-ref-nested.md]     |         1|       0.4|       0.4|        0.6|
-|[inline-autolink.md]      |         1|       1.5|       2.9|        0.9|
-|[inline-backticks.md]     |         1|       5.0|       4.6|        6.0|
-|[inline-em-flat.md]       |         1|       0.7|       0.8|        0.9|
-|[inline-em-nested.md]     |         1|       1.0|       1.1|        1.0|
-|[inline-em-worst.md]      |         1|       1.1|       1.1|        0.8|
-|[inline-entity.md]        |         1|       1.2|       2.9|        1.8|
-|[inline-escape.md]        |         1|       1.6|       1.2|        3.7|
-|[inline-html.md]          |         1|       1.4|       3.2|        2.2|
-|[inline-links-flat.md]    |         1|       1.8|       2.2|        1.2|
-|[inline-links-nested.md]  |         1|       1.2|       0.4|        0.4|
-|[inline-newlines.md]      |         1|       1.1|       1.4|        1.7|
-|[lorem1.md]               |         1|       3.9|       3.1|        2.6|
-|[rawtabs.md]              |         1|       3.1|       3.3|        3.5|
+|[inline-autolink.md]      |         1|       1.7|       2.8|        1.9|
+|[inline-backticks.md]     |         1|       5.0|       4.0|        6.7|
+|[inline-em-flat.md]       |         1|       0.7|       0.6|        1.1|
+|[inline-em-nested.md]     |         1|       0.9|       0.8|        1.0|
+|[inline-em-worst.md]      |         1|       1.1|       0.9|        0.6|
+|[inline-entity.md]        |         1|       1.2|       2.6|        1.7|
+|[inline-escape.md]        |         1|       1.5|       1.0|        3.5|
+|[inline-html.md]          |         1|       1.7|       2.6|        2.3|
+|[inline-links-flat.md]    |         1|       2.1|       2.0|        2.0|
+|[inline-links-nested.md]  |         1|       1.3|       0.4|        0.3|
+|[inline-newlines.md]      |         1|       1.2|       1.2|        1.8|
+|[lorem1.md]               |         1|       5.6|       2.8|        3.1|
+|[rawtabs.md]              |         1|       2.9|       2.9|        3.8|
 
 [block-html.md]: bench/samples/block-html.md
 [inline-links-nested.md]: bench/samples/inline-links-nested.md
