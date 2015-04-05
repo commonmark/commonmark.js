@@ -1,5 +1,5 @@
 ALL=commonmark.js
-COMPONENTS=lodash.min.js jquery.min.js jquery.min.map bootstrap.min.js bootstrap.min.css ace.js
+COMPONENTS=lodash.min.js jquery.min.js jquery.min.map bootstrap.min.js bootstrap.min.css
 LIBFILES=../lib/blocks.js ../lib/common.js ../lib/from-code-point.js ../lib/html.js ../lib/html5-entities.js ../lib/inlines.js ../lib/index.js ../lib/node.js ../lib/normalize-reference.js ../lib/xml.js
 
 all: $(ALL) components
@@ -25,9 +25,6 @@ bootstrap.min.js: bower_components/bootstrap
 
 bootstrap.min.css: bower_components/bootstrap
 	cp $</dist/css/$@ $@
-
-ace.js:
-	curl 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js' > $@
 
 clean:
 	-rm $(ALL) $(COMPONENTS)

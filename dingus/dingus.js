@@ -21,13 +21,10 @@ function getQueryVariable(variable) {
 }
 
 $(document).ready(function() {
-  var editor = window.ace.edit("text");
-  editor.getSession().setUseWrapMode(true);
-  editor.renderer.setShowGutter(false);
-  // editor.setBehavioursEnabled(false);
   var timer;
   var x;
   var parsed;
+  var textarea = $("#text");
   var render = function() {
     if (parsed === undefined) {
       return;
@@ -41,9 +38,10 @@ $(document).ready(function() {
     $("#ast").text(xmlwriter.render(parsed));
     $("#rendertime").text(renderTime);
   };
-  var syncScroll = function(e) {
-    var lineHeight = editor.renderer.lineHeight;
-    var lineNumber = editor.getSession().screenToDocumentRow(Math.floor(e / lineHeight) + 1);
+  var syncScroll = function() {
+    var lineHeight = parseFloat(textarea.css('line-height'));
+    // TODO this ignores the fact that lines can wrap - fix!
+    var lineNumber = Math.floor(textarea.scrollTop() / lineHeight) + 1;
     var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         if (elt.offset()) {
@@ -55,12 +53,20 @@ $(document).ready(function() {
     }
   };
   var markSelection = function() {
-    var lineNumber = editor.selection.getCursor().row + 1;
+    var cursorPos = $("#text").prop("selectionStart");
+    // now count newline up to this pos
+    var textval = $("#text").val();
+    var lineNumber = 1;
+    for (var i = 0; i < cursorPos; i++) {
+        if (textval.charAt(i) === '\n') {
+            lineNumber++;
+        }
+    }
     var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         $("#preview .selected").removeClass("selected");
         elt.addClass("selected");
-        syncScroll(editor.getSession().getScrollTop());
+        syncScroll();
     }
   };
   var parseAndRender = function() {
@@ -68,7 +74,7 @@ $(document).ready(function() {
     clearTimeout(timer); // Clear the timer so we don't end up with dupes.
     timer = setTimeout(function() { // assign timer a new timeout
       var startTime = new Date().getTime();
-      parsed = reader.parse(editor.getValue());
+      parsed = reader.parse(textarea.val());
       var endTime = new Date().getTime();
       var parseTime = endTime - startTime;
       $("#parsetime").text(parseTime);
@@ -79,23 +85,23 @@ $(document).ready(function() {
   };
   var initial_text = getQueryVariable("text");
   if (initial_text) {
-    editor.setValue(initial_text);
+    textarea.val(initial_text);
     // show HTML tab if text is from query
     $('#result-tabs a[href="#result"]').tab('show');
   }
 
   parseAndRender();
   $("#clear-text-box").click(function() {
-    editor.setValue('');
+    textarea.val('');
     parseAndRender();
   });
   $("#permalink").click(function() {
     window.location.pathname = "/index.html";
-    window.location.search = "text=" + encodeURIComponent(editor.getValue());
+    window.location.search = "text=" + encodeURIComponent(textarea.val());
   });
-  editor.getSession().on('change', _.debounce(parseAndRender, 50, { maxWait: 100 }));
-  editor.getSession().on('changeScrollTop', _.debounce(syncScroll, 50, { maxWait: 50 }));
-  editor.getSession().selection.on('changeCursor', _.debounce(markSelection, 50, { maxWait: 100}));
+  textarea.bind('input propertychange', _.debounce(parseAndRender, 50, { maxWait: 100 }));
+  textarea.on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
+  textarea.on('keydown click focus', _.debounce(markSelection, 50, { maxWait: 100}));
   $("#smart").click(function() {
       reader = new commonmark.Parser({smart: $("#smart").is(":checked")});
       parseAndRender();

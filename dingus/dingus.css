@@ -1,7 +1,7 @@
 h1.title { font-family: monospace; font-size: 120%; font-weight: bold; margin-top: 0.5em; margin-bottom: 0; }
-pre#htmlpre { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
-pre#astpre  { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
-div#preview { height: 400px; overflow: scroll; resize: vertical; width: 95%; }
+pre#htmlpre { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
+pre#astpre  { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
+div#preview { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
 div.row { margin-top: 1em; }
 blockquote { font-size: 100%; }
 footer { color: #555; text-align: center; margin: 1em; }
@@ -14,4 +14,4 @@ a#permalink { margin-left: 1em; }
 span.timing { font-weight: bold; }
 span.timing { font-weight: bold; }
 .selected { background-color: #eeeeee; }
-#text { position: absolute; top: 4em; right: 0; bottom: -30em; left: 0; }
+textarea#text { width: 100%; overflow: scroll; resize: vertical; height: 400px; font-family: monospace; white-space: nowrap; }
