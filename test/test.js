@@ -55,7 +55,6 @@ var showSpaces = function(s) {
 
 var extractSpecTests = function(testfile) {
     var data = fs.readFileSync(testfile, 'utf8');
-    var i;
     var examples = [];
     var current_section = "";
     var example_number = 0;
@@ -106,7 +105,7 @@ var specTests = function(testfile, res, converter) {
     var examples = extractSpecTests(testfile);
 
     console.time("Elapsed time");
-    for (i = 0; i < examples.length; i++) {
+    for (var i = 0; i < examples.length; i++) {
         var testcase = examples[i];
         if (testcase.section !== current_section) {
             if (current_section !== '') {
@@ -120,7 +119,7 @@ var specTests = function(testfile, res, converter) {
     cursor.write('\n');
     console.timeEnd("Elapsed time");
     cursor.write('\n');
-}
+};
 
 var pathologicalTest = function(testcase, res, converter) {
     cursor.write(testcase.name + ' ');
@@ -185,10 +184,12 @@ for (x = 1000; x <= 10000; x *= 10) {
           repeat('</blockquote>\n', x) });
 }
 
-for (var i = 0; i < cases.length; i++) {
-    pathologicalTest(cases[i], results, function(x) {
-        return writer.render(reader.parse(x));
-    });
+var parse_and_render = function(x) {
+    return writer.render(reader.parse(x));
+};
+
+for (var j = 0; j < cases.length; j++) {
+    pathologicalTest(cases[j], results, parse_and_render);
 }
 cursor.write('\n');
 
