@@ -21,11 +21,9 @@ function getQueryVariable(variable) {
 }
 
 $(document).ready(function() {
-  var timer;
   var x;
-  var parsed;
   var textarea = $("#text");
-  var render = function() {
+  var render = function(parsed) {
     if (parsed === undefined) {
       return;
     }
@@ -71,17 +69,14 @@ $(document).ready(function() {
   };
   var parseAndRender = function() {
     if (x) { x.abort(); } // If there is an existing XHR, abort it.
-    clearTimeout(timer); // Clear the timer so we don't end up with dupes.
-    timer = setTimeout(function() { // assign timer a new timeout
-      var startTime = new Date().getTime();
-      parsed = reader.parse(textarea.val());
-      var endTime = new Date().getTime();
-      var parseTime = endTime - startTime;
-      $("#parsetime").text(parseTime);
-      $(".timing").css('visibility', 'visible');
-      render();
-      markSelection();
-    }, 0); // ms delay
+    var startTime = new Date().getTime();
+    var parsed = reader.parse(textarea.val());
+    var endTime = new Date().getTime();
+    var parseTime = endTime - startTime;
+    $("#parsetime").text(parseTime);
+    $(".timing").css('visibility', 'visible');
+    render(parsed);
+    markSelection();
   };
   var initial_text = getQueryVariable("text");
   if (initial_text) {
