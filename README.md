@@ -74,7 +74,7 @@ The constructors for `Parser` and `HtmlRenderer` take an optional
 var writer = new commonmark.HtmlRenderer({sourcepos: true});
 ```
 
-THe following options are currently supported:
+The following options are currently supported:
 
 - `sourcepos`:  if `true`, source position information for block-level
   elements will be rendered in the `data-sourcepos` attribute (for
