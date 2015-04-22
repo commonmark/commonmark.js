@@ -152,9 +152,6 @@ var parseListMarker = function(ln, offset, indent) {
                  delimiter: null,
                  padding: null,
                  markerOffset: indent };
-    if (rest.match(reHrule)) {
-        return null;
-    }
     if ((match = rest.match(reBulletListMarker))) {
         spaces_after_marker = match[1].length;
         data.type = 'Bullet';
@@ -684,7 +681,7 @@ var incorporateLine = function(ln) {
 // of paragraphs for reference definitions.  Reset the tip to the
 // parent of the closed block.
 var finalize = function(block, lineNumber) {
-    var above = block._parent || this.top;
+    var above = block._parent;
     block._open = false;
     block.sourcepos[1] = [lineNumber, this.lastLineLength];
 
@@ -694,7 +691,7 @@ var finalize = function(block, lineNumber) {
 };
 
 // Walk through a block & children recursively, parsing string content
-// into inline content where appropriate.  Returns new object.
+// into inline content where appropriate.
 var processInlines = function(block) {
     var node, event, t;
     var walker = block.walker();
@@ -780,8 +777,11 @@ function Parser(options){
 
 module.exports = Parser;
 
-},{"./common":2,"./inlines":7,"./node":8}],2:[function(require,module,exports){
+},{"./common":2,"./inlines":9,"./node":10}],2:[function(require,module,exports){
 "use strict";
+
+var encode = require('./encode');
+var decode = require('./decode');
 
 var C_BACKSLASH = 92;
 
@@ -820,7 +820,7 @@ var unescapeString = function(s) {
 
 var normalizeURI = function(uri) {
     try {
-        return encodeURI(decodeURI(uri));
+        return encode(decode(uri));
     }
     catch(err) {
         return uri;
@@ -856,10 +856,240 @@ var escapeXml = function(s, preserve_entities) {
 
 module.exports = { unescapeString: unescapeString,
                    normalizeURI: normalizeURI,
-                   escapeXml: escapeXml
+                   escapeXml: escapeXml,
+                   ENTITY: ENTITY,
+                   ESCAPABLE: ESCAPABLE
                  };
 
-},{"./html5-entities.js":5}],3:[function(require,module,exports){
+},{"./decode":3,"./encode":4,"./html5-entities.js":7}],3:[function(require,module,exports){
+// from https://github.com/markdown-it/mdurl
+// Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT license.
+
+'use strict';
+
+
+/* eslint-disable no-bitwise */
+
+var decodeCache = {};
+
+function getDecodeCache(exclude) {
+  var i, ch, cache = decodeCache[exclude];
+  if (cache) { return cache; }
+
+  cache = decodeCache[exclude] = [];
+
+  for (i = 0; i < 128; i++) {
+    ch = String.fromCharCode(i);
+    cache.push(ch);
+  }
+
+  for (i = 0; i < exclude.length; i++) {
+    ch = exclude.charCodeAt(i);
+    cache[ch] = '%' + ('0' + ch.toString(16).toUpperCase()).slice(-2);
+  }
+
+  return cache;
+}
+
+
+// Decode percent-encoded string.
+//
+function decode(string, exclude) {
+  var cache;
+
+  if (typeof exclude !== 'string') {
+    exclude = decode.defaultChars;
+  }
+
+  cache = getDecodeCache(exclude);
+
+  return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
+    var i, l, b1, b2, b3, b4, char,
+        result = '';
+
+    for (i = 0, l = seq.length; i < l; i += 3) {
+      b1 = parseInt(seq.slice(i + 1, i + 3), 16);
+
+      if (b1 < 0x80) {
+        result += cache[b1];
+        continue;
+      }
+
+      if ((b1 & 0xE0) === 0xC0 && (i + 3 < l)) {
+        // 110xxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+
+        if ((b2 & 0xC0) === 0x80) {
+          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
+
+          if (char < 0x80) {
+            result += '\ufffd\ufffd';
+          } else {
+            result += String.fromCharCode(char);
+          }
+
+          i += 3;
+          continue;
+        }
+      }
+
+      if ((b1 & 0xF0) === 0xE0 && (i + 6 < l)) {
+        // 1110xxxx 10xxxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
+
+        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
+          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
+
+          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
+            result += '\ufffd\ufffd\ufffd';
+          } else {
+            result += String.fromCharCode(char);
+          }
+
+          i += 6;
+          continue;
+        }
+      }
+
+      if ((b1 & 0xF8) === 0xF0 && (i + 9 < l)) {
+        // 111110xx 10xxxxxx 10xxxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
+        b4 = parseInt(seq.slice(i + 10, i + 12), 16);
+
+        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
+          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
+
+          if (char < 0x10000 || char > 0x10FFFF) {
+            result += '\ufffd\ufffd\ufffd\ufffd';
+          } else {
+            char -= 0x10000;
+            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
+          }
+
+          i += 9;
+          continue;
+        }
+      }
+
+      result += '\ufffd';
+    }
+
+    return result;
+  });
+}
+
+
+decode.defaultChars = ';/?:@&=+$,#';
+decode.componentChars = '';
+
+
+module.exports = decode;
+
+},{}],4:[function(require,module,exports){
+// from https://github.com/markdown-it/mdurl
+// Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT license.
+
+'use strict';
+
+
+var encodeCache = {};
+
+
+// Create a lookup array where anything but characters in `chars` string
+// and alphanumeric chars is percent-encoded.
+//
+function getEncodeCache(exclude) {
+  var i, ch, cache = encodeCache[exclude];
+  if (cache) { return cache; }
+
+  cache = encodeCache[exclude] = [];
+
+  for (i = 0; i < 128; i++) {
+    ch = String.fromCharCode(i);
+
+    if (/^[0-9a-z]$/i.test(ch)) {
+      // always allow unencoded alphanumeric characters
+      cache.push(ch);
+    } else {
+      cache.push('%' + ('0' + i.toString(16).toUpperCase()).slice(-2));
+    }
+  }
+
+  for (i = 0; i < exclude.length; i++) {
+    cache[exclude.charCodeAt(i)] = exclude[i];
+  }
+
+  return cache;
+}
+
+
+// Encode unsafe characters with percent-encoding, skipping already
+// encoded sequences.
+//
+//  - string       - string to encode
+//  - exclude      - list of characters to ignore (in addition to a-zA-Z0-9)
+//  - keepEscaped  - don't encode '%' in a correct escape sequence (default: true)
+//
+function encode(string, exclude, keepEscaped) {
+  var i, l, code, nextCode, cache,
+      result = '';
+
+  if (typeof exclude !== 'string') {
+    // encode(string, keepEscaped)
+    keepEscaped = exclude;
+    exclude = encode.defaultChars;
+  }
+
+  if (typeof keepEscaped === 'undefined') {
+    keepEscaped = true;
+  }
+
+  cache = getEncodeCache(exclude);
+
+  for (i = 0, l = string.length; i < l; i++) {
+    code = string.charCodeAt(i);
+
+    if (keepEscaped && code === 0x25 && i + 2 < l) {
+      if (/^[0-9a-f]{2}$/i.test(string.slice(i + 1, i + 3))) {
+        result += string.slice(i, i + 3);
+        i += 2;
+        continue;
+      }
+    }
+
+    if (code < 128) {
+      result += cache[code];
+      continue;
+    }
+
+    if (code >= 0xD800 && code <= 0xDFFF) {
+      if (code >= 0xD800 && code <= 0xDBFF && i + 1 < l) {
+        nextCode = string.charCodeAt(i + 1);
+        if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
+          result += encodeURIComponent(string[i] + string[i + 1]);
+          i++;
+          continue;
+        }
+      }
+      result += '%EF%BF%BD';
+      continue;
+    }
+
+    result += encodeURIComponent(string[i]);
+  }
+
+  return result;
+}
+
+encode.defaultChars = ";/?:@&=+$,-_.!~*'()#";
+encode.componentChars = "-_.!~*'()";
+
+
+module.exports = encode;
+
+},{}],5:[function(require,module,exports){
 "use strict";
 
 // derived from https://github.com/mathiasbynens/String.fromCodePoint
@@ -920,7 +1150,7 @@ if (String.fromCodePoint) {
   module.exports = fromCodePoint;
 }
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 
 var escapeXml = require('./common').escapeXml;
@@ -1168,7 +1398,7 @@ function HtmlRenderer(options){
 
 module.exports = HtmlRenderer;
 
-},{"./common":2}],5:[function(require,module,exports){
+},{"./common":2}],7:[function(require,module,exports){
 "use strict";
 
 var fromCodePoint = require('./from-code-point');
@@ -3325,7 +3555,7 @@ var entityToChar = function(m) {
 
 module.exports.entityToChar = entityToChar;
 
-},{"./from-code-point":3}],6:[function(require,module,exports){
+},{"./from-code-point":5}],8:[function(require,module,exports){
 "use strict";
 
 // commonmark.js - CommomMark in JavaScript
@@ -3344,7 +3574,7 @@ module.exports.Parser = require('./blocks');
 module.exports.HtmlRenderer = require('./html');
 module.exports.XmlRenderer = require('./xml');
 
-},{"./blocks":1,"./html":4,"./node":8,"./xml":10}],7:[function(require,module,exports){
+},{"./blocks":1,"./html":6,"./node":10,"./xml":12}],9:[function(require,module,exports){
 "use strict";
 
 var Node = require('./node');
@@ -3376,7 +3606,7 @@ var C_DOUBLEQUOTE = 34;
 
 // Some regexps used in inline parser:
 
-var ESCAPABLE = '[!"#$%&\'()*+,./:;<=>?@[\\\\\\]^_`{|}~-]';
+var ESCAPABLE = common.ESCAPABLE;
 var ESCAPED_CHAR = '\\\\' + ESCAPABLE;
 var REG_CHAR = '[^\\\\()\\x00-\\x20]';
 var IN_PARENS_NOSP = '\\((' + REG_CHAR + '|' + ESCAPED_CHAR + ')*\\)';
@@ -3396,7 +3626,7 @@ var DECLARATION = "<![A-Z]+" + "\\s+[^>]*>";
 var CDATA = "<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";
 var HTMLTAG = "(?:" + OPENTAG + "|" + CLOSETAG + "|" + HTMLCOMMENT + "|" +
         PROCESSINGINSTRUCTION + "|" + DECLARATION + "|" + CDATA + ")";
-var ENTITY = "&(?:#x[a-f0-9]{1,8}|#[0-9]{1,8}|[a-z][a-z0-9]{1,31});";
+var ENTITY = common.ENTITY;
 
 var rePunctuation = new RegExp(/^[\u2000-\u206F\u2E00-\u2E7F\\'!"#\$%&\(\)\*\+,\-\.\/:;<=>\?@\[\]\^_`\{\|\}~]/);
 
@@ -3441,6 +3671,8 @@ var reFinalSpace = / *$/;
 
 var reInitialSpace = /^ */;
 
+var reSpaceAtEndOfLine = /^ *(?:\n|$)/;
+
 var reLinkLabel = /^\[(?:[^\\\[\]]|\\[\[\]]){0,1000}\]/;
 
 // Matches a string of non-special characters.
@@ -3483,7 +3715,7 @@ var peek = function() {
 // Parse zero or more space characters, including at most one newline
 var spnl = function() {
     this.match(reSpnl);
-    return 1;
+    return true;
 };
 
 // All of the parsers below try to match something at the current position
@@ -3495,7 +3727,7 @@ var spnl = function() {
 var parseBackticks = function(block) {
     var ticks = this.match(reTicksHere);
     if (ticks === null) {
-        return 0;
+        return false;
     }
     var afterOpenTicks = this.pos;
     var matched;
@@ -3644,7 +3876,7 @@ var handleDelim = function(cc, block) {
     if (cc === C_SINGLEQUOTE) {
         contents = "\u2019";
     } else if (cc === C_DOUBLEQUOTE) {
-        contents = "\u201D";
+        contents = "\u201C";
     } else {
         contents = this.subject.slice(startpos, this.pos);
     }
@@ -3680,10 +3912,17 @@ var removeDelimiter = function(delim) {
     }
 };
 
-var processEmphasis = function(block, stack_bottom) {
+var removeDelimitersBetween = function(bottom, top) {
+    if (bottom.next !== top) {
+        bottom.next = top;
+        top.previous = bottom;
+    }
+};
+
+var processEmphasis = function(stack_bottom) {
     var opener, closer;
     var opener_inl, closer_inl;
-    var nextstack, tempstack;
+    var tempstack;
     var use_delims;
     var tmp, next;
 
@@ -3695,10 +3934,12 @@ var processEmphasis = function(block, stack_bottom) {
     // move forward, looking for closers, and handling each
     while (closer !== null) {
         var closercc = closer.cc;
-        if (closer.can_close && (closercc === C_UNDERSCORE ||
-                                 closercc === C_ASTERISK ||
-                                 closercc === C_SINGLEQUOTE ||
-                                 closercc === C_DOUBLEQUOTE)) {
+        if (!(closer.can_close && (closercc === C_UNDERSCORE ||
+                                   closercc === C_ASTERISK ||
+                                   closercc === C_SINGLEQUOTE ||
+                                   closercc === C_DOUBLEQUOTE))) {
+            closer = closer.next;
+        } else {
             // found emphasis closer. now look back for first matching opener:
             opener = closer.previous;
             while (opener !== null && opener !== stack_bottom) {
@@ -3708,7 +3949,9 @@ var processEmphasis = function(block, stack_bottom) {
                 opener = opener.previous;
             }
             if (closercc === C_ASTERISK || closercc === C_UNDERSCORE) {
-                if (opener !== null && opener !== stack_bottom) {
+                if (opener === null || opener === stack_bottom) {
+                    closer = closer.next;
+                } else {
                     // calculate actual number of delimiters used from closer
                     if (closer.numdelims < 3 || opener.numdelims < 3) {
                         use_delims = closer.numdelims <= opener.numdelims ?
@@ -3743,13 +3986,8 @@ var processEmphasis = function(block, stack_bottom) {
 
                     opener_inl.insertAfter(emph);
 
-                    // remove elts btw opener and closer in delimiters stack
-                    tempstack = closer.previous;
-                    while (tempstack !== null && tempstack !== opener) {
-                        nextstack = tempstack.previous;
-                        this.removeDelimiter(tempstack);
-                        tempstack = nextstack;
-                    }
+                    // remove elts between opener and closer in delimiters stack
+                    removeDelimitersBetween(opener, closer);
 
                     // if opener has 0 delims, remove it and the inline
                     if (opener.numdelims === 0) {
@@ -3764,8 +4002,6 @@ var processEmphasis = function(block, stack_bottom) {
                         closer = tempstack;
                     }
 
-                } else {
-                    closer = closer.next;
                 }
 
             } else if (closercc === C_SINGLEQUOTE) {
@@ -3784,8 +4020,6 @@ var processEmphasis = function(block, stack_bottom) {
 
             }
 
-        } else {
-            closer = closer.next;
         }
 
     }
@@ -3986,7 +4220,7 @@ var parseCloseBracket = function(block) {
             tmp = next;
         }
         block.appendChild(node);
-        this.processEmphasis(node, opener.previous);
+        this.processEmphasis(opener.previous);
 
         opener.node.unlink();
 
@@ -4052,12 +4286,10 @@ var parseNewline = function(block) {
     this.pos += 1; // assume we're at a \n
     // check previous node for trailing spaces
     var lastc = block._lastChild;
-    if (lastc && lastc.type === 'Text') {
-        var sps = reFinalSpace.exec(lastc._literal)[0].length;
-        if (sps > 0) {
-            lastc._literal = lastc._literal.replace(reFinalSpace, '');
-        }
-        block.appendChild(new Node(sps >= 2 ? 'Hardbreak' : 'Softbreak'));
+    if (lastc && lastc.type === 'Text' && lastc._literal[lastc._literal.length - 1] === ' ') {
+        var hardbreak = lastc._literal[lastc._literal.length - 2] === ' ';
+        lastc._literal = lastc._literal.replace(reFinalSpace, '');
+        block.appendChild(new Node(hardbreak ? 'Hardbreak' : 'Softbreak'));
     } else {
         block.appendChild(new Node('Softbreak'));
     }
@@ -4110,7 +4342,7 @@ var parseReference = function(s, refmap) {
     }
 
     // make sure we're at line end:
-    if (this.match(/^ *(?:\n|$)/) === null) {
+    if (this.match(reSpaceAtEndOfLine) === null) {
         this.pos = startpos;
         return 0;
     }
@@ -4186,7 +4418,7 @@ var parseInlines = function(block) {
     while (this.parseInline(block)) {
     }
     block._string_content = null; // allow raw string to be garbage collected
-    this.processEmphasis(block, null);
+    this.processEmphasis(null);
 };
 
 // The InlineParser object.
@@ -4225,7 +4457,7 @@ function InlineParser(options){
 
 module.exports = InlineParser;
 
-},{"./common":2,"./from-code-point.js":3,"./html5-entities.js":5,"./node":8,"./normalize-reference":9}],8:[function(require,module,exports){
+},{"./common":2,"./from-code-point.js":5,"./html5-entities.js":7,"./node":10,"./normalize-reference":11}],10:[function(require,module,exports){
 "use strict";
 
 function isContainer(node) {
@@ -4269,6 +4501,9 @@ var next = function(){
             // stay on node but exit
             this.entering = false;
         }
+
+    } else if (cur === this.root) {
+        this.current = null;
 
     } else if (cur._next === null) {
         this.current = cur._parent;
@@ -4481,7 +4716,7 @@ module.exports = Node;
 
  */
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 
 /* The bulk of this code derives from https://github.com/dmoscrop/fold-case
@@ -4525,7 +4760,7 @@ module.exports = function(string) {
     });
 };
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 
 var escapeXml = require('./common').escapeXml;
@@ -4698,5 +4933,5 @@ function XmlRenderer(options){
 
 module.exports = XmlRenderer;
 
-},{"./common":2}]},{},[6])(6)
+},{"./common":2}]},{},[8])(8)
 });
