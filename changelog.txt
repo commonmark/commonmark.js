@@ -1,3 +1,32 @@
+[0.18.2]
+
+  * Fixed walker so that it stops at `this.root`, even when this is
+    not the document root.
+  * Fixed typo (Ed Adams).
+  * Removed unused argument from `processEmphasis` (Robin Stocker).
+  * Shortened code for removing a sequence of delimiters, changing the
+    links on the edges rather than dropping them one by one
+    (Eli Barzilay).
+  * Code layout improvements for readability (Eli Barzilay).
+  * Dingus:  rewrote without ACE editor for better accessibility
+    and to fix layout in smal windows (#11).
+  * Optimize checking for final spaces in `parseNewline` (Robin
+    Stocker).  This yields a 5-10% speed improvement in `make bench`.
+  * Consolidated regex definitions (Robin Stocker).
+  * Return boolean from `spnl` and `parseBackticks` for consistency
+    (Robin Stocker).
+  * Removed unnecessary check for hrule in `parseListMarker` (Robin
+    Stocker).
+  * Return error status if tests fail.
+  * Use `encode`/`decode` from markdown-it/mdurl for URL
+    normalization.  This fixes cases like `[link](http://google.com/?q=%3f)`
+    which was formerly wrongly converted to
+    `<a href="http://google.com/?q=%253f">link</a>` (#9).
+  * Refactored `test.js`, adding `smart_punct` tests from cmark, and
+    factoring out `specTest` function.
+  * Make unmatched double quotes left quotes with `smart_punct` (#14).
+  * Code cleanup in `finalize`.
+
 [0.18.1]
 
   * Updated `dist/commonmark.js`.
