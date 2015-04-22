@@ -8,4 +8,10 @@ _ tag release
 _ git push
 _ git push --tags
 _ npm publish
-_ update dingus
+_ update dingus:
+
+    cd dingus
+    make
+    cd ../../CommonMark-site
+    make update
+    make upload
