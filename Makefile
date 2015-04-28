@@ -6,6 +6,9 @@ VERSION?=$(SPECVERSION)
 
 .PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
 
+lint:
+	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
+
 dist: dist/commonmark.js dist/commonmark.min.js
 
 dist/commonmark.js: lib/index.js ${JSMODULES}
@@ -20,9 +23,6 @@ update-spec:
 
 test: $(SPEC)
 	node test/test.js
-
-lint:
-	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
 
 bench:
 	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
