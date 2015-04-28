@@ -144,12 +144,12 @@ var pathologicalTest = function(testcase, res, converter) {
     console.timeEnd('  elapsed time');
 };
 
-specTests('test/spec.txt', results, function(x) {
-        return writer.render(reader.parse(x));
+specTests('test/spec.txt', results, function(z) {
+        return writer.render(reader.parse(z));
     });
 
-specTests('test/smart_punct.txt', results, function(x) {
-        return writer.render(readerSmart.parse(x));
+specTests('test/smart_punct.txt', results, function(z) {
+        return writer.render(readerSmart.parse(z));
     });
 
 // pathological cases
@@ -184,8 +184,8 @@ for (x = 1000; x <= 10000; x *= 10) {
           repeat('</blockquote>\n', x) });
 }
 
-var parse_and_render = function(x) {
-    return writer.render(reader.parse(x));
+var parse_and_render = function(z) {
+    return writer.render(reader.parse(z));
 };
 
 for (var j = 0; j < cases.length; j++) {
