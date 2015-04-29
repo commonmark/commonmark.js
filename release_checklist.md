@@ -8,6 +8,7 @@ _ tag release
 _ git push
 _ git push --tags
 _ npm publish
+_ create github release
 _ update dingus:
 
     cd dingus
