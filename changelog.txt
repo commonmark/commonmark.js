@@ -1,3 +1,13 @@
+[0.19.0]
+
+  * Fixed underscore emphasis to conform to spec changes
+    (jgm/CommonMark#317, #12).
+  * Fixed variable shadowing (linter warnings) in `test.js`.
+  * Makefile: Moved `lint` first to avoid regenerating `dist` by accident.
+  * Dingus: Fixed word wrapping in text area (jgm/CommonMark#319).
+  * Updated `spec.txt` in `test/`.
+  * Added `release_checklist.md`.
+
 [0.18.2]
 
   * Fixed walker so that it stops at `this.root`, even when this is
