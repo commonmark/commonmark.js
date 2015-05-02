@@ -1,6 +1,10 @@
 commonmark.js
 =============
 
+[![Build Status](https://img.shields.io/travis/jgm/commonmark.js/master.svg?style=flat)](https://travis-ci.org/jgm/commonmark.js)
+[![NPM version](https://img.shields.io/npm/v/commonmark.svg?style=flat)](https://www.npmjs.org/package/commonmark)
+
+
 CommonMark is a rationalized version of Markdown syntax,
 with a [spec][the spec] and BSD-licensed reference
 implementations in C and JavaScript.
