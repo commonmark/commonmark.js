@@ -240,7 +240,7 @@ var blocks = {
     BlockQuote: {
         continue: function(parser) {
             var ln = parser.currentLine;
-            if (parser.indent <= 3 &&
+            if (!parser.indented &&
                 peek(ln, parser.nextNonspace) === C_GREATERTHAN) {
                 parser.offset = parser.nextNonspace + 1;
                 if (peek(ln, parser.offset) === C_SPACE) {
@@ -380,27 +380,10 @@ var blocks = {
 // 1 = matched container, keep going
 // 2 = matched leaf, no more block starts
 var blockStarts = [
-    // indented code block
-    function(parser) {
-        if (parser.indent >= CODE_INDENT) {
-            if (parser.tip.type !== 'Paragraph' && !parser.blank) {
-                // indented code
-                parser.offset += CODE_INDENT;
-                parser.closeUnmatchedBlocks();
-                parser.addChild('CodeBlock', parser.offset);
-            } else {
-                // lazy paragraph continuation
-                parser.offset = parser.nextNonspace;
-            }
-            return 2;
-        } else {
-            return 0;
-        }
-     },
-
     // block quote
     function(parser) {
-        if (peek(parser.currentLine, parser.nextNonspace) === C_GREATERTHAN) {
+        if (!parser.indented &&
+            peek(parser.currentLine, parser.nextNonspace) === C_GREATERTHAN) {
             parser.offset = parser.nextNonspace + 1;
             // optional following space
             if (peek(parser.currentLine, parser.offset) === C_SPACE) {
@@ -417,7 +400,8 @@ var blockStarts = [
     // ATX header
     function(parser) {
         var match;
-        if ((match = parser.currentLine.slice(parser.nextNonspace).match(reATXHeaderMarker))) {
+        if (!parser.indented &&
+            (match = parser.currentLine.slice(parser.nextNonspace).match(reATXHeaderMarker))) {
             parser.offset = parser.nextNonspace + match[0].length;
             parser.closeUnmatchedBlocks();
             var container = parser.addChild('Header', parser.nextNonspace);
@@ -435,7 +419,8 @@ var blockStarts = [
     // Fenced code block
     function(parser) {
         var match;
-        if ((match = parser.currentLine.slice(parser.nextNonspace).match(reCodeFence))) {
+        if (!parser.indented &&
+            (match = parser.currentLine.slice(parser.nextNonspace).match(reCodeFence))) {
             var fenceLength = match[0].length;
             parser.closeUnmatchedBlocks();
             var container = parser.addChild('CodeBlock', parser.nextNonspace);
@@ -452,7 +437,8 @@ var blockStarts = [
 
     // HTML block
     function(parser) {
-        if (reHtmlBlockOpen.test(parser.currentLine.slice(parser.nextNonspace))) {
+        if (!parser.indented &&
+            reHtmlBlockOpen.test(parser.currentLine.slice(parser.nextNonspace))) {
             parser.closeUnmatchedBlocks();
             parser.addChild('HtmlBlock', parser.offset);
             // don't adjust parser.offset; spaces are part of block
@@ -465,7 +451,8 @@ var blockStarts = [
     // Setext header
     function(parser, container) {
         var match;
-        if (container.type === 'Paragraph' &&
+        if (!parser.indented &&
+            container.type === 'Paragraph' &&
                    (container._string_content.indexOf('\n') ===
                       container._string_content.length - 1) &&
                    ((match = parser.currentLine.slice(parser.nextNonspace).match(reSetextHeaderLine)))) {
@@ -485,7 +472,8 @@ var blockStarts = [
 
     // hrule
     function(parser) {
-        if (reHrule.test(parser.currentLine.slice(parser.nextNonspace))) {
+        if (!parser.indented &&
+            reHrule.test(parser.currentLine.slice(parser.nextNonspace))) {
             parser.closeUnmatchedBlocks();
             parser.addChild('HorizontalRule', parser.nextNonspace);
             parser.offset = parser.currentLine.length;
@@ -501,6 +489,9 @@ var blockStarts = [
         if ((data = parseListMarker(parser.currentLine,
                                     parser.nextNonspace, parser.indent))) {
             parser.closeUnmatchedBlocks();
+            if (parser.indented && parser.tip.type !== 'List') {
+                return 0;
+            }
             parser.offset = parser.nextNonspace + data.padding;
 
             // add the list if needed
@@ -517,7 +508,23 @@ var blockStarts = [
         } else {
             return 0;
         }
-    }
+    },
+
+    // indented code block
+    function(parser) {
+        if (parser.indented &&
+            parser.tip.type !== 'Paragraph' &&
+            !parser.blank) {
+            // indented code
+            parser.offset += CODE_INDENT;
+            parser.closeUnmatchedBlocks();
+            parser.addChild('CodeBlock', parser.offset);
+            return 2;
+        } else {
+            return 0;
+        }
+     }
+
 ];
 
 var findNextNonspace = function() {
@@ -531,6 +538,7 @@ var findNextNonspace = function() {
         this.blank = false;
     }
     this.indent = this.nextNonspace - this.offset;
+    this.indented = this.indent >= CODE_INDENT;
 };
 
 // Analyze a line of text and update the document appropriately.
@@ -600,7 +608,8 @@ var incorporateLine = function(ln) {
         this.findNextNonspace();
 
         // this is a little performance optimization:
-        if (this.indent < CODE_INDENT && !reMaybeSpecial.test(ln.slice(this.nextNonspace))) {
+        if (!this.indented &&
+            !reMaybeSpecial.test(ln.slice(this.nextNonspace))) {
             this.offset = this.nextNonspace;
             break;
         }
@@ -756,6 +765,7 @@ function Parser(options){
         offset: 0,
         nextNonspace: 0,
         indent: 0,
+        indented: false,
         blank: false,
         allClosed: true,
         lastMatchedContainer: this.doc,
@@ -3543,7 +3553,11 @@ var entityToChar = function(m) {
         } else {
             num = parseInt(m.slice(2, m.length - 1), 10);
         }
-        uchar = fromCodePoint(num);
+        if (num === 0) {
+            uchar = '\uFFFD';
+        } else {
+            uchar = fromCodePoint(num);
+        }
     } else {
         ucode = entities[m.slice(1, m.length - 1)];
         if (ucode) {
@@ -3817,9 +3831,7 @@ var scanDelims = function(cc) {
     var char_before, char_after, cc_after;
     var startpos = this.pos;
     var left_flanking, right_flanking, can_open, can_close;
-
-    char_before = this.pos === 0 ? '\n' :
-        this.subject.charAt(this.pos - 1);
+    var after_is_whitespace, after_is_punctuation, before_is_whitespace, before_is_punctuation;
 
     if (cc === C_SINGLEQUOTE || cc === C_DOUBLEQUOTE) {
         numdelims++;
@@ -3831,6 +3843,12 @@ var scanDelims = function(cc) {
         }
     }
 
+    if (numdelims === 0) {
+        return null;
+    }
+
+    char_before = startpos === 0 ? '\n' : this.subject.charAt(startpos - 1);
+
     cc_after = this.peek();
     if (cc_after === -1) {
         char_after = '\n';
@@ -3838,21 +3856,20 @@ var scanDelims = function(cc) {
         char_after = fromCodePoint(cc_after);
     }
 
-    left_flanking = numdelims > 0 &&
-            !(reWhitespaceChar.test(char_after)) &&
-            !(rePunctuation.test(char_after) &&
-             !(reWhitespaceChar.test(char_before)) &&
-             !(rePunctuation.test(char_before)));
-    right_flanking = numdelims > 0 &&
-            !(reWhitespaceChar.test(char_before)) &&
-            !(rePunctuation.test(char_before) &&
-              !(reWhitespaceChar.test(char_after)) &&
-              !(rePunctuation.test(char_after)));
+    after_is_whitespace = reWhitespaceChar.test(char_after);
+    after_is_punctuation = rePunctuation.test(char_after);
+    before_is_whitespace = reWhitespaceChar.test(char_before);
+    before_is_punctuation = rePunctuation.test(char_before);
+
+    left_flanking = !after_is_whitespace &&
+            !(after_is_punctuation && !before_is_whitespace && !before_is_punctuation);
+    right_flanking = !before_is_whitespace &&
+            !(before_is_punctuation && !after_is_whitespace && !after_is_punctuation);
     if (cc === C_UNDERSCORE) {
         can_open = left_flanking &&
-            (!right_flanking || rePunctuation.test(char_before));
+            (!right_flanking || before_is_punctuation);
         can_close = right_flanking &&
-            (!left_flanking || rePunctuation.test(char_after));
+            (!left_flanking || after_is_punctuation);
     } else {
         can_open = left_flanking;
         can_close = right_flanking;
@@ -3866,13 +3883,12 @@ var scanDelims = function(cc) {
 // Handle a delimiter marker for emphasis or a quote.
 var handleDelim = function(cc, block) {
     var res = this.scanDelims(cc);
+    if (!res) {
+        return false;
+    }
     var numdelims = res.numdelims;
     var startpos = this.pos;
     var contents;
-
-    if (numdelims === 0) {
-        return false;
-    }
 
     this.pos += numdelims;
     if (cc === C_SINGLEQUOTE) {
@@ -4350,6 +4366,11 @@ var parseReference = function(s, refmap) {
     }
 
     var normlabel = normalizeReference(rawlabel);
+    if (normlabel === '') {
+        // label must contain non-whitespace characters
+        this.pos = startpos;
+        return 0;
+    }
 
     if (!refmap[normlabel]) {
         refmap[normlabel] = { destination: dest, title: title };
@@ -4755,7 +4776,7 @@ var map = {'A':'a','B':'b','C':'c','D':'d','E':'e','F':'f','G':'g','H':'h','I':'
 // Normalize reference label: collapse internal whitespace
 // to single space, remove leading/trailing whitespace, case fold.
 module.exports = function(string) {
-    return string.trim().replace(regex, function($0) {
+    return string.slice(1, string.length - 1).trim().replace(regex, function($0) {
         // Note: there is no need to check `hasOwnProperty($0)` here.
         // If character not found in lookup table, it must be whitespace.
         return map[$0] || ' ';
