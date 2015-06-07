@@ -1,3 +1,24 @@
+[0.20.0]
+
+  * Ensure that link labels contain non-whitespace (jgm/CommonMark#322).
+  * Strip brackets in `normalize-reference`. Otherwise the stripping
+    of leading/trailing whitespace doesn't work.  For example:
+    ```
+    [hi]
+
+    [ hi ]: url
+    ```
+  * Use U+FFFD for entities resolving to 0 (jgm/CommonMark#323).
+  * Fixed bug with list items indented >= 4 spaces (#42).
+  * Extract regex test results in `scanDelims` as local variables
+    (Robin Stocker). Also, abort earlier when no delims where found.
+  * Added travis & npm buttons to README.md (Vitaly Puzrin).
+  * Travis-CI: refresh node.js versions & use docker containers
+    (Vitaly Puzrin).
+  * Dingus css:  set colors for textarea (#319). Otherwise we may run
+    into problems for people who have set their textarea default
+    colors.
+
 [0.19.0]
 
   * Fixed underscore emphasis to conform to spec changes
