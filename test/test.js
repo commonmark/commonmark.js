@@ -158,7 +158,11 @@ cursor.write('Pathological cases:\n');
 var cases = [
     { name: 'U+0000 in input',
       input: 'abc\u0000xyz\u0000\n',
-      expected: '<p>abc\ufffdxyz\ufffd</p>\n' }
+      expected: '<p>abc\ufffdxyz\ufffd</p>\n' },
+    { name: 'alternate line endings',
+      input: '- a\n- b\r- c\r\n- d',
+      expected: '<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d</li>\n</ul>\n'
+    }
 ];
 
 var x;
