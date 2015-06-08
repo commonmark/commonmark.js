@@ -12,6 +12,12 @@
   * Fixed bug with list items indented >= 4 spaces (#42).
   * Extract regex test results in `scanDelims` as local variables
     (Robin Stocker). Also, abort earlier when no delims where found.
+  * Allow a partial open block tag to be recognized when followed
+    by a newline with no space (#324).  For example:
+    ```
+    <div
+      class="foo">
+    ```
   * Added test for alternate line endings.
   * Added travis & npm buttons to README.md (Vitaly Puzrin).
   * Travis-CI: refresh node.js versions & use docker containers
