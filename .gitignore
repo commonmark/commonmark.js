@@ -3,4 +3,3 @@
 *.diff
 *#
 node_modules/
-dist/commonmark.min.js
