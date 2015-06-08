@@ -11,9 +11,10 @@
         "test",
         "tools",
         "bench",
+        "dingus",
         "Makefile",
-        "README.md",
-        "dingus.html",
+        "*.md",
+        "release_checklist.md",
         "eslint.json",
         "package.json"
     ],
