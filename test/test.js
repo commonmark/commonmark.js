@@ -175,6 +175,30 @@ for (x = 1000; x <= 10000; x *= 10) {
 }
 for (x = 1000; x <= 10000; x *= 10) {
     cases.push(
+        { name: x + ' emph closers with no openers',
+          input: repeat('a_ ', x),
+          expected: '<p>' + repeat('a_ ', x - 1) + 'a_</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' emph openers with no closers',
+          input: repeat('_a ', x),
+          expected: '<p>' + repeat('_a ', x - 1) + '_a</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' link closers with no openers',
+          input: repeat('a] ', x),
+          expected: '<p>' + repeat('a] ', x - 1) + 'a]</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' link openers with no closers',
+          input: repeat('[a ', x),
+          expected: '<p>' + repeat('[a ', x - 1) + '[a</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
         { name: 'nested brackets ' + x + ' deep',
           input: repeat('[', x) + 'a' + repeat(']', x),
           expected: '<p>' + repeat('[', x) + 'a' + repeat(']', x) +
