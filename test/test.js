@@ -199,6 +199,18 @@ for (x = 1000; x <= 10000; x *= 10) {
 }
 for (x = 1000; x <= 10000; x *= 10) {
     cases.push(
+        { name: x + ' link openers and emph closers',
+          input: repeat('[ a_ ', x),
+          expected: '<p>' + repeat('[ a_ ', x - 1) + '[ a_</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' mismatched openers and closers',
+          input: repeat('*a_ ', x),
+          expected: '<p>' + repeat('*a_ ', x - 1) + '*a_</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
         { name: 'nested brackets ' + x + ' deep',
           input: repeat('[', x) + 'a' + repeat(']', x),
           expected: '<p>' + repeat('[', x) + 'a' + repeat(']', x) +
