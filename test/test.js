@@ -78,8 +78,9 @@ tests.replace(/^\.\n([\s\S]*?)^\.\n([\s\S]*?)^\.$|^#{1,6} *(.*)$/gm,
 };
 
 var specTest = function(testcase, res, converter) {
-    var actual = converter(testcase.markdown.replace(/→/g, '\t'));
+    var markdown = testcase.markdown.replace(/→/g, '\t');
     var expected = testcase.html.replace(/→/g, '\t');
+    var actual = converter(markdown);
     if (actual === expected) {
         res.passed++;
         cursor.green().write('✓').reset();
@@ -90,7 +91,7 @@ var specTest = function(testcase, res, converter) {
         cursor.red().write('✘ Example ' + testcase.number + '\n');
         cursor.cyan();
         cursor.write('=== markdown ===============\n');
-        cursor.write(showSpaces(testcase.markdown));
+        cursor.write(showSpaces(markdown));
         cursor.write('=== expected ===============\n');
         cursor.write(showSpaces(expected));
         cursor.write('=== got ====================\n');
