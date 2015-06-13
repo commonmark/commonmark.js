@@ -18,6 +18,7 @@
   "scripts": { "test": "node ./test/test.js" },
   "dependencies": {
     "entities": "~ 1.1.1",
+    "mdurl": "~ 1.0.0"
   },
   "directories": {
       "lib": "./lib"
