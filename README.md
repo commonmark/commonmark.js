@@ -40,6 +40,7 @@ from <http://spec.commonmark.org/js/commonmark.js>, or
 
 To run tests for the JavaScript library:
 
+    npm install # if needed to fetch dependencies
     make test
 
 To run benchmarks against some other JavaScript converters:
