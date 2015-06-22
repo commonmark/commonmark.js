@@ -15,7 +15,7 @@ var markdownit_encode = markdownit.utils.lib.mdurl.encode;
 markdownit.normalizeLink = function(url) { return markdownit_encode(url); };
 markdownit.normalizeLinkText = function(str) { return str; };
 
-var showdown = new Showdown.converter();
+var showdown = new Showdown.Converter();
 var parser = new commonmark.Parser();
 var parserSmart = new commonmark.Parser({smart: true});
 var renderer = new commonmark.HtmlRenderer();
