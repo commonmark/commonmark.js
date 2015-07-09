@@ -84,6 +84,9 @@ var parseAndRender = function() {
 $(document).ready(function() {
     var textarea = $("#text");
     var initial_text = getQueryVariable("text");
+    var smartSelected = getQueryVariable("smart") === "1";
+    $("#smart").prop('checked', smartSelected);
+    reader.options.smart = smartSelected;
     if (initial_text) {
         textarea.val(initial_text);
         // show HTML tab if text is from query
@@ -98,8 +101,10 @@ $(document).ready(function() {
     });
 
     $("#permalink").click(function() {
+        var smart = $("#smart").prop('checked');
         window.location.pathname = "/index.html";
-        window.location.search = "text=" + encodeURIComponent(textarea.val());
+        window.location.search = "text=" + encodeURIComponent(textarea.val()) +
+                (smart ? '&smart=1' : '');
     });
 
     textarea.bind('input propertychange',
@@ -109,7 +114,7 @@ $(document).ready(function() {
                 _.debounce(markSelection, 50, { maxWait: 100}));
 
     $("#smart").click(function() {
-        reader = new commonmark.Parser({smart: $("#smart").is(":checked")});
+        reader.options.smart = $("#smart").prop('checked');
         parseAndRender();
     });
 });
