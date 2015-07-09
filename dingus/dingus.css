@@ -12,6 +12,5 @@ div.timing { color: gray; visibility: hidden; height: 2em; }
 p#text-controls { height: 1em; margin-top: 1em; }
 a#permalink { margin-left: 1em; }
 span.timing { font-weight: bold; }
-span.timing { font-weight: bold; }
 .selected { background-color: #eeeeee; }
 textarea#text { width: 100%; overflow: scroll; resize: vertical; height: 400px; font-family: monospace; white-space: pre; word-wrap: normal; background-color: white; color: black; }
