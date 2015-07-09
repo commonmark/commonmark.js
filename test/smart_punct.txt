@@ -111,15 +111,27 @@ used (so, 7 hyphens = 2 em dashes an 1 en
 dash).
 
 .
-Some dashes:  one---two ---
-three---four --- five ----
-six ----- seven ------
-eight ------- nine ----------.
+one-
+two--
+three---
+four----
+five-----
+six------
+seven-------
+eight--------
+nine---------
+thirteen-------------.
 .
-<p>Some dashes:  one—two —
-three—four — five ––
-six —– seven ——
-eight —–– nine –––––.</p>
+<p>one-
+two–
+three—
+four––
+five—–
+six——
+seven—––
+eight––––
+nine———
+thirteen———––.</p>
 .
 
 Hyphens can be escaped:
