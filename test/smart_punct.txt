@@ -65,10 +65,14 @@ This isn't either.</p>
 
 .
 Some dashes:  one---two ---
-three---four --- five.
+three---four --- five ----
+six ----- seven ------
+eight ------- nine ----------.
 .
 <p>Some dashes:  one—two —
-three—four — five.</p>
+three—four — five ––
+six —– seven ——
+eight —–– nine –––––.</p>
 .
 
 .
