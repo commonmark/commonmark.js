@@ -84,9 +84,31 @@ This isn't either.
 .
 
 Two hyphens form an en-dash, three an em-dash.
-When a sequence of more than three hyphens is
-encountered, they are grouped by threes and twos
-to avoid single hyphens:
+
+.
+Some dashes:  em---em
+en--en
+em --- em
+en -- en
+2--3
+.
+<p>Some dashes:  em—em
+en–en
+em — em
+en – en
+2–3</p>
+.
+
+A sequence of more than three hyphens is
+parsed as a sequence of em and/or en dashes,
+with no hyphens. If possible, a homogeneous
+sequence of dashes is used (so, 10 hyphens
+= 5 en dashes, and 9 hyphens = 3 em dashes).
+When a heterogeneous sequence must be used,
+the em dashes come first, followed by the en
+dashes, and as few en dashes as possible are
+used (so, 7 hyphens = 2 em dashes an 1 en
+dash).
 
 .
 Some dashes:  one---two ---
