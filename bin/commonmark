@@ -22,6 +22,8 @@ for (i = 2; i < process.argv.length; i++) {
         options.time = true;
     } else if (arg === '--smart') {
         options.smart = true;
+    } else if (arg === '--safe') {
+        options.safe = true;
     } else if (arg === '--sourcepos') {
         options.sourcepos = true;
     } else if (/^--/.test(arg)) {

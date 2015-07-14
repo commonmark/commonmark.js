@@ -87,6 +87,11 @@ The following options are currently supported:
 - `smart`:  if `true`, straight quotes will be made curly, `--` will
   be changed to an en dash, `---` will be changed to an em dash, and
   `...` will be changed to ellipses.
+- `safe`: if `true`, raw HTML will not be passed through to HTML
+  output (it will be replaced by comments), and potentially unsafe
+  URLs in links and images (those beginning with `javascript:`,
+  `vbscript:`, `file:`, and with a few exceptions `data:`) will
+  be replaced with empty strings.
 
 It is also possible to override the `escape` and `softbreak`
 properties of a renderer.  So, to make soft breaks render as hard
@@ -223,8 +228,8 @@ A note on security
 
 The library does not attempt to sanitize link attributes or
 raw HTML.  If you use this library in applications that accept
-untrusted user input, you must run the output through an HTML
-sanitizer to protect against
+untrusted user input, you should either enable the `safe` option
+(see above) or run the output through an HTML sanitizer to protect against
 [XSS attacks](http://en.wikipedia.org/wiki/Cross-site_scripting).
 
 Performance
