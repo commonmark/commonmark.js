@@ -1,3 +1,62 @@
+[0.21.0]
+
+  * Updated to version 0.21 of spec.
+  * Implemented `safe` option.  This suppresses output of raw
+    HTML and potentially unsafe URLs.
+  * Documented `smart` option.
+  * Allow non-initial hyphens in html tag names.
+    This allows for custom tags, which in HTML5 MUST contain
+    a hyphen.  See jgm/CommonMark#239.
+  * Revised HTML block parsing to conform to new spec.
+  * Improved `smart_punct.txt` tests, and added some commentary
+    (a proto-spec).
+  * Improved `smart` handling of dashes.  We now process
+    whole strings of hyphens in such a way as to ensure that
+    we don't get a mix of hyphens and em and en dashes (#56,
+    Brandon Frohs).
+  * Dingus: Removed duplicated CSS line (Aurelio Jargas).
+  * Dingus:  Make permalink record whether 'smart' was selected (#55).
+  * Dingus:  Removed Makefile dependency on `html5-entities.js`.
+  * Reset options before calling `inlineParser`.
+    Otherwise, if the main parser's options have changed since
+    it was instantiated, the new options won't be visible to
+    the `inlineParser`.
+  * Properly split on whitespace in HTML renderer (#54).
+  * Fixed bench for new version of showdown (soomtong).
+  * `processEmphasis`: renamed `potential_openers` -> `openers_bottom`,
+    better logic for setting lower bound in `openers_bottom`.
+  * Fixed emphasis/link parsing bug (#50).
+  * Reset `this.column` on new parse.
+  * Fixed test runner to handle visible tabs in spec HTML.
+  * Improved detection of column with tabs in input.  Added
+    `advanceNextNonspace` and `advanceOffset` functions.
+  * Removed `detabLine` and tabs-to-spaces conversion.
+  * Added `column` and `nextNonspaceColumn` to parser.
+    Adjust these in `findNextNonspace`.
+  * Added note on README about how to fetch dependencies.
+  * Fix link reference definition edge case (Benjamin Dumke-
+    von der Ehe).  If the reference seems to have a valid title
+    that does not go until the end of the line, check if the
+    reference becomes valid when discarding the title.
+  * Fixed link label recognizer.  Allow a backslash-escaped
+    backslash (#38).
+  * Use `mdurl` instead of copied `encode.js`, `decode.js`.
+  * Use `entities` from npm instead of `html5-entities.js`.
+  * Rewrote `findNextNonspace` for speed.
+  * Remove delimiters as soon as we see that they don't match
+    anything (#43).  This fixes a performance bug for things like
+    `"a_ " * 20000`.
+  * Improved efficiency of `processEmphasis` (#43).  Don't look
+    for openers again when we've already searched for openers
+    of a certain type.
+  * Allow literal (non-escaping) backslashes in link destinations
+    (Benjamin Dumke-von der Ehe).
+  * Added several pathological tests (#43).
+  * Don't consider images to be self-closing in the XML writer
+    (Benjamin Dumke-von der Ehe).  Image nodes in a CommonMark AST
+    are containers, and as such the XML writer will always output
+    a closing tag.
+
 [0.20.0]
 
   * Ensure that link labels contain non-whitespace (jgm/CommonMark#322).
