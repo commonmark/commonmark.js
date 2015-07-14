@@ -8,6 +8,7 @@
     This allows for custom tags, which in HTML5 MUST contain
     a hyphen.  See jgm/CommonMark#239.
   * Revised HTML block parsing to conform to new spec.
+  * Imposed 9-digit limit on ordered list markers, per spec.
   * Improved `smart_punct.txt` tests, and added some commentary
     (a proto-spec).
   * Improved `smart` handling of dashes.  We now process
