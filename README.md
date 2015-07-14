@@ -84,6 +84,9 @@ The following options are currently supported:
 - `sourcepos`:  if `true`, source position information for block-level
   elements will be rendered in the `data-sourcepos` attribute (for
   HTML) or the `sourcepos` attribute (for XML).
+- `smart`:  if `true`, straight quotes will be made curly, `--` will
+  be changed to an en dash, `---` will be changed to an em dash, and
+  `...` will be changed to ellipses.
 
 It is also possible to override the `escape` and `softbreak`
 properties of a renderer.  So, to make soft breaks render as hard
