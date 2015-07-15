@@ -3,22 +3,38 @@
 
 var Node = require('./node');
 var unescapeString = require('./common').unescapeString;
+var OPENTAG = require('./common').OPENTAG;
+var CLOSETAG = require('./common').CLOSETAG;
 
 var CODE_INDENT = 4;
 
 var C_NEWLINE = 10;
 var C_GREATERTHAN = 62;
+var C_LESSTHAN = 60;
 var C_SPACE = 32;
 var C_OPEN_BRACKET = 91;
 
 var InlineParser = require('./inlines');
 
-var BLOCKTAGNAME = '(?:article|header|aside|hgroup|iframe|blockquote|hr|body|li|map|button|object|canvas|ol|caption|output|col|p|colgroup|pre|dd|progress|div|section|dl|table|td|dt|tbody|embed|textarea|fieldset|tfoot|figcaption|th|figure|thead|footer|footer|tr|form|ul|h1|h2|h3|h4|h5|h6|video|script|style)';
+var reHtmlBlockOpen = [
+   /./, // dummy for 0
+   /^<(?:script|pre|style)(?:\s|>|$)/i,
+   /^<!--/,
+   /^<[?]/,
+   /^<![A-Z]/,
+   /^<!\[CDATA\[/,
+   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|head|header|hr|html|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|pre|section|source|title|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
+    new RegExp('^(?:' + OPENTAG + '|' + CLOSETAG + ')\s*$', 'i')
+];
 
-var HTMLBLOCKOPEN = "<(?:" + BLOCKTAGNAME + "(?:[\\s/>]|$)" + "|" +
-        "/" + BLOCKTAGNAME + "(?:[\\s>]|$)" + "|" + "[?!])";
-
-var reHtmlBlockOpen = new RegExp('^' + HTMLBLOCKOPEN, 'i');
+var reHtmlBlockClose = [
+   /./, // dummy for 0
+   /<\/(?:script|pre|style)>/i,
+   /-->/,
+   /\?>/,
+   />/,
+   /\]\]>/
+];
 
 var reHrule = /^(?:(?:\* *){3,}|(?:_ *){3,}|(?:- *){3,}) *$/;
 
@@ -28,7 +44,7 @@ var reNonSpace = /[^ \t\f\v\r\n]/;
 
 var reBulletListMarker = /^[*+-]( +|$)/;
 
-var reOrderedListMarker = /^(\d+)([.)])( +|$)/;
+var reOrderedListMarker = /^(\d{1,9})([.)])( +|$)/;
 
 var reATXHeaderMarker = /^#{1,6}(?: +|$)/;
 
@@ -43,25 +59,6 @@ var reLineEnding = /\r\n|\n|\r/;
 // Returns true if string contains only space characters.
 var isBlank = function(s) {
     return !(reNonSpace.test(s));
-};
-
-var tabSpaces = ['    ', '   ', '  ', ' '];
-
-// Convert tabs to spaces on each line using a 4-space tab stop.
-var detabLine = function(text) {
-    var start = 0;
-    var offset;
-    var lastStop = 0;
-
-    while ((offset = text.indexOf('\t', start)) !== -1) {
-        var numspaces = (offset - lastStop) % 4;
-        var spaces = tabSpaces[numspaces];
-        text = text.slice(0, offset) + spaces + text.slice(offset + 1);
-        lastStop = offset + numspaces;
-        start = lastStop;
-    }
-
-    return text;
 };
 
 var peek = function(ln, pos) {
@@ -242,7 +239,8 @@ var blocks = {
             var ln = parser.currentLine;
             if (!parser.indented &&
                 peek(ln, parser.nextNonspace) === C_GREATERTHAN) {
-                parser.offset = parser.nextNonspace + 1;
+                parser.advanceNextNonspace();
+                parser.advanceOffset(1, false);
                 if (peek(ln, parser.offset) === C_SPACE) {
                     parser.offset++;
                 }
@@ -258,12 +256,12 @@ var blocks = {
     Item: {
         continue: function(parser, container) {
             if (parser.blank) {
-                parser.offset = parser.nextNonspace;
+                parser.advanceNextNonspace();
             } else if (parser.indent >=
                        container._listData.markerOffset +
                        container._listData.padding) {
-                parser.offset += container._listData.markerOffset +
-                    container._listData.padding;
+                parser.advanceOffset(container._listData.markerOffset +
+                    container._listData.padding, true);
             } else {
                 return 1;
             }
@@ -307,15 +305,15 @@ var blocks = {
                     // skip optional spaces of fence offset
                     var i = container._fenceOffset;
                     while (i > 0 && peek(ln, parser.offset) === C_SPACE) {
-                        parser.offset++;
+                        parser.advanceOffset(1, false);
                         i--;
                     }
                 }
             } else { // indented
                 if (indent >= CODE_INDENT) {
-                    parser.offset += CODE_INDENT;
+                    parser.advanceOffset(CODE_INDENT, true);
                 } else if (parser.blank) {
-                    parser.offset = parser.nextNonspace;
+                    parser.advanceNextNonspace();
                 } else {
                     return 1;
                 }
@@ -340,8 +338,10 @@ var blocks = {
         acceptsLines: true
     },
     HtmlBlock: {
-        continue: function(parser) {
-            return (parser.blank ? 1 : 0);
+        continue: function(parser, container) {
+            return ((parser.blank &&
+                     (container._htmlBlockType === 6 ||
+                      container._htmlBlockType === 7)) ? 1 : 0);
         },
         finalize: function(parser, block) {
             block._literal = block._string_content.replace(/(\n *)+$/, '');
@@ -384,10 +384,11 @@ var blockStarts = [
     function(parser) {
         if (!parser.indented &&
             peek(parser.currentLine, parser.nextNonspace) === C_GREATERTHAN) {
-            parser.offset = parser.nextNonspace + 1;
+            parser.advanceNextNonspace();
+            parser.advanceOffset(1, false);
             // optional following space
             if (peek(parser.currentLine, parser.offset) === C_SPACE) {
-                parser.offset++;
+                parser.advanceOffset(1, false);
             }
             parser.closeUnmatchedBlocks();
             parser.addChild('BlockQuote', parser.nextNonspace);
@@ -402,14 +403,15 @@ var blockStarts = [
         var match;
         if (!parser.indented &&
             (match = parser.currentLine.slice(parser.nextNonspace).match(reATXHeaderMarker))) {
-            parser.offset = parser.nextNonspace + match[0].length;
+            parser.advanceNextNonspace();
+            parser.advanceOffset(match[0].length, false);
             parser.closeUnmatchedBlocks();
             var container = parser.addChild('Header', parser.nextNonspace);
             container.level = match[0].trim().length; // number of #s
             // remove trailing ###s:
             container._string_content =
                 parser.currentLine.slice(parser.offset).replace(/^ *#+ *$/, '').replace(/ +#+ *$/, '');
-            parser.offset = parser.currentLine.length;
+            parser.advanceOffset(parser.currentLine.length - parser.offset);
             return 2;
         } else {
             return 0;
@@ -428,7 +430,8 @@ var blockStarts = [
             container._fenceLength = fenceLength;
             container._fenceChar = match[0][0];
             container._fenceOffset = parser.indent;
-            parser.offset = parser.nextNonspace + fenceLength;
+            parser.advanceNextNonspace();
+            parser.advanceOffset(fenceLength, false);
             return 2;
         } else {
             return 0;
@@ -436,16 +439,29 @@ var blockStarts = [
     },
 
     // HTML block
-    function(parser) {
+    function(parser, container) {
         if (!parser.indented &&
-            reHtmlBlockOpen.test(parser.currentLine.slice(parser.nextNonspace))) {
-            parser.closeUnmatchedBlocks();
-            parser.addChild('HtmlBlock', parser.offset);
-            // don't adjust parser.offset; spaces are part of block
-            return 2;
-        } else {
-            return 0;
+            peek(parser.currentLine, parser.nextNonspace) === C_LESSTHAN) {
+            var s = parser.currentLine.slice(parser.nextNonspace);
+            var blockType;
+
+            for (blockType = 1; blockType <= 7; blockType++) {
+                if (reHtmlBlockOpen[blockType].test(s) &&
+                    (blockType < 7 ||
+                     container.type !== 'Paragraph')) {
+                    parser.closeUnmatchedBlocks();
+                    // We don't adjust parser.offset;
+                    // spaces are part of the HTML block:
+                    var b = parser.addChild('HtmlBlock',
+                                            parser.offset);
+                    b._htmlBlockType = blockType;
+                    return 2;
+                }
+            }
         }
+
+        return 0;
+
     },
 
     // Setext header
@@ -463,7 +479,7 @@ var blockStarts = [
             container.insertAfter(header);
             container.unlink();
             parser.tip = header;
-            parser.offset = parser.currentLine.length;
+            parser.advanceOffset(parser.currentLine.length - parser.offset, false);
             return 2;
         } else {
             return 0;
@@ -476,7 +492,7 @@ var blockStarts = [
             reHrule.test(parser.currentLine.slice(parser.nextNonspace))) {
             parser.closeUnmatchedBlocks();
             parser.addChild('HorizontalRule', parser.nextNonspace);
-            parser.offset = parser.currentLine.length;
+            parser.advanceOffset(parser.currentLine.length - parser.offset, false);
             return 2;
         } else {
             return 0;
@@ -486,13 +502,18 @@ var blockStarts = [
     // list item
     function(parser, container) {
         var data;
+        var i;
         if ((data = parseListMarker(parser.currentLine,
                                     parser.nextNonspace, parser.indent))) {
             parser.closeUnmatchedBlocks();
             if (parser.indented && parser.tip.type !== 'List') {
                 return 0;
             }
-            parser.offset = parser.nextNonspace + data.padding;
+            parser.advanceNextNonspace();
+            // recalculate data.padding, taking into account tabs:
+            i = parser.column;
+            parser.advanceOffset(data.padding, false);
+            data.padding = parser.column - i;
 
             // add the list if needed
             if (parser.tip.type !== 'List' ||
@@ -516,7 +537,7 @@ var blockStarts = [
             parser.tip.type !== 'Paragraph' &&
             !parser.blank) {
             // indented code
-            parser.offset += CODE_INDENT;
+            parser.advanceOffset(CODE_INDENT, true);
             parser.closeUnmatchedBlocks();
             parser.addChild('CodeBlock', parser.offset);
             return 2;
@@ -527,17 +548,48 @@ var blockStarts = [
 
 ];
 
+var advanceOffset = function(count, columns) {
+    var i = 0;
+    var cols = 0;
+    var currentLine = this.currentLine;
+    while (columns ? (cols < count) : (i < count)) {
+        if (currentLine[this.offset + i] === '\t') {
+            cols += (4 - (this.column % 4));
+        } else {
+            cols += 1;
+        }
+        i++;
+    }
+    this.offset += i;
+    this.column += cols;
+};
+
+var advanceNextNonspace = function() {
+    this.offset = this.nextNonspace;
+    this.column = this.nextNonspaceColumn;
+};
+
 var findNextNonspace = function() {
     var currentLine = this.currentLine;
-    var match = currentLine.slice(this.offset).match(reNonSpace);
-    if (match === null) {
-        this.nextNonspace = currentLine.length;
-        this.blank = true;
-    } else {
-        this.nextNonspace = this.offset + match.index;
-        this.blank = false;
+    var i = this.offset;
+    var cols = this.column;
+    var c;
+
+    while ((c = currentLine.charAt(i)) !== '') {
+        if (c === ' ') {
+            i++;
+            cols++;
+        } else if (c === '\t') {
+            i++;
+            cols += (4 - (cols % 4));
+        } else {
+            break;
+        }
     }
-    this.indent = this.nextNonspace - this.offset;
+    this.blank = (c === '\n' || c === '\r' || c === '');
+    this.nextNonspace = i;
+    this.nextNonspaceColumn = cols;
+    this.indent = this.nextNonspaceColumn - this.column;
     this.indented = this.indent >= CODE_INDENT;
 };
 
@@ -558,8 +610,6 @@ var incorporateLine = function(ln) {
         ln = ln.replace(/\0/g, '\uFFFD');
     }
 
-    // Convert tabs to spaces:
-    ln = detabLine(ln);
     this.currentLine = ln;
 
     // For each containing block, try to parse the associated line start.
@@ -610,7 +660,7 @@ var incorporateLine = function(ln) {
         // this is a little performance optimization:
         if (!this.indented &&
             !reMaybeSpecial.test(ln.slice(this.nextNonspace))) {
-            this.offset = this.nextNonspace;
+            this.advanceNextNonspace();
             break;
         }
 
@@ -630,7 +680,7 @@ var incorporateLine = function(ln) {
         }
 
         if (i === startsLen) { // nothing matched
-            this.offset = this.nextNonspace;
+            this.advanceNextNonspace();
             break;
         }
     }
@@ -674,10 +724,18 @@ var incorporateLine = function(ln) {
 
         if (this.blocks[t].acceptsLines) {
             this.addLine();
+            // if HtmlBlock, check for end condition
+            if (t === 'HtmlBlock' &&
+                container._htmlBlockType >= 1 &&
+                container._htmlBlockType <= 5 &&
+                reHtmlBlockClose[container._htmlBlockType].test(this.currentLine.slice(this.offset))) {
+                this.finalize(container, this.lineNumber);
+            }
+
         } else if (this.offset < ln.length && !this.blank) {
             // create paragraph container for line
             container = this.addChild('Paragraph', this.offset);
-            this.offset = this.nextNonspace;
+            this.advanceNextNonspace();
             this.addLine();
         }
     }
@@ -705,6 +763,7 @@ var processInlines = function(block) {
     var node, event, t;
     var walker = block.walker();
     this.inlineParser.refmap = this.refmap;
+    this.inlineParser.options = this.options;
     while ((event = walker.next())) {
         node = event.node;
         t = node.type;
@@ -727,6 +786,7 @@ var parse = function(input) {
     this.lineNumber = 0;
     this.lastLineLength = 0;
     this.offset = 0;
+    this.column = 0;
     this.lastMatchedContainer = this.doc;
     this.currentLine = "";
     if (this.options.time) { console.time("preparing input"); }
@@ -763,7 +823,9 @@ function Parser(options){
         currentLine: "",
         lineNumber: 0,
         offset: 0,
+        column: 0,
         nextNonspace: 0,
+        nextNonspaceColumn: 0,
         indent: 0,
         indented: false,
         blank: false,
@@ -773,6 +835,8 @@ function Parser(options){
         lastLineLength: 0,
         inlineParser: new InlineParser(options),
         findNextNonspace: findNextNonspace,
+        advanceOffset: advanceOffset,
+        advanceNextNonspace: advanceNextNonspace,
         breakOutOfLists: breakOutOfLists,
         addLine: addLine,
         addChild: addChild,
@@ -787,17 +851,35 @@ function Parser(options){
 
 module.exports = Parser;
 
-},{"./common":2,"./inlines":9,"./node":10}],2:[function(require,module,exports){
+},{"./common":2,"./inlines":6,"./node":7}],2:[function(require,module,exports){
 "use strict";
 
-var encode = require('./encode');
-var decode = require('./decode');
+var encode = require('mdurl/encode');
+var decode = require('mdurl/decode');
 
 var C_BACKSLASH = 92;
 
-var entityToChar = require('./html5-entities.js').entityToChar;
+var decodeHTML = require('entities').decodeHTML;
 
 var ENTITY = "&(?:#x[a-f0-9]{1,8}|#[0-9]{1,8}|[a-z][a-z0-9]{1,31});";
+
+var TAGNAME = '[A-Za-z][A-Za-z0-9-]*';
+var ATTRIBUTENAME = '[a-zA-Z_:][a-zA-Z0-9:._-]*';
+var UNQUOTEDVALUE = "[^\"'=<>`\\x00-\\x20]+";
+var SINGLEQUOTEDVALUE = "'[^']*'";
+var DOUBLEQUOTEDVALUE = '"[^"]*"';
+var ATTRIBUTEVALUE = "(?:" + UNQUOTEDVALUE + "|" + SINGLEQUOTEDVALUE + "|" + DOUBLEQUOTEDVALUE + ")";
+var ATTRIBUTEVALUESPEC = "(?:" + "\\s*=" + "\\s*" + ATTRIBUTEVALUE + ")";
+var ATTRIBUTE = "(?:" + "\\s+" + ATTRIBUTENAME + ATTRIBUTEVALUESPEC + "?)";
+var OPENTAG = "<" + TAGNAME + ATTRIBUTE + "*" + "\\s*/?>";
+var CLOSETAG = "</" + TAGNAME + "\\s*[>]";
+var HTMLCOMMENT = "<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->";
+var PROCESSINGINSTRUCTION = "[<][?].*?[?][>]";
+var DECLARATION = "<![A-Z]+" + "\\s+[^>]*>";
+var CDATA = "<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";
+var HTMLTAG = "(?:" + OPENTAG + "|" + CLOSETAG + "|" + HTMLCOMMENT + "|" +
+        PROCESSINGINSTRUCTION + "|" + DECLARATION + "|" + CDATA + ")";
+var reHtmlTag = new RegExp('^' + HTMLTAG, 'i');
 
 var reBackslashOrAmp = /[\\&]/;
 
@@ -815,7 +897,7 @@ var unescapeChar = function(s) {
     if (s.charCodeAt(0) === C_BACKSLASH) {
         return s.charAt(1);
     } else {
-        return entityToChar(s);
+        return decodeHTML(s);
     }
 };
 
@@ -867,239 +949,14 @@ var escapeXml = function(s, preserve_entities) {
 module.exports = { unescapeString: unescapeString,
                    normalizeURI: normalizeURI,
                    escapeXml: escapeXml,
+                   reHtmlTag: reHtmlTag,
+                   OPENTAG: OPENTAG,
+                   CLOSETAG: CLOSETAG,
                    ENTITY: ENTITY,
                    ESCAPABLE: ESCAPABLE
                  };
 
-},{"./decode":3,"./encode":4,"./html5-entities.js":7}],3:[function(require,module,exports){
-// from https://github.com/markdown-it/mdurl
-// Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT license.
-
-'use strict';
-
-
-/* eslint-disable no-bitwise */
-
-var decodeCache = {};
-
-function getDecodeCache(exclude) {
-  var i, ch, cache = decodeCache[exclude];
-  if (cache) { return cache; }
-
-  cache = decodeCache[exclude] = [];
-
-  for (i = 0; i < 128; i++) {
-    ch = String.fromCharCode(i);
-    cache.push(ch);
-  }
-
-  for (i = 0; i < exclude.length; i++) {
-    ch = exclude.charCodeAt(i);
-    cache[ch] = '%' + ('0' + ch.toString(16).toUpperCase()).slice(-2);
-  }
-
-  return cache;
-}
-
-
-// Decode percent-encoded string.
-//
-function decode(string, exclude) {
-  var cache;
-
-  if (typeof exclude !== 'string') {
-    exclude = decode.defaultChars;
-  }
-
-  cache = getDecodeCache(exclude);
-
-  return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
-    var i, l, b1, b2, b3, b4, char,
-        result = '';
-
-    for (i = 0, l = seq.length; i < l; i += 3) {
-      b1 = parseInt(seq.slice(i + 1, i + 3), 16);
-
-      if (b1 < 0x80) {
-        result += cache[b1];
-        continue;
-      }
-
-      if ((b1 & 0xE0) === 0xC0 && (i + 3 < l)) {
-        // 110xxxxx 10xxxxxx
-        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
-
-        if ((b2 & 0xC0) === 0x80) {
-          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
-
-          if (char < 0x80) {
-            result += '\ufffd\ufffd';
-          } else {
-            result += String.fromCharCode(char);
-          }
-
-          i += 3;
-          continue;
-        }
-      }
-
-      if ((b1 & 0xF0) === 0xE0 && (i + 6 < l)) {
-        // 1110xxxx 10xxxxxx 10xxxxxx
-        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
-        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
-
-        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
-          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
-
-          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
-            result += '\ufffd\ufffd\ufffd';
-          } else {
-            result += String.fromCharCode(char);
-          }
-
-          i += 6;
-          continue;
-        }
-      }
-
-      if ((b1 & 0xF8) === 0xF0 && (i + 9 < l)) {
-        // 111110xx 10xxxxxx 10xxxxxx 10xxxxxx
-        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
-        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
-        b4 = parseInt(seq.slice(i + 10, i + 12), 16);
-
-        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
-          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
-
-          if (char < 0x10000 || char > 0x10FFFF) {
-            result += '\ufffd\ufffd\ufffd\ufffd';
-          } else {
-            char -= 0x10000;
-            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
-          }
-
-          i += 9;
-          continue;
-        }
-      }
-
-      result += '\ufffd';
-    }
-
-    return result;
-  });
-}
-
-
-decode.defaultChars = ';/?:@&=+$,#';
-decode.componentChars = '';
-
-
-module.exports = decode;
-
-},{}],4:[function(require,module,exports){
-// from https://github.com/markdown-it/mdurl
-// Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT license.
-
-'use strict';
-
-
-var encodeCache = {};
-
-
-// Create a lookup array where anything but characters in `chars` string
-// and alphanumeric chars is percent-encoded.
-//
-function getEncodeCache(exclude) {
-  var i, ch, cache = encodeCache[exclude];
-  if (cache) { return cache; }
-
-  cache = encodeCache[exclude] = [];
-
-  for (i = 0; i < 128; i++) {
-    ch = String.fromCharCode(i);
-
-    if (/^[0-9a-z]$/i.test(ch)) {
-      // always allow unencoded alphanumeric characters
-      cache.push(ch);
-    } else {
-      cache.push('%' + ('0' + i.toString(16).toUpperCase()).slice(-2));
-    }
-  }
-
-  for (i = 0; i < exclude.length; i++) {
-    cache[exclude.charCodeAt(i)] = exclude[i];
-  }
-
-  return cache;
-}
-
-
-// Encode unsafe characters with percent-encoding, skipping already
-// encoded sequences.
-//
-//  - string       - string to encode
-//  - exclude      - list of characters to ignore (in addition to a-zA-Z0-9)
-//  - keepEscaped  - don't encode '%' in a correct escape sequence (default: true)
-//
-function encode(string, exclude, keepEscaped) {
-  var i, l, code, nextCode, cache,
-      result = '';
-
-  if (typeof exclude !== 'string') {
-    // encode(string, keepEscaped)
-    keepEscaped = exclude;
-    exclude = encode.defaultChars;
-  }
-
-  if (typeof keepEscaped === 'undefined') {
-    keepEscaped = true;
-  }
-
-  cache = getEncodeCache(exclude);
-
-  for (i = 0, l = string.length; i < l; i++) {
-    code = string.charCodeAt(i);
-
-    if (keepEscaped && code === 0x25 && i + 2 < l) {
-      if (/^[0-9a-f]{2}$/i.test(string.slice(i + 1, i + 3))) {
-        result += string.slice(i, i + 3);
-        i += 2;
-        continue;
-      }
-    }
-
-    if (code < 128) {
-      result += cache[code];
-      continue;
-    }
-
-    if (code >= 0xD800 && code <= 0xDFFF) {
-      if (code >= 0xD800 && code <= 0xDBFF && i + 1 < l) {
-        nextCode = string.charCodeAt(i + 1);
-        if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
-          result += encodeURIComponent(string[i] + string[i + 1]);
-          i++;
-          continue;
-        }
-      }
-      result += '%EF%BF%BD';
-      continue;
-    }
-
-    result += encodeURIComponent(string[i]);
-  }
-
-  return result;
-}
-
-encode.defaultChars = ";/?:@&=+$,-_.!~*'()#";
-encode.componentChars = "-_.!~*'()";
-
-
-module.exports = encode;
-
-},{}],5:[function(require,module,exports){
+},{"entities":10,"mdurl/decode":18,"mdurl/encode":19}],3:[function(require,module,exports){
 "use strict";
 
 // derived from https://github.com/mathiasbynens/String.fromCodePoint
@@ -1160,7 +1017,7 @@ if (String.fromCodePoint) {
   module.exports = fromCodePoint;
 }
 
-},{}],6:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 var escapeXml = require('./common').escapeXml;
@@ -1185,6 +1042,13 @@ var tag = function(name, attrs, selfclosing) {
 };
 
 var reHtmlTag = /\<[^>]*\>/;
+var reUnsafeProtocol = /^javascript:|vbscript:|file:|data:/i;
+var reSafeDataProtocol = /^data:image\/(?:png|gif|jpeg|webp)/i;
+
+var potentiallyUnsafe = function(url) {
+    return reUnsafeProtocol.test(url) &&
+        !reSafeDataProtocol.test(url);
+};
 
 var renderNodes = function(block) {
 
@@ -1254,12 +1118,18 @@ var renderNodes = function(block) {
             break;
 
         case 'Html':
-            out(node.literal);
+            if (options.safe) {
+                out('<!-- raw HTML omitted -->');
+            } else {
+                out(node.literal);
+            }
             break;
 
         case 'Link':
             if (entering) {
-                attrs.push(['href', esc(node.destination, true)]);
+                if (!(options.safe && potentiallyUnsafe(node.destination))) {
+                    attrs.push(['href', esc(node.destination, true)]);
+                }
                 if (node.title) {
                     attrs.push(['title', esc(node.title, true)]);
                 }
@@ -1272,8 +1142,13 @@ var renderNodes = function(block) {
         case 'Image':
             if (entering) {
                 if (disableTags === 0) {
-                    out('<img src="' + esc(node.destination, true) +
-                        '" alt="');
+                    if (options.safe &&
+                         potentiallyUnsafe(node.destination)) {
+                        out('<img src="" alt="');
+                    } else {
+                        out('<img src="' + esc(node.destination, true) +
+                            '" alt="');
+                    }
                 }
                 disableTags += 1;
             } else {
@@ -1361,7 +1236,7 @@ var renderNodes = function(block) {
             break;
 
         case 'CodeBlock':
-            info_words = node.info ? node.info.split(/ +/) : [];
+            info_words = node.info ? node.info.split(/\s+/) : [];
             if (info_words.length > 0 && info_words[0].length > 0) {
                 attrs.push(['class', 'language-' + esc(info_words[0], true)]);
             }
@@ -1374,7 +1249,11 @@ var renderNodes = function(block) {
 
         case 'HtmlBlock':
             cr();
-            out(node.literal);
+            if (options.safe) {
+                out('<!-- raw HTML omitted -->');
+            } else {
+                out(node.literal);
+            }
             cr();
             break;
 
@@ -1408,2168 +1287,7 @@ function HtmlRenderer(options){
 
 module.exports = HtmlRenderer;
 
-},{"./common":2}],7:[function(require,module,exports){
-"use strict";
-
-var fromCodePoint = require('./from-code-point');
-
-var entities = {
-  AAacute: 193,
-  aacute: 225,
-  Abreve: 258,
-  abreve: 259,
-  ac: 8766,
-  acd: 8767,
-  acE: 8766,
-  Acirc: 194,
-  acirc: 226,
-  acute: 180,
-  Acy: 1040,
-  acy: 1072,
-  AElig: 198,
-  aelig: 230,
-  af: 8289,
-  Afr: 55349,
-  afr: 55349,
-  Agrave: 192,
-  agrave: 224,
-  alefsym: 8501,
-  aleph: 8501,
-  Alpha: 913,
-  alpha: 945,
-  Amacr: 256,
-  amacr: 257,
-  amalg: 10815,
-  amp: 38,
-  AMP: 38,
-  andand: 10837,
-  And: 10835,
-  and: 8743,
-  andd: 10844,
-  andslope: 10840,
-  andv: 10842,
-  ang: 8736,
-  ange: 10660,
-  angle: 8736,
-  angmsdaa: 10664,
-  angmsdab: 10665,
-  angmsdac: 10666,
-  angmsdad: 10667,
-  angmsdae: 10668,
-  angmsdaf: 10669,
-  angmsdag: 10670,
-  angmsdah: 10671,
-  angmsd: 8737,
-  angrt: 8735,
-  angrtvb: 8894,
-  angrtvbd: 10653,
-  angsph: 8738,
-  angst: 197,
-  angzarr: 9084,
-  Aogon: 260,
-  aogon: 261,
-  Aopf: 55349,
-  aopf: 55349,
-  apacir: 10863,
-  ap: 8776,
-  apE: 10864,
-  ape: 8778,
-  apid: 8779,
-  apos: 39,
-  ApplyFunction: 8289,
-  approx: 8776,
-  approxeq: 8778,
-  Aring: 197,
-  aring: 229,
-  Ascr: 55349,
-  ascr: 55349,
-  Assign: 8788,
-  ast: 42,
-  asymp: 8776,
-  asympeq: 8781,
-  Atilde: 195,
-  atilde: 227,
-  Auml: 196,
-  auml: 228,
-  awconint: 8755,
-  awint: 10769,
-  backcong: 8780,
-  backepsilon: 1014,
-  backprime: 8245,
-  backsim: 8765,
-  backsimeq: 8909,
-  Backslash: 8726,
-  Barv: 10983,
-  barvee: 8893,
-  barwed: 8965,
-  Barwed: 8966,
-  barwedge: 8965,
-  bbrk: 9141,
-  bbrktbrk: 9142,
-  bcong: 8780,
-  Bcy: 1041,
-  bcy: 1073,
-  bdquo: 8222,
-  becaus: 8757,
-  because: 8757,
-  Because: 8757,
-  bemptyv: 10672,
-  bepsi: 1014,
-  bernou: 8492,
-  Bernoullis: 8492,
-  Beta: 914,
-  beta: 946,
-  beth: 8502,
-  between: 8812,
-  Bfr: 55349,
-  bfr: 55349,
-  bigcap: 8898,
-  bigcirc: 9711,
-  bigcup: 8899,
-  bigodot: 10752,
-  bigoplus: 10753,
-  bigotimes: 10754,
-  bigsqcup: 10758,
-  bigstar: 9733,
-  bigtriangledown: 9661,
-  bigtriangleup: 9651,
-  biguplus: 10756,
-  bigvee: 8897,
-  bigwedge: 8896,
-  bkarow: 10509,
-  blacklozenge: 10731,
-  blacksquare: 9642,
-  blacktriangle: 9652,
-  blacktriangledown: 9662,
-  blacktriangleleft: 9666,
-  blacktriangleright: 9656,
-  blank: 9251,
-  blk12: 9618,
-  blk14: 9617,
-  blk34: 9619,
-  block: 9608,
-  bne: 61,
-  bnequiv: 8801,
-  bNot: 10989,
-  bnot: 8976,
-  Bopf: 55349,
-  bopf: 55349,
-  bot: 8869,
-  bottom: 8869,
-  bowtie: 8904,
-  boxbox: 10697,
-  boxdl: 9488,
-  boxdL: 9557,
-  boxDl: 9558,
-  boxDL: 9559,
-  boxdr: 9484,
-  boxdR: 9554,
-  boxDr: 9555,
-  boxDR: 9556,
-  boxh: 9472,
-  boxH: 9552,
-  boxhd: 9516,
-  boxHd: 9572,
-  boxhD: 9573,
-  boxHD: 9574,
-  boxhu: 9524,
-  boxHu: 9575,
-  boxhU: 9576,
-  boxHU: 9577,
-  boxminus: 8863,
-  boxplus: 8862,
-  boxtimes: 8864,
-  boxul: 9496,
-  boxuL: 9563,
-  boxUl: 9564,
-  boxUL: 9565,
-  boxur: 9492,
-  boxuR: 9560,
-  boxUr: 9561,
-  boxUR: 9562,
-  boxv: 9474,
-  boxV: 9553,
-  boxvh: 9532,
-  boxvH: 9578,
-  boxVh: 9579,
-  boxVH: 9580,
-  boxvl: 9508,
-  boxvL: 9569,
-  boxVl: 9570,
-  boxVL: 9571,
-  boxvr: 9500,
-  boxvR: 9566,
-  boxVr: 9567,
-  boxVR: 9568,
-  bprime: 8245,
-  breve: 728,
-  Breve: 728,
-  brvbar: 166,
-  bscr: 55349,
-  Bscr: 8492,
-  bsemi: 8271,
-  bsim: 8765,
-  bsime: 8909,
-  bsolb: 10693,
-  bsol: 92,
-  bsolhsub: 10184,
-  bull: 8226,
-  bullet: 8226,
-  bump: 8782,
-  bumpE: 10926,
-  bumpe: 8783,
-  Bumpeq: 8782,
-  bumpeq: 8783,
-  Cacute: 262,
-  cacute: 263,
-  capand: 10820,
-  capbrcup: 10825,
-  capcap: 10827,
-  cap: 8745,
-  Cap: 8914,
-  capcup: 10823,
-  capdot: 10816,
-  CapitalDifferentialD: 8517,
-  caps: 8745,
-  caret: 8257,
-  caron: 711,
-  Cayleys: 8493,
-  ccaps: 10829,
-  Ccaron: 268,
-  ccaron: 269,
-  Ccedil: 199,
-  ccedil: 231,
-  Ccirc: 264,
-  ccirc: 265,
-  Cconint: 8752,
-  ccups: 10828,
-  ccupssm: 10832,
-  Cdot: 266,
-  cdot: 267,
-  cedil: 184,
-  Cedilla: 184,
-  cemptyv: 10674,
-  cent: 162,
-  centerdot: 183,
-  CenterDot: 183,
-  cfr: 55349,
-  Cfr: 8493,
-  CHcy: 1063,
-  chcy: 1095,
-  check: 10003,
-  checkmark: 10003,
-  Chi: 935,
-  chi: 967,
-  circ: 710,
-  circeq: 8791,
-  circlearrowleft: 8634,
-  circlearrowright: 8635,
-  circledast: 8859,
-  circledcirc: 8858,
-  circleddash: 8861,
-  CircleDot: 8857,
-  circledR: 174,
-  circledS: 9416,
-  CircleMinus: 8854,
-  CirclePlus: 8853,
-  CircleTimes: 8855,
-  cir: 9675,
-  cirE: 10691,
-  cire: 8791,
-  cirfnint: 10768,
-  cirmid: 10991,
-  cirscir: 10690,
-  ClockwiseContourIntegral: 8754,
-  CloseCurlyDoubleQuote: 8221,
-  CloseCurlyQuote: 8217,
-  clubs: 9827,
-  clubsuit: 9827,
-  colon: 58,
-  Colon: 8759,
-  Colone: 10868,
-  colone: 8788,
-  coloneq: 8788,
-  comma: 44,
-  commat: 64,
-  comp: 8705,
-  compfn: 8728,
-  complement: 8705,
-  complexes: 8450,
-  cong: 8773,
-  congdot: 10861,
-  Congruent: 8801,
-  conint: 8750,
-  Conint: 8751,
-  ContourIntegral: 8750,
-  copf: 55349,
-  Copf: 8450,
-  coprod: 8720,
-  Coproduct: 8720,
-  copy: 169,
-  COPY: 169,
-  copysr: 8471,
-  CounterClockwiseContourIntegral: 8755,
-  crarr: 8629,
-  cross: 10007,
-  Cross: 10799,
-  Cscr: 55349,
-  cscr: 55349,
-  csub: 10959,
-  csube: 10961,
-  csup: 10960,
-  csupe: 10962,
-  ctdot: 8943,
-  cudarrl: 10552,
-  cudarrr: 10549,
-  cuepr: 8926,
-  cuesc: 8927,
-  cularr: 8630,
-  cularrp: 10557,
-  cupbrcap: 10824,
-  cupcap: 10822,
-  CupCap: 8781,
-  cup: 8746,
-  Cup: 8915,
-  cupcup: 10826,
-  cupdot: 8845,
-  cupor: 10821,
-  cups: 8746,
-  curarr: 8631,
-  curarrm: 10556,
-  curlyeqprec: 8926,
-  curlyeqsucc: 8927,
-  curlyvee: 8910,
-  curlywedge: 8911,
-  curren: 164,
-  curvearrowleft: 8630,
-  curvearrowright: 8631,
-  cuvee: 8910,
-  cuwed: 8911,
-  cwconint: 8754,
-  cwint: 8753,
-  cylcty: 9005,
-  dagger: 8224,
-  Dagger: 8225,
-  daleth: 8504,
-  darr: 8595,
-  Darr: 8609,
-  dArr: 8659,
-  dash: 8208,
-  Dashv: 10980,
-  dashv: 8867,
-  dbkarow: 10511,
-  dblac: 733,
-  Dcaron: 270,
-  dcaron: 271,
-  Dcy: 1044,
-  dcy: 1076,
-  ddagger: 8225,
-  ddarr: 8650,
-  DD: 8517,
-  dd: 8518,
-  DDotrahd: 10513,
-  ddotseq: 10871,
-  deg: 176,
-  Del: 8711,
-  Delta: 916,
-  delta: 948,
-  demptyv: 10673,
-  dfisht: 10623,
-  Dfr: 55349,
-  dfr: 55349,
-  dHar: 10597,
-  dharl: 8643,
-  dharr: 8642,
-  DiacriticalAcute: 180,
-  DiacriticalDot: 729,
-  DiacriticalDoubleAcute: 733,
-  DiacriticalGrave: 96,
-  DiacriticalTilde: 732,
-  diam: 8900,
-  diamond: 8900,
-  Diamond: 8900,
-  diamondsuit: 9830,
-  diams: 9830,
-  die: 168,
-  DifferentialD: 8518,
-  digamma: 989,
-  disin: 8946,
-  div: 247,
-  divide: 247,
-  divideontimes: 8903,
-  divonx: 8903,
-  DJcy: 1026,
-  djcy: 1106,
-  dlcorn: 8990,
-  dlcrop: 8973,
-  dollar: 36,
-  Dopf: 55349,
-  dopf: 55349,
-  Dot: 168,
-  dot: 729,
-  DotDot: 8412,
-  doteq: 8784,
-  doteqdot: 8785,
-  DotEqual: 8784,
-  dotminus: 8760,
-  dotplus: 8724,
-  dotsquare: 8865,
-  doublebarwedge: 8966,
-  DoubleContourIntegral: 8751,
-  DoubleDot: 168,
-  DoubleDownArrow: 8659,
-  DoubleLeftArrow: 8656,
-  DoubleLeftRightArrow: 8660,
-  DoubleLeftTee: 10980,
-  DoubleLongLeftArrow: 10232,
-  DoubleLongLeftRightArrow: 10234,
-  DoubleLongRightArrow: 10233,
-  DoubleRightArrow: 8658,
-  DoubleRightTee: 8872,
-  DoubleUpArrow: 8657,
-  DoubleUpDownArrow: 8661,
-  DoubleVerticalBar: 8741,
-  DownArrowBar: 10515,
-  downarrow: 8595,
-  DownArrow: 8595,
-  Downarrow: 8659,
-  DownArrowUpArrow: 8693,
-  DownBreve: 785,
-  downdownarrows: 8650,
-  downharpoonleft: 8643,
-  downharpoonright: 8642,
-  DownLeftRightVector: 10576,
-  DownLeftTeeVector: 10590,
-  DownLeftVectorBar: 10582,
-  DownLeftVector: 8637,
-  DownRightTeeVector: 10591,
-  DownRightVectorBar: 10583,
-  DownRightVector: 8641,
-  DownTeeArrow: 8615,
-  DownTee: 8868,
-  drbkarow: 10512,
-  drcorn: 8991,
-  drcrop: 8972,
-  Dscr: 55349,
-  dscr: 55349,
-  DScy: 1029,
-  dscy: 1109,
-  dsol: 10742,
-  Dstrok: 272,
-  dstrok: 273,
-  dtdot: 8945,
-  dtri: 9663,
-  dtrif: 9662,
-  duarr: 8693,
-  duhar: 10607,
-  dwangle: 10662,
-  DZcy: 1039,
-  dzcy: 1119,
-  dzigrarr: 10239,
-  Eacute: 201,
-  eacute: 233,
-  easter: 10862,
-  Ecaron: 282,
-  ecaron: 283,
-  Ecirc: 202,
-  ecirc: 234,
-  ecir: 8790,
-  ecolon: 8789,
-  Ecy: 1069,
-  ecy: 1101,
-  eDDot: 10871,
-  Edot: 278,
-  edot: 279,
-  eDot: 8785,
-  ee: 8519,
-  efDot: 8786,
-  Efr: 55349,
-  efr: 55349,
-  eg: 10906,
-  Egrave: 200,
-  egrave: 232,
-  egs: 10902,
-  egsdot: 10904,
-  el: 10905,
-  Element: 8712,
-  elinters: 9191,
-  ell: 8467,
-  els: 10901,
-  elsdot: 10903,
-  Emacr: 274,
-  emacr: 275,
-  empty: 8709,
-  emptyset: 8709,
-  EmptySmallSquare: 9723,
-  emptyv: 8709,
-  EmptyVerySmallSquare: 9643,
-  emsp13: 8196,
-  emsp14: 8197,
-  emsp: 8195,
-  ENG: 330,
-  eng: 331,
-  ensp: 8194,
-  Eogon: 280,
-  eogon: 281,
-  Eopf: 55349,
-  eopf: 55349,
-  epar: 8917,
-  eparsl: 10723,
-  eplus: 10865,
-  epsi: 949,
-  Epsilon: 917,
-  epsilon: 949,
-  epsiv: 1013,
-  eqcirc: 8790,
-  eqcolon: 8789,
-  eqsim: 8770,
-  eqslantgtr: 10902,
-  eqslantless: 10901,
-  Equal: 10869,
-  equals: 61,
-  EqualTilde: 8770,
-  equest: 8799,
-  Equilibrium: 8652,
-  equiv: 8801,
-  equivDD: 10872,
-  eqvparsl: 10725,
-  erarr: 10609,
-  erDot: 8787,
-  escr: 8495,
-  Escr: 8496,
-  esdot: 8784,
-  Esim: 10867,
-  esim: 8770,
-  Eta: 919,
-  eta: 951,
-  ETH: 208,
-  eth: 240,
-  Euml: 203,
-  euml: 235,
-  euro: 8364,
-  excl: 33,
-  exist: 8707,
-  Exists: 8707,
-  expectation: 8496,
-  exponentiale: 8519,
-  ExponentialE: 8519,
-  fallingdotseq: 8786,
-  Fcy: 1060,
-  fcy: 1092,
-  female: 9792,
-  ffilig: 64259,
-  fflig: 64256,
-  ffllig: 64260,
-  Ffr: 55349,
-  ffr: 55349,
-  filig: 64257,
-  FilledSmallSquare: 9724,
-  FilledVerySmallSquare: 9642,
-  fjlig: 102,
-  flat: 9837,
-  fllig: 64258,
-  fltns: 9649,
-  fnof: 402,
-  Fopf: 55349,
-  fopf: 55349,
-  forall: 8704,
-  ForAll: 8704,
-  fork: 8916,
-  forkv: 10969,
-  Fouriertrf: 8497,
-  fpartint: 10765,
-  frac12: 189,
-  frac13: 8531,
-  frac14: 188,
-  frac15: 8533,
-  frac16: 8537,
-  frac18: 8539,
-  frac23: 8532,
-  frac25: 8534,
-  frac34: 190,
-  frac35: 8535,
-  frac38: 8540,
-  frac45: 8536,
-  frac56: 8538,
-  frac58: 8541,
-  frac78: 8542,
-  frasl: 8260,
-  frown: 8994,
-  fscr: 55349,
-  Fscr: 8497,
-  gacute: 501,
-  Gamma: 915,
-  gamma: 947,
-  Gammad: 988,
-  gammad: 989,
-  gap: 10886,
-  Gbreve: 286,
-  gbreve: 287,
-  Gcedil: 290,
-  Gcirc: 284,
-  gcirc: 285,
-  Gcy: 1043,
-  gcy: 1075,
-  Gdot: 288,
-  gdot: 289,
-  ge: 8805,
-  gE: 8807,
-  gEl: 10892,
-  gel: 8923,
-  geq: 8805,
-  geqq: 8807,
-  geqslant: 10878,
-  gescc: 10921,
-  ges: 10878,
-  gesdot: 10880,
-  gesdoto: 10882,
-  gesdotol: 10884,
-  gesl: 8923,
-  gesles: 10900,
-  Gfr: 55349,
-  gfr: 55349,
-  gg: 8811,
-  Gg: 8921,
-  ggg: 8921,
-  gimel: 8503,
-  GJcy: 1027,
-  gjcy: 1107,
-  gla: 10917,
-  gl: 8823,
-  glE: 10898,
-  glj: 10916,
-  gnap: 10890,
-  gnapprox: 10890,
-  gne: 10888,
-  gnE: 8809,
-  gneq: 10888,
-  gneqq: 8809,
-  gnsim: 8935,
-  Gopf: 55349,
-  gopf: 55349,
-  grave: 96,
-  GreaterEqual: 8805,
-  GreaterEqualLess: 8923,
-  GreaterFullEqual: 8807,
-  GreaterGreater: 10914,
-  GreaterLess: 8823,
-  GreaterSlantEqual: 10878,
-  GreaterTilde: 8819,
-  Gscr: 55349,
-  gscr: 8458,
-  gsim: 8819,
-  gsime: 10894,
-  gsiml: 10896,
-  gtcc: 10919,
-  gtcir: 10874,
-  gt: 62,
-  GT: 62,
-  Gt: 8811,
-  gtdot: 8919,
-  gtlPar: 10645,
-  gtquest: 10876,
-  gtrapprox: 10886,
-  gtrarr: 10616,
-  gtrdot: 8919,
-  gtreqless: 8923,
-  gtreqqless: 10892,
-  gtrless: 8823,
-  gtrsim: 8819,
-  gvertneqq: 8809,
-  gvnE: 8809,
-  Hacek: 711,
-  hairsp: 8202,
-  half: 189,
-  hamilt: 8459,
-  HARDcy: 1066,
-  hardcy: 1098,
-  harrcir: 10568,
-  harr: 8596,
-  hArr: 8660,
-  harrw: 8621,
-  Hat: 94,
-  hbar: 8463,
-  Hcirc: 292,
-  hcirc: 293,
-  hearts: 9829,
-  heartsuit: 9829,
-  hellip: 8230,
-  hercon: 8889,
-  hfr: 55349,
-  Hfr: 8460,
-  HilbertSpace: 8459,
-  hksearow: 10533,
-  hkswarow: 10534,
-  hoarr: 8703,
-  homtht: 8763,
-  hookleftarrow: 8617,
-  hookrightarrow: 8618,
-  hopf: 55349,
-  Hopf: 8461,
-  horbar: 8213,
-  HorizontalLine: 9472,
-  hscr: 55349,
-  Hscr: 8459,
-  hslash: 8463,
-  Hstrok: 294,
-  hstrok: 295,
-  HumpDownHump: 8782,
-  HumpEqual: 8783,
-  hybull: 8259,
-  hyphen: 8208,
-  Iacute: 205,
-  iacute: 237,
-  ic: 8291,
-  Icirc: 206,
-  icirc: 238,
-  Icy: 1048,
-  icy: 1080,
-  Idot: 304,
-  IEcy: 1045,
-  iecy: 1077,
-  iexcl: 161,
-  iff: 8660,
-  ifr: 55349,
-  Ifr: 8465,
-  Igrave: 204,
-  igrave: 236,
-  ii: 8520,
-  iiiint: 10764,
-  iiint: 8749,
-  iinfin: 10716,
-  iiota: 8489,
-  IJlig: 306,
-  ijlig: 307,
-  Imacr: 298,
-  imacr: 299,
-  image: 8465,
-  ImaginaryI: 8520,
-  imagline: 8464,
-  imagpart: 8465,
-  imath: 305,
-  Im: 8465,
-  imof: 8887,
-  imped: 437,
-  Implies: 8658,
-  incare: 8453,
-  'in': 8712,
-  infin: 8734,
-  infintie: 10717,
-  inodot: 305,
-  intcal: 8890,
-  int: 8747,
-  Int: 8748,
-  integers: 8484,
-  Integral: 8747,
-  intercal: 8890,
-  Intersection: 8898,
-  intlarhk: 10775,
-  intprod: 10812,
-  InvisibleComma: 8291,
-  InvisibleTimes: 8290,
-  IOcy: 1025,
-  iocy: 1105,
-  Iogon: 302,
-  iogon: 303,
-  Iopf: 55349,
-  iopf: 55349,
-  Iota: 921,
-  iota: 953,
-  iprod: 10812,
-  iquest: 191,
-  iscr: 55349,
-  Iscr: 8464,
-  isin: 8712,
-  isindot: 8949,
-  isinE: 8953,
-  isins: 8948,
-  isinsv: 8947,
-  isinv: 8712,
-  it: 8290,
-  Itilde: 296,
-  itilde: 297,
-  Iukcy: 1030,
-  iukcy: 1110,
-  Iuml: 207,
-  iuml: 239,
-  Jcirc: 308,
-  jcirc: 309,
-  Jcy: 1049,
-  jcy: 1081,
-  Jfr: 55349,
-  jfr: 55349,
-  jmath: 567,
-  Jopf: 55349,
-  jopf: 55349,
-  Jscr: 55349,
-  jscr: 55349,
-  Jsercy: 1032,
-  jsercy: 1112,
-  Jukcy: 1028,
-  jukcy: 1108,
-  Kappa: 922,
-  kappa: 954,
-  kappav: 1008,
-  Kcedil: 310,
-  kcedil: 311,
-  Kcy: 1050,
-  kcy: 1082,
-  Kfr: 55349,
-  kfr: 55349,
-  kgreen: 312,
-  KHcy: 1061,
-  khcy: 1093,
-  KJcy: 1036,
-  kjcy: 1116,
-  Kopf: 55349,
-  kopf: 55349,
-  Kscr: 55349,
-  kscr: 55349,
-  lAarr: 8666,
-  Lacute: 313,
-  lacute: 314,
-  laemptyv: 10676,
-  lagran: 8466,
-  Lambda: 923,
-  lambda: 955,
-  lang: 10216,
-  Lang: 10218,
-  langd: 10641,
-  langle: 10216,
-  lap: 10885,
-  Laplacetrf: 8466,
-  laquo: 171,
-  larrb: 8676,
-  larrbfs: 10527,
-  larr: 8592,
-  Larr: 8606,
-  lArr: 8656,
-  larrfs: 10525,
-  larrhk: 8617,
-  larrlp: 8619,
-  larrpl: 10553,
-  larrsim: 10611,
-  larrtl: 8610,
-  latail: 10521,
-  lAtail: 10523,
-  lat: 10923,
-  late: 10925,
-  lates: 10925,
-  lbarr: 10508,
-  lBarr: 10510,
-  lbbrk: 10098,
-  lbrace: 123,
-  lbrack: 91,
-  lbrke: 10635,
-  lbrksld: 10639,
-  lbrkslu: 10637,
-  Lcaron: 317,
-  lcaron: 318,
-  Lcedil: 315,
-  lcedil: 316,
-  lceil: 8968,
-  lcub: 123,
-  Lcy: 1051,
-  lcy: 1083,
-  ldca: 10550,
-  ldquo: 8220,
-  ldquor: 8222,
-  ldrdhar: 10599,
-  ldrushar: 10571,
-  ldsh: 8626,
-  le: 8804,
-  lE: 8806,
-  LeftAngleBracket: 10216,
-  LeftArrowBar: 8676,
-  leftarrow: 8592,
-  LeftArrow: 8592,
-  Leftarrow: 8656,
-  LeftArrowRightArrow: 8646,
-  leftarrowtail: 8610,
-  LeftCeiling: 8968,
-  LeftDoubleBracket: 10214,
-  LeftDownTeeVector: 10593,
-  LeftDownVectorBar: 10585,
-  LeftDownVector: 8643,
-  LeftFloor: 8970,
-  leftharpoondown: 8637,
-  leftharpoonup: 8636,
-  leftleftarrows: 8647,
-  leftrightarrow: 8596,
-  LeftRightArrow: 8596,
-  Leftrightarrow: 8660,
-  leftrightarrows: 8646,
-  leftrightharpoons: 8651,
-  leftrightsquigarrow: 8621,
-  LeftRightVector: 10574,
-  LeftTeeArrow: 8612,
-  LeftTee: 8867,
-  LeftTeeVector: 10586,
-  leftthreetimes: 8907,
-  LeftTriangleBar: 10703,
-  LeftTriangle: 8882,
-  LeftTriangleEqual: 8884,
-  LeftUpDownVector: 10577,
-  LeftUpTeeVector: 10592,
-  LeftUpVectorBar: 10584,
-  LeftUpVector: 8639,
-  LeftVectorBar: 10578,
-  LeftVector: 8636,
-  lEg: 10891,
-  leg: 8922,
-  leq: 8804,
-  leqq: 8806,
-  leqslant: 10877,
-  lescc: 10920,
-  les: 10877,
-  lesdot: 10879,
-  lesdoto: 10881,
-  lesdotor: 10883,
-  lesg: 8922,
-  lesges: 10899,
-  lessapprox: 10885,
-  lessdot: 8918,
-  lesseqgtr: 8922,
-  lesseqqgtr: 10891,
-  LessEqualGreater: 8922,
-  LessFullEqual: 8806,
-  LessGreater: 8822,
-  lessgtr: 8822,
-  LessLess: 10913,
-  lesssim: 8818,
-  LessSlantEqual: 10877,
-  LessTilde: 8818,
-  lfisht: 10620,
-  lfloor: 8970,
-  Lfr: 55349,
-  lfr: 55349,
-  lg: 8822,
-  lgE: 10897,
-  lHar: 10594,
-  lhard: 8637,
-  lharu: 8636,
-  lharul: 10602,
-  lhblk: 9604,
-  LJcy: 1033,
-  ljcy: 1113,
-  llarr: 8647,
-  ll: 8810,
-  Ll: 8920,
-  llcorner: 8990,
-  Lleftarrow: 8666,
-  llhard: 10603,
-  lltri: 9722,
-  Lmidot: 319,
-  lmidot: 320,
-  lmoustache: 9136,
-  lmoust: 9136,
-  lnap: 10889,
-  lnapprox: 10889,
-  lne: 10887,
-  lnE: 8808,
-  lneq: 10887,
-  lneqq: 8808,
-  lnsim: 8934,
-  loang: 10220,
-  loarr: 8701,
-  lobrk: 10214,
-  longleftarrow: 10229,
-  LongLeftArrow: 10229,
-  Longleftarrow: 10232,
-  longleftrightarrow: 10231,
-  LongLeftRightArrow: 10231,
-  Longleftrightarrow: 10234,
-  longmapsto: 10236,
-  longrightarrow: 10230,
-  LongRightArrow: 10230,
-  Longrightarrow: 10233,
-  looparrowleft: 8619,
-  looparrowright: 8620,
-  lopar: 10629,
-  Lopf: 55349,
-  lopf: 55349,
-  loplus: 10797,
-  lotimes: 10804,
-  lowast: 8727,
-  lowbar: 95,
-  LowerLeftArrow: 8601,
-  LowerRightArrow: 8600,
-  loz: 9674,
-  lozenge: 9674,
-  lozf: 10731,
-  lpar: 40,
-  lparlt: 10643,
-  lrarr: 8646,
-  lrcorner: 8991,
-  lrhar: 8651,
-  lrhard: 10605,
-  lrm: 8206,
-  lrtri: 8895,
-  lsaquo: 8249,
-  lscr: 55349,
-  Lscr: 8466,
-  lsh: 8624,
-  Lsh: 8624,
-  lsim: 8818,
-  lsime: 10893,
-  lsimg: 10895,
-  lsqb: 91,
-  lsquo: 8216,
-  lsquor: 8218,
-  Lstrok: 321,
-  lstrok: 322,
-  ltcc: 10918,
-  ltcir: 10873,
-  lt: 60,
-  LT: 60,
-  Lt: 8810,
-  ltdot: 8918,
-  lthree: 8907,
-  ltimes: 8905,
-  ltlarr: 10614,
-  ltquest: 10875,
-  ltri: 9667,
-  ltrie: 8884,
-  ltrif: 9666,
-  ltrPar: 10646,
-  lurdshar: 10570,
-  luruhar: 10598,
-  lvertneqq: 8808,
-  lvnE: 8808,
-  macr: 175,
-  male: 9794,
-  malt: 10016,
-  maltese: 10016,
-  Map: 10501,
-  map: 8614,
-  mapsto: 8614,
-  mapstodown: 8615,
-  mapstoleft: 8612,
-  mapstoup: 8613,
-  marker: 9646,
-  mcomma: 10793,
-  Mcy: 1052,
-  mcy: 1084,
-  mdash: 8212,
-  mDDot: 8762,
-  measuredangle: 8737,
-  MediumSpace: 8287,
-  Mellintrf: 8499,
-  Mfr: 55349,
-  mfr: 55349,
-  mho: 8487,
-  micro: 181,
-  midast: 42,
-  midcir: 10992,
-  mid: 8739,
-  middot: 183,
-  minusb: 8863,
-  minus: 8722,
-  minusd: 8760,
-  minusdu: 10794,
-  MinusPlus: 8723,
-  mlcp: 10971,
-  mldr: 8230,
-  mnplus: 8723,
-  models: 8871,
-  Mopf: 55349,
-  mopf: 55349,
-  mp: 8723,
-  mscr: 55349,
-  Mscr: 8499,
-  mstpos: 8766,
-  Mu: 924,
-  mu: 956,
-  multimap: 8888,
-  mumap: 8888,
-  nabla: 8711,
-  Nacute: 323,
-  nacute: 324,
-  nang: 8736,
-  nap: 8777,
-  napE: 10864,
-  napid: 8779,
-  napos: 329,
-  napprox: 8777,
-  natural: 9838,
-  naturals: 8469,
-  natur: 9838,
-  nbsp: 160,
-  nbump: 8782,
-  nbumpe: 8783,
-  ncap: 10819,
-  Ncaron: 327,
-  ncaron: 328,
-  Ncedil: 325,
-  ncedil: 326,
-  ncong: 8775,
-  ncongdot: 10861,
-  ncup: 10818,
-  Ncy: 1053,
-  ncy: 1085,
-  ndash: 8211,
-  nearhk: 10532,
-  nearr: 8599,
-  neArr: 8663,
-  nearrow: 8599,
-  ne: 8800,
-  nedot: 8784,
-  NegativeMediumSpace: 8203,
-  NegativeThickSpace: 8203,
-  NegativeThinSpace: 8203,
-  NegativeVeryThinSpace: 8203,
-  nequiv: 8802,
-  nesear: 10536,
-  nesim: 8770,
-  NestedGreaterGreater: 8811,
-  NestedLessLess: 8810,
-  NewLine: 10,
-  nexist: 8708,
-  nexists: 8708,
-  Nfr: 55349,
-  nfr: 55349,
-  ngE: 8807,
-  nge: 8817,
-  ngeq: 8817,
-  ngeqq: 8807,
-  ngeqslant: 10878,
-  nges: 10878,
-  nGg: 8921,
-  ngsim: 8821,
-  nGt: 8811,
-  ngt: 8815,
-  ngtr: 8815,
-  nGtv: 8811,
-  nharr: 8622,
-  nhArr: 8654,
-  nhpar: 10994,
-  ni: 8715,
-  nis: 8956,
-  nisd: 8954,
-  niv: 8715,
-  NJcy: 1034,
-  njcy: 1114,
-  nlarr: 8602,
-  nlArr: 8653,
-  nldr: 8229,
-  nlE: 8806,
-  nle: 8816,
-  nleftarrow: 8602,
-  nLeftarrow: 8653,
-  nleftrightarrow: 8622,
-  nLeftrightarrow: 8654,
-  nleq: 8816,
-  nleqq: 8806,
-  nleqslant: 10877,
-  nles: 10877,
-  nless: 8814,
-  nLl: 8920,
-  nlsim: 8820,
-  nLt: 8810,
-  nlt: 8814,
-  nltri: 8938,
-  nltrie: 8940,
-  nLtv: 8810,
-  nmid: 8740,
-  NoBreak: 8288,
-  NonBreakingSpace: 160,
-  nopf: 55349,
-  Nopf: 8469,
-  Not: 10988,
-  not: 172,
-  NotCongruent: 8802,
-  NotCupCap: 8813,
-  NotDoubleVerticalBar: 8742,
-  NotElement: 8713,
-  NotEqual: 8800,
-  NotEqualTilde: 8770,
-  NotExists: 8708,
-  NotGreater: 8815,
-  NotGreaterEqual: 8817,
-  NotGreaterFullEqual: 8807,
-  NotGreaterGreater: 8811,
-  NotGreaterLess: 8825,
-  NotGreaterSlantEqual: 10878,
-  NotGreaterTilde: 8821,
-  NotHumpDownHump: 8782,
-  NotHumpEqual: 8783,
-  notin: 8713,
-  notindot: 8949,
-  notinE: 8953,
-  notinva: 8713,
-  notinvb: 8951,
-  notinvc: 8950,
-  NotLeftTriangleBar: 10703,
-  NotLeftTriangle: 8938,
-  NotLeftTriangleEqual: 8940,
-  NotLess: 8814,
-  NotLessEqual: 8816,
-  NotLessGreater: 8824,
-  NotLessLess: 8810,
-  NotLessSlantEqual: 10877,
-  NotLessTilde: 8820,
-  NotNestedGreaterGreater: 10914,
-  NotNestedLessLess: 10913,
-  notni: 8716,
-  notniva: 8716,
-  notnivb: 8958,
-  notnivc: 8957,
-  NotPrecedes: 8832,
-  NotPrecedesEqual: 10927,
-  NotPrecedesSlantEqual: 8928,
-  NotReverseElement: 8716,
-  NotRightTriangleBar: 10704,
-  NotRightTriangle: 8939,
-  NotRightTriangleEqual: 8941,
-  NotSquareSubset: 8847,
-  NotSquareSubsetEqual: 8930,
-  NotSquareSuperset: 8848,
-  NotSquareSupersetEqual: 8931,
-  NotSubset: 8834,
-  NotSubsetEqual: 8840,
-  NotSucceeds: 8833,
-  NotSucceedsEqual: 10928,
-  NotSucceedsSlantEqual: 8929,
-  NotSucceedsTilde: 8831,
-  NotSuperset: 8835,
-  NotSupersetEqual: 8841,
-  NotTilde: 8769,
-  NotTildeEqual: 8772,
-  NotTildeFullEqual: 8775,
-  NotTildeTilde: 8777,
-  NotVerticalBar: 8740,
-  nparallel: 8742,
-  npar: 8742,
-  nparsl: 11005,
-  npart: 8706,
-  npolint: 10772,
-  npr: 8832,
-  nprcue: 8928,
-  nprec: 8832,
-  npreceq: 10927,
-  npre: 10927,
-  nrarrc: 10547,
-  nrarr: 8603,
-  nrArr: 8655,
-  nrarrw: 8605,
-  nrightarrow: 8603,
-  nRightarrow: 8655,
-  nrtri: 8939,
-  nrtrie: 8941,
-  nsc: 8833,
-  nsccue: 8929,
-  nsce: 10928,
-  Nscr: 55349,
-  nscr: 55349,
-  nshortmid: 8740,
-  nshortparallel: 8742,
-  nsim: 8769,
-  nsime: 8772,
-  nsimeq: 8772,
-  nsmid: 8740,
-  nspar: 8742,
-  nsqsube: 8930,
-  nsqsupe: 8931,
-  nsub: 8836,
-  nsubE: 10949,
-  nsube: 8840,
-  nsubset: 8834,
-  nsubseteq: 8840,
-  nsubseteqq: 10949,
-  nsucc: 8833,
-  nsucceq: 10928,
-  nsup: 8837,
-  nsupE: 10950,
-  nsupe: 8841,
-  nsupset: 8835,
-  nsupseteq: 8841,
-  nsupseteqq: 10950,
-  ntgl: 8825,
-  Ntilde: 209,
-  ntilde: 241,
-  ntlg: 8824,
-  ntriangleleft: 8938,
-  ntrianglelefteq: 8940,
-  ntriangleright: 8939,
-  ntrianglerighteq: 8941,
-  Nu: 925,
-  nu: 957,
-  num: 35,
-  numero: 8470,
-  numsp: 8199,
-  nvap: 8781,
-  nvdash: 8876,
-  nvDash: 8877,
-  nVdash: 8878,
-  nVDash: 8879,
-  nvge: 8805,
-  nvgt: 62,
-  nvHarr: 10500,
-  nvinfin: 10718,
-  nvlArr: 10498,
-  nvle: 8804,
-  nvlt: 62,
-  nvltrie: 8884,
-  nvrArr: 10499,
-  nvrtrie: 8885,
-  nvsim: 8764,
-  nwarhk: 10531,
-  nwarr: 8598,
-  nwArr: 8662,
-  nwarrow: 8598,
-  nwnear: 10535,
-  Oacute: 211,
-  oacute: 243,
-  oast: 8859,
-  Ocirc: 212,
-  ocirc: 244,
-  ocir: 8858,
-  Ocy: 1054,
-  ocy: 1086,
-  odash: 8861,
-  Odblac: 336,
-  odblac: 337,
-  odiv: 10808,
-  odot: 8857,
-  odsold: 10684,
-  OElig: 338,
-  oelig: 339,
-  ofcir: 10687,
-  Ofr: 55349,
-  ofr: 55349,
-  ogon: 731,
-  Ograve: 210,
-  ograve: 242,
-  ogt: 10689,
-  ohbar: 10677,
-  ohm: 937,
-  oint: 8750,
-  olarr: 8634,
-  olcir: 10686,
-  olcross: 10683,
-  oline: 8254,
-  olt: 10688,
-  Omacr: 332,
-  omacr: 333,
-  Omega: 937,
-  omega: 969,
-  Omicron: 927,
-  omicron: 959,
-  omid: 10678,
-  ominus: 8854,
-  Oopf: 55349,
-  oopf: 55349,
-  opar: 10679,
-  OpenCurlyDoubleQuote: 8220,
-  OpenCurlyQuote: 8216,
-  operp: 10681,
-  oplus: 8853,
-  orarr: 8635,
-  Or: 10836,
-  or: 8744,
-  ord: 10845,
-  order: 8500,
-  orderof: 8500,
-  ordf: 170,
-  ordm: 186,
-  origof: 8886,
-  oror: 10838,
-  orslope: 10839,
-  orv: 10843,
-  oS: 9416,
-  Oscr: 55349,
-  oscr: 8500,
-  Oslash: 216,
-  oslash: 248,
-  osol: 8856,
-  Otilde: 213,
-  otilde: 245,
-  otimesas: 10806,
-  Otimes: 10807,
-  otimes: 8855,
-  Ouml: 214,
-  ouml: 246,
-  ovbar: 9021,
-  OverBar: 8254,
-  OverBrace: 9182,
-  OverBracket: 9140,
-  OverParenthesis: 9180,
-  para: 182,
-  parallel: 8741,
-  par: 8741,
-  parsim: 10995,
-  parsl: 11005,
-  part: 8706,
-  PartialD: 8706,
-  Pcy: 1055,
-  pcy: 1087,
-  percnt: 37,
-  period: 46,
-  permil: 8240,
-  perp: 8869,
-  pertenk: 8241,
-  Pfr: 55349,
-  pfr: 55349,
-  Phi: 934,
-  phi: 966,
-  phiv: 981,
-  phmmat: 8499,
-  phone: 9742,
-  Pi: 928,
-  pi: 960,
-  pitchfork: 8916,
-  piv: 982,
-  planck: 8463,
-  planckh: 8462,
-  plankv: 8463,
-  plusacir: 10787,
-  plusb: 8862,
-  pluscir: 10786,
-  plus: 43,
-  plusdo: 8724,
-  plusdu: 10789,
-  pluse: 10866,
-  PlusMinus: 177,
-  plusmn: 177,
-  plussim: 10790,
-  plustwo: 10791,
-  pm: 177,
-  Poincareplane: 8460,
-  pointint: 10773,
-  popf: 55349,
-  Popf: 8473,
-  pound: 163,
-  prap: 10935,
-  Pr: 10939,
-  pr: 8826,
-  prcue: 8828,
-  precapprox: 10935,
-  prec: 8826,
-  preccurlyeq: 8828,
-  Precedes: 8826,
-  PrecedesEqual: 10927,
-  PrecedesSlantEqual: 8828,
-  PrecedesTilde: 8830,
-  preceq: 10927,
-  precnapprox: 10937,
-  precneqq: 10933,
-  precnsim: 8936,
-  pre: 10927,
-  prE: 10931,
-  precsim: 8830,
-  prime: 8242,
-  Prime: 8243,
-  primes: 8473,
-  prnap: 10937,
-  prnE: 10933,
-  prnsim: 8936,
-  prod: 8719,
-  Product: 8719,
-  profalar: 9006,
-  profline: 8978,
-  profsurf: 8979,
-  prop: 8733,
-  Proportional: 8733,
-  Proportion: 8759,
-  propto: 8733,
-  prsim: 8830,
-  prurel: 8880,
-  Pscr: 55349,
-  pscr: 55349,
-  Psi: 936,
-  psi: 968,
-  puncsp: 8200,
-  Qfr: 55349,
-  qfr: 55349,
-  qint: 10764,
-  qopf: 55349,
-  Qopf: 8474,
-  qprime: 8279,
-  Qscr: 55349,
-  qscr: 55349,
-  quaternions: 8461,
-  quatint: 10774,
-  quest: 63,
-  questeq: 8799,
-  quot: 34,
-  QUOT: 34,
-  rAarr: 8667,
-  race: 8765,
-  Racute: 340,
-  racute: 341,
-  radic: 8730,
-  raemptyv: 10675,
-  rang: 10217,
-  Rang: 10219,
-  rangd: 10642,
-  range: 10661,
-  rangle: 10217,
-  raquo: 187,
-  rarrap: 10613,
-  rarrb: 8677,
-  rarrbfs: 10528,
-  rarrc: 10547,
-  rarr: 8594,
-  Rarr: 8608,
-  rArr: 8658,
-  rarrfs: 10526,
-  rarrhk: 8618,
-  rarrlp: 8620,
-  rarrpl: 10565,
-  rarrsim: 10612,
-  Rarrtl: 10518,
-  rarrtl: 8611,
-  rarrw: 8605,
-  ratail: 10522,
-  rAtail: 10524,
-  ratio: 8758,
-  rationals: 8474,
-  rbarr: 10509,
-  rBarr: 10511,
-  RBarr: 10512,
-  rbbrk: 10099,
-  rbrace: 125,
-  rbrack: 93,
-  rbrke: 10636,
-  rbrksld: 10638,
-  rbrkslu: 10640,
-  Rcaron: 344,
-  rcaron: 345,
-  Rcedil: 342,
-  rcedil: 343,
-  rceil: 8969,
-  rcub: 125,
-  Rcy: 1056,
-  rcy: 1088,
-  rdca: 10551,
-  rdldhar: 10601,
-  rdquo: 8221,
-  rdquor: 8221,
-  rdsh: 8627,
-  real: 8476,
-  realine: 8475,
-  realpart: 8476,
-  reals: 8477,
-  Re: 8476,
-  rect: 9645,
-  reg: 174,
-  REG: 174,
-  ReverseElement: 8715,
-  ReverseEquilibrium: 8651,
-  ReverseUpEquilibrium: 10607,
-  rfisht: 10621,
-  rfloor: 8971,
-  rfr: 55349,
-  Rfr: 8476,
-  rHar: 10596,
-  rhard: 8641,
-  rharu: 8640,
-  rharul: 10604,
-  Rho: 929,
-  rho: 961,
-  rhov: 1009,
-  RightAngleBracket: 10217,
-  RightArrowBar: 8677,
-  rightarrow: 8594,
-  RightArrow: 8594,
-  Rightarrow: 8658,
-  RightArrowLeftArrow: 8644,
-  rightarrowtail: 8611,
-  RightCeiling: 8969,
-  RightDoubleBracket: 10215,
-  RightDownTeeVector: 10589,
-  RightDownVectorBar: 10581,
-  RightDownVector: 8642,
-  RightFloor: 8971,
-  rightharpoondown: 8641,
-  rightharpoonup: 8640,
-  rightleftarrows: 8644,
-  rightleftharpoons: 8652,
-  rightrightarrows: 8649,
-  rightsquigarrow: 8605,
-  RightTeeArrow: 8614,
-  RightTee: 8866,
-  RightTeeVector: 10587,
-  rightthreetimes: 8908,
-  RightTriangleBar: 10704,
-  RightTriangle: 8883,
-  RightTriangleEqual: 8885,
-  RightUpDownVector: 10575,
-  RightUpTeeVector: 10588,
-  RightUpVectorBar: 10580,
-  RightUpVector: 8638,
-  RightVectorBar: 10579,
-  RightVector: 8640,
-  ring: 730,
-  risingdotseq: 8787,
-  rlarr: 8644,
-  rlhar: 8652,
-  rlm: 8207,
-  rmoustache: 9137,
-  rmoust: 9137,
-  rnmid: 10990,
-  roang: 10221,
-  roarr: 8702,
-  robrk: 10215,
-  ropar: 10630,
-  ropf: 55349,
-  Ropf: 8477,
-  roplus: 10798,
-  rotimes: 10805,
-  RoundImplies: 10608,
-  rpar: 41,
-  rpargt: 10644,
-  rppolint: 10770,
-  rrarr: 8649,
-  Rrightarrow: 8667,
-  rsaquo: 8250,
-  rscr: 55349,
-  Rscr: 8475,
-  rsh: 8625,
-  Rsh: 8625,
-  rsqb: 93,
-  rsquo: 8217,
-  rsquor: 8217,
-  rthree: 8908,
-  rtimes: 8906,
-  rtri: 9657,
-  rtrie: 8885,
-  rtrif: 9656,
-  rtriltri: 10702,
-  RuleDelayed: 10740,
-  ruluhar: 10600,
-  rx: 8478,
-  Sacute: 346,
-  sacute: 347,
-  sbquo: 8218,
-  scap: 10936,
-  Scaron: 352,
-  scaron: 353,
-  Sc: 10940,
-  sc: 8827,
-  sccue: 8829,
-  sce: 10928,
-  scE: 10932,
-  Scedil: 350,
-  scedil: 351,
-  Scirc: 348,
-  scirc: 349,
-  scnap: 10938,
-  scnE: 10934,
-  scnsim: 8937,
-  scpolint: 10771,
-  scsim: 8831,
-  Scy: 1057,
-  scy: 1089,
-  sdotb: 8865,
-  sdot: 8901,
-  sdote: 10854,
-  searhk: 10533,
-  searr: 8600,
-  seArr: 8664,
-  searrow: 8600,
-  sect: 167,
-  semi: 59,
-  seswar: 10537,
-  setminus: 8726,
-  setmn: 8726,
-  sext: 10038,
-  Sfr: 55349,
-  sfr: 55349,
-  sfrown: 8994,
-  sharp: 9839,
-  SHCHcy: 1065,
-  shchcy: 1097,
-  SHcy: 1064,
-  shcy: 1096,
-  ShortDownArrow: 8595,
-  ShortLeftArrow: 8592,
-  shortmid: 8739,
-  shortparallel: 8741,
-  ShortRightArrow: 8594,
-  ShortUpArrow: 8593,
-  shy: 173,
-  Sigma: 931,
-  sigma: 963,
-  sigmaf: 962,
-  sigmav: 962,
-  sim: 8764,
-  simdot: 10858,
-  sime: 8771,
-  simeq: 8771,
-  simg: 10910,
-  simgE: 10912,
-  siml: 10909,
-  simlE: 10911,
-  simne: 8774,
-  simplus: 10788,
-  simrarr: 10610,
-  slarr: 8592,
-  SmallCircle: 8728,
-  smallsetminus: 8726,
-  smashp: 10803,
-  smeparsl: 10724,
-  smid: 8739,
-  smile: 8995,
-  smt: 10922,
-  smte: 10924,
-  smtes: 10924,
-  SOFTcy: 1068,
-  softcy: 1100,
-  solbar: 9023,
-  solb: 10692,
-  sol: 47,
-  Sopf: 55349,
-  sopf: 55349,
-  spades: 9824,
-  spadesuit: 9824,
-  spar: 8741,
-  sqcap: 8851,
-  sqcaps: 8851,
-  sqcup: 8852,
-  sqcups: 8852,
-  Sqrt: 8730,
-  sqsub: 8847,
-  sqsube: 8849,
-  sqsubset: 8847,
-  sqsubseteq: 8849,
-  sqsup: 8848,
-  sqsupe: 8850,
-  sqsupset: 8848,
-  sqsupseteq: 8850,
-  square: 9633,
-  Square: 9633,
-  SquareIntersection: 8851,
-  SquareSubset: 8847,
-  SquareSubsetEqual: 8849,
-  SquareSuperset: 8848,
-  SquareSupersetEqual: 8850,
-  SquareUnion: 8852,
-  squarf: 9642,
-  squ: 9633,
-  squf: 9642,
-  srarr: 8594,
-  Sscr: 55349,
-  sscr: 55349,
-  ssetmn: 8726,
-  ssmile: 8995,
-  sstarf: 8902,
-  Star: 8902,
-  star: 9734,
-  starf: 9733,
-  straightepsilon: 1013,
-  straightphi: 981,
-  strns: 175,
-  sub: 8834,
-  Sub: 8912,
-  subdot: 10941,
-  subE: 10949,
-  sube: 8838,
-  subedot: 10947,
-  submult: 10945,
-  subnE: 10955,
-  subne: 8842,
-  subplus: 10943,
-  subrarr: 10617,
-  subset: 8834,
-  Subset: 8912,
-  subseteq: 8838,
-  subseteqq: 10949,
-  SubsetEqual: 8838,
-  subsetneq: 8842,
-  subsetneqq: 10955,
-  subsim: 10951,
-  subsub: 10965,
-  subsup: 10963,
-  succapprox: 10936,
-  succ: 8827,
-  succcurlyeq: 8829,
-  Succeeds: 8827,
-  SucceedsEqual: 10928,
-  SucceedsSlantEqual: 8829,
-  SucceedsTilde: 8831,
-  succeq: 10928,
-  succnapprox: 10938,
-  succneqq: 10934,
-  succnsim: 8937,
-  succsim: 8831,
-  SuchThat: 8715,
-  sum: 8721,
-  Sum: 8721,
-  sung: 9834,
-  sup1: 185,
-  sup2: 178,
-  sup3: 179,
-  sup: 8835,
-  Sup: 8913,
-  supdot: 10942,
-  supdsub: 10968,
-  supE: 10950,
-  supe: 8839,
-  supedot: 10948,
-  Superset: 8835,
-  SupersetEqual: 8839,
-  suphsol: 10185,
-  suphsub: 10967,
-  suplarr: 10619,
-  supmult: 10946,
-  supnE: 10956,
-  supne: 8843,
-  supplus: 10944,
-  supset: 8835,
-  Supset: 8913,
-  supseteq: 8839,
-  supseteqq: 10950,
-  supsetneq: 8843,
-  supsetneqq: 10956,
-  supsim: 10952,
-  supsub: 10964,
-  supsup: 10966,
-  swarhk: 10534,
-  swarr: 8601,
-  swArr: 8665,
-  swarrow: 8601,
-  swnwar: 10538,
-  szlig: 223,
-  Tab: NaN,
-  target: 8982,
-  Tau: 932,
-  tau: 964,
-  tbrk: 9140,
-  Tcaron: 356,
-  tcaron: 357,
-  Tcedil: 354,
-  tcedil: 355,
-  Tcy: 1058,
-  tcy: 1090,
-  tdot: 8411,
-  telrec: 8981,
-  Tfr: 55349,
-  tfr: 55349,
-  there4: 8756,
-  therefore: 8756,
-  Therefore: 8756,
-  Theta: 920,
-  theta: 952,
-  thetasym: 977,
-  thetav: 977,
-  thickapprox: 8776,
-  thicksim: 8764,
-  ThickSpace: 8287,
-  ThinSpace: 8201,
-  thinsp: 8201,
-  thkap: 8776,
-  thksim: 8764,
-  THORN: 222,
-  thorn: 254,
-  tilde: 732,
-  Tilde: 8764,
-  TildeEqual: 8771,
-  TildeFullEqual: 8773,
-  TildeTilde: 8776,
-  timesbar: 10801,
-  timesb: 8864,
-  times: 215,
-  timesd: 10800,
-  tint: 8749,
-  toea: 10536,
-  topbot: 9014,
-  topcir: 10993,
-  top: 8868,
-  Topf: 55349,
-  topf: 55349,
-  topfork: 10970,
-  tosa: 10537,
-  tprime: 8244,
-  trade: 8482,
-  TRADE: 8482,
-  triangle: 9653,
-  triangledown: 9663,
-  triangleleft: 9667,
-  trianglelefteq: 8884,
-  triangleq: 8796,
-  triangleright: 9657,
-  trianglerighteq: 8885,
-  tridot: 9708,
-  trie: 8796,
-  triminus: 10810,
-  TripleDot: 8411,
-  triplus: 10809,
-  trisb: 10701,
-  tritime: 10811,
-  trpezium: 9186,
-  Tscr: 55349,
-  tscr: 55349,
-  TScy: 1062,
-  tscy: 1094,
-  TSHcy: 1035,
-  tshcy: 1115,
-  Tstrok: 358,
-  tstrok: 359,
-  twixt: 8812,
-  twoheadleftarrow: 8606,
-  twoheadrightarrow: 8608,
-  Uacute: 218,
-  uacute: 250,
-  uarr: 8593,
-  Uarr: 8607,
-  uArr: 8657,
-  Uarrocir: 10569,
-  Ubrcy: 1038,
-  ubrcy: 1118,
-  Ubreve: 364,
-  ubreve: 365,
-  Ucirc: 219,
-  ucirc: 251,
-  Ucy: 1059,
-  ucy: 1091,
-  udarr: 8645,
-  Udblac: 368,
-  udblac: 369,
-  udhar: 10606,
-  ufisht: 10622,
-  Ufr: 55349,
-  ufr: 55349,
-  Ugrave: 217,
-  ugrave: 249,
-  uHar: 10595,
-  uharl: 8639,
-  uharr: 8638,
-  uhblk: 9600,
-  ulcorn: 8988,
-  ulcorner: 8988,
-  ulcrop: 8975,
-  ultri: 9720,
-  Umacr: 362,
-  umacr: 363,
-  uml: 168,
-  UnderBar: 95,
-  UnderBrace: 9183,
-  UnderBracket: 9141,
-  UnderParenthesis: 9181,
-  Union: 8899,
-  UnionPlus: 8846,
-  Uogon: 370,
-  uogon: 371,
-  Uopf: 55349,
-  uopf: 55349,
-  UpArrowBar: 10514,
-  uparrow: 8593,
-  UpArrow: 8593,
-  Uparrow: 8657,
-  UpArrowDownArrow: 8645,
-  updownarrow: 8597,
-  UpDownArrow: 8597,
-  Updownarrow: 8661,
-  UpEquilibrium: 10606,
-  upharpoonleft: 8639,
-  upharpoonright: 8638,
-  uplus: 8846,
-  UpperLeftArrow: 8598,
-  UpperRightArrow: 8599,
-  upsi: 965,
-  Upsi: 978,
-  upsih: 978,
-  Upsilon: 933,
-  upsilon: 965,
-  UpTeeArrow: 8613,
-  UpTee: 8869,
-  upuparrows: 8648,
-  urcorn: 8989,
-  urcorner: 8989,
-  urcrop: 8974,
-  Uring: 366,
-  uring: 367,
-  urtri: 9721,
-  Uscr: 55349,
-  uscr: 55349,
-  utdot: 8944,
-  Utilde: 360,
-  utilde: 361,
-  utri: 9653,
-  utrif: 9652,
-  uuarr: 8648,
-  Uuml: 220,
-  uuml: 252,
-  uwangle: 10663,
-  vangrt: 10652,
-  varepsilon: 1013,
-  varkappa: 1008,
-  varnothing: 8709,
-  varphi: 981,
-  varpi: 982,
-  varpropto: 8733,
-  varr: 8597,
-  vArr: 8661,
-  varrho: 1009,
-  varsigma: 962,
-  varsubsetneq: 8842,
-  varsubsetneqq: 10955,
-  varsupsetneq: 8843,
-  varsupsetneqq: 10956,
-  vartheta: 977,
-  vartriangleleft: 8882,
-  vartriangleright: 8883,
-  vBar: 10984,
-  Vbar: 10987,
-  vBarv: 10985,
-  Vcy: 1042,
-  vcy: 1074,
-  vdash: 8866,
-  vDash: 8872,
-  Vdash: 8873,
-  VDash: 8875,
-  Vdashl: 10982,
-  veebar: 8891,
-  vee: 8744,
-  Vee: 8897,
-  veeeq: 8794,
-  vellip: 8942,
-  verbar: 124,
-  Verbar: 8214,
-  vert: 124,
-  Vert: 8214,
-  VerticalBar: 8739,
-  VerticalLine: 124,
-  VerticalSeparator: 10072,
-  VerticalTilde: 8768,
-  VeryThinSpace: 8202,
-  Vfr: 55349,
-  vfr: 55349,
-  vltri: 8882,
-  vnsub: 8834,
-  vnsup: 8835,
-  Vopf: 55349,
-  vopf: 55349,
-  vprop: 8733,
-  vrtri: 8883,
-  Vscr: 55349,
-  vscr: 55349,
-  vsubnE: 10955,
-  vsubne: 8842,
-  vsupnE: 10956,
-  vsupne: 8843,
-  Vvdash: 8874,
-  vzigzag: 10650,
-  Wcirc: 372,
-  wcirc: 373,
-  wedbar: 10847,
-  wedge: 8743,
-  Wedge: 8896,
-  wedgeq: 8793,
-  weierp: 8472,
-  Wfr: 55349,
-  wfr: 55349,
-  Wopf: 55349,
-  wopf: 55349,
-  wp: 8472,
-  wr: 8768,
-  wreath: 8768,
-  Wscr: 55349,
-  wscr: 55349,
-  xcap: 8898,
-  xcirc: 9711,
-  xcup: 8899,
-  xdtri: 9661,
-  Xfr: 55349,
-  xfr: 55349,
-  xharr: 10231,
-  xhArr: 10234,
-  Xi: 926,
-  xi: 958,
-  xlarr: 10229,
-  xlArr: 10232,
-  xmap: 10236,
-  xnis: 8955,
-  xodot: 10752,
-  Xopf: 55349,
-  xopf: 55349,
-  xoplus: 10753,
-  xotime: 10754,
-  xrarr: 10230,
-  xrArr: 10233,
-  Xscr: 55349,
-  xscr: 55349,
-  xsqcup: 10758,
-  xuplus: 10756,
-  xutri: 9651,
-  xvee: 8897,
-  xwedge: 8896,
-  Yacute: 221,
-  yacute: 253,
-  YAcy: 1071,
-  yacy: 1103,
-  Ycirc: 374,
-  ycirc: 375,
-  Ycy: 1067,
-  ycy: 1099,
-  yen: 165,
-  Yfr: 55349,
-  yfr: 55349,
-  YIcy: 1031,
-  yicy: 1111,
-  Yopf: 55349,
-  yopf: 55349,
-  Yscr: 55349,
-  yscr: 55349,
-  YUcy: 1070,
-  yucy: 1102,
-  yuml: 255,
-  Yuml: 376,
-  Zacute: 377,
-  zacute: 378,
-  Zcaron: 381,
-  zcaron: 382,
-  Zcy: 1047,
-  zcy: 1079,
-  Zdot: 379,
-  zdot: 380,
-  zeetrf: 8488,
-  ZeroWidthSpace: 8203,
-  Zeta: 918,
-  zeta: 950,
-  zfr: 55349,
-  Zfr: 8488,
-  ZHcy: 1046,
-  zhcy: 1078,
-  zigrarr: 8669,
-  zopf: 55349,
-  Zopf: 8484,
-  Zscr: 55349,
-  zscr: 55349,
-  zwj: 8205,
-  zwnj: 8204 };
-
-var entityToChar = function(m) {
-    var isNumeric = m.slice(0, 2) === "&#";
-    var c;
-    var isHex = isNumeric && (c = m.slice(2, 3)) && (c === 'X' || c === 'x');
-    var uchar;
-    var ucode;
-    if (isNumeric) {
-        var num;
-        if (isHex) {
-            num = parseInt(m.slice(3, m.length - 1), 16);
-        } else {
-            num = parseInt(m.slice(2, m.length - 1), 10);
-        }
-        if (num === 0) {
-            uchar = '\uFFFD';
-        } else {
-            uchar = fromCodePoint(num);
-        }
-    } else {
-        ucode = entities[m.slice(1, m.length - 1)];
-        if (ucode) {
-            uchar = fromCodePoint(entities[m.slice(1, m.length - 1)]);
-        }
-    }
-    return (uchar || m);
-};
-
-module.exports.entityToChar = entityToChar;
-
-},{"./from-code-point":5}],8:[function(require,module,exports){
+},{"./common":2}],5:[function(require,module,exports){
 "use strict";
 
 // commonmark.js - CommomMark in JavaScript
@@ -3588,7 +1306,7 @@ module.exports.Parser = require('./blocks');
 module.exports.HtmlRenderer = require('./html');
 module.exports.XmlRenderer = require('./xml');
 
-},{"./blocks":1,"./html":6,"./node":10,"./xml":12}],9:[function(require,module,exports){
+},{"./blocks":1,"./html":4,"./node":7,"./xml":9}],6:[function(require,module,exports){
 "use strict";
 
 var Node = require('./node');
@@ -3598,7 +1316,8 @@ var normalizeReference = require('./normalize-reference');
 var normalizeURI = common.normalizeURI;
 var unescapeString = common.unescapeString;
 var fromCodePoint = require('./from-code-point.js');
-var entityToChar = require('./html5-entities.js').entityToChar;
+var decodeHTML = require('entities').decodeHTML;
+require('string.prototype.repeat'); // Polyfill for String.prototype.repeat
 
 // Constants for character codes:
 
@@ -3623,28 +1342,12 @@ var C_DOUBLEQUOTE = 34;
 var ESCAPABLE = common.ESCAPABLE;
 var ESCAPED_CHAR = '\\\\' + ESCAPABLE;
 var REG_CHAR = '[^\\\\()\\x00-\\x20]';
-var IN_PARENS_NOSP = '\\((' + REG_CHAR + '|' + ESCAPED_CHAR + ')*\\)';
-var TAGNAME = '[A-Za-z][A-Za-z0-9]*';
-var ATTRIBUTENAME = '[a-zA-Z_:][a-zA-Z0-9:._-]*';
-var UNQUOTEDVALUE = "[^\"'=<>`\\x00-\\x20]+";
-var SINGLEQUOTEDVALUE = "'[^']*'";
-var DOUBLEQUOTEDVALUE = '"[^"]*"';
-var ATTRIBUTEVALUE = "(?:" + UNQUOTEDVALUE + "|" + SINGLEQUOTEDVALUE + "|" + DOUBLEQUOTEDVALUE + ")";
-var ATTRIBUTEVALUESPEC = "(?:" + "\\s*=" + "\\s*" + ATTRIBUTEVALUE + ")";
-var ATTRIBUTE = "(?:" + "\\s+" + ATTRIBUTENAME + ATTRIBUTEVALUESPEC + "?)";
-var OPENTAG = "<" + TAGNAME + ATTRIBUTE + "*" + "\\s*/?>";
-var CLOSETAG = "</" + TAGNAME + "\\s*[>]";
-var HTMLCOMMENT = "<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->";
-var PROCESSINGINSTRUCTION = "[<][?].*?[?][>]";
-var DECLARATION = "<![A-Z]+" + "\\s+[^>]*>";
-var CDATA = "<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";
-var HTMLTAG = "(?:" + OPENTAG + "|" + CLOSETAG + "|" + HTMLCOMMENT + "|" +
-        PROCESSINGINSTRUCTION + "|" + DECLARATION + "|" + CDATA + ")";
+var IN_PARENS_NOSP = '\\((' + REG_CHAR + '|' + ESCAPED_CHAR + '|\\\\)*\\)';
+
 var ENTITY = common.ENTITY;
+var reHtmlTag = common.reHtmlTag;
 
 var rePunctuation = new RegExp(/^[\u2000-\u206F\u2E00-\u2E7F\\'!"#\$%&\(\)\*\+,\-\.\/:;<=>\?@\[\]\^_`\{\|\}~]/);
-
-var reHtmlTag = new RegExp('^' + HTMLTAG, 'i');
 
 var reLinkTitle = new RegExp(
     '^(?:"(' + ESCAPED_CHAR + '|[^"\\x00])*"' +
@@ -3657,7 +1360,7 @@ var reLinkDestinationBraces = new RegExp(
     '^(?:[<](?:[^<>\\n\\\\\\x00]' + '|' + ESCAPED_CHAR + '|' + '\\\\)*[>])');
 
 var reLinkDestination = new RegExp(
-    '^(?:' + REG_CHAR + '+|' + ESCAPED_CHAR + '|' + IN_PARENS_NOSP + ')*');
+    '^(?:' + REG_CHAR + '+|' + ESCAPED_CHAR + '|\\\\|' + IN_PARENS_NOSP + ')*');
 
 var reEscapable = new RegExp('^' + ESCAPABLE);
 
@@ -3669,7 +1372,7 @@ var reTicksHere = /^`+/;
 
 var reEllipses = /\.\.\./g;
 
-var reDash = /---?/g;
+var reDash = /--+/g;
 
 var reEmailAutolink = /^<([a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)>/;
 
@@ -3687,7 +1390,8 @@ var reInitialSpace = /^ */;
 
 var reSpaceAtEndOfLine = /^ *(?:\n|$)/;
 
-var reLinkLabel = /^\[(?:[^\\\[\]]|\\[\[\]]){0,1000}\]/;
+var reLinkLabel = new RegExp('^\\[(?:[^\\\\\\[\\]]|' + ESCAPED_CHAR +
+  '|\\\\){0,1000}\\]');
 
 // Matches a string of non-special characters.
 var reMain = /^[^\n`\[\]\\!<&*_'"]+/m;
@@ -3938,11 +1642,18 @@ var removeDelimitersBetween = function(bottom, top) {
 };
 
 var processEmphasis = function(stack_bottom) {
-    var opener, closer;
+    var opener, closer, old_closer;
     var opener_inl, closer_inl;
     var tempstack;
     var use_delims;
     var tmp, next;
+    var opener_found;
+    var openers_bottom = [];
+
+    openers_bottom[C_UNDERSCORE] = stack_bottom;
+    openers_bottom[C_ASTERISK] = stack_bottom;
+    openers_bottom[C_SINGLEQUOTE] = stack_bottom;
+    openers_bottom[C_DOUBLEQUOTE] = stack_bottom;
 
     // find first closer above stack_bottom:
     closer = this.delimiters;
@@ -3960,14 +1671,19 @@ var processEmphasis = function(stack_bottom) {
         } else {
             // found emphasis closer. now look back for first matching opener:
             opener = closer.previous;
-            while (opener !== null && opener !== stack_bottom) {
+            opener_found = false;
+            while (opener !== null && opener !== stack_bottom &&
+                   opener !== openers_bottom[closercc]) {
                 if (opener.cc === closer.cc && opener.can_open) {
+                    opener_found = true;
                     break;
                 }
                 opener = opener.previous;
             }
+            old_closer = closer;
+
             if (closercc === C_ASTERISK || closercc === C_UNDERSCORE) {
-                if (opener === null || opener === stack_bottom) {
+                if (!opener_found) {
                     closer = closer.next;
                 } else {
                     // calculate actual number of delimiters used from closer
@@ -4024,26 +1740,34 @@ var processEmphasis = function(stack_bottom) {
 
             } else if (closercc === C_SINGLEQUOTE) {
                 closer.node._literal = "\u2019";
-                if (opener !== null && opener !== stack_bottom) {
+                if (opener_found) {
                     opener.node._literal = "\u2018";
                 }
                 closer = closer.next;
 
             } else if (closercc === C_DOUBLEQUOTE) {
                 closer.node._literal = "\u201D";
-                if (opener !== null && opener !== stack_bottom) {
+                if (opener_found) {
                     opener.node.literal = "\u201C";
                 }
                 closer = closer.next;
 
             }
-
+            if (!opener_found) {
+                // Set lower bound for future searches for openers:
+                openers_bottom[closercc] = old_closer.previous;
+                if (!old_closer.can_open) {
+                    // We can remove a closer that can't be an opener,
+                    // once we've seen there's no matching opener:
+                    this.removeDelimiter(old_closer);
+                }
+            }
         }
 
     }
 
     // remove all delimiters
-    while (this.delimiters !== stack_bottom) {
+    while (this.delimiters !== null && this.delimiters !== stack_bottom) {
         this.removeDelimiter(this.delimiters);
     }
 };
@@ -4079,7 +1803,11 @@ var parseLinkDestination = function() {
 // Attempt to parse a link label, returning number of characters parsed.
 var parseLinkLabel = function() {
     var m = this.match(reLinkLabel);
-    return m === null ? 0 : m.length;
+    if (m === null || m.length > 1001) {
+        return 0;
+    } else {
+        return m.length;
+    }
 };
 
 // Add open bracket to delimiter stack and add a text node to block's children.
@@ -4271,7 +1999,7 @@ var parseCloseBracket = function(block) {
 var parseEntity = function(block) {
     var m;
     if ((m = this.match(reEntityHere))) {
-        block.appendChild(text(entityToChar(m)));
+        block.appendChild(text(decodeHTML(m)));
         return true;
     } else {
         return false;
@@ -4287,7 +2015,20 @@ var parseString = function(block) {
             block.appendChild(text(
                 m.replace(reEllipses, "\u2026")
                     .replace(reDash, function(chars) {
-                        return (chars.length === 3) ? "\u2014" : "\u2013";
+                        var enCount = 0;
+                        var emCount = 0;
+                        if (chars.length % 3 === 0) { // If divisible by 3, use all em dashes
+                            emCount = chars.length / 3;
+                        } else if (chars.length % 2 === 0) { // If divisible by 2, use all en dashes
+                            enCount = chars.length / 2;
+                        } else if (chars.length % 3 === 2) { // If 2 extra dashes, use en dash for last 2; em dashes for rest
+                            enCount = 1;
+                            emCount = (chars.length - 2) / 3;
+                        } else { // Use en dashes for last 4 hyphens; em dashes for rest
+                            enCount = 2;
+                            emCount = (chars.length - 4) / 3;
+                        }
+                        return "\u2014".repeat(emCount) + "\u2013".repeat(enCount);
                     })));
         } else {
             block.appendChild(text(m));
@@ -4360,7 +2101,23 @@ var parseReference = function(s, refmap) {
     }
 
     // make sure we're at line end:
+    var atLineEnd = true;
     if (this.match(reSpaceAtEndOfLine) === null) {
+        if (title === '') {
+            atLineEnd = false;
+        } else {
+            // the potential title we found is not at the line end,
+            // but it could still be a legal link reference if we
+            // discard the title
+            title = '';
+            // rewind before spaces
+            this.pos = beforetitle;
+            // and instead check if the link URL is at the line end
+            atLineEnd = this.match(reSpaceAtEndOfLine) !== null;
+        }
+    }
+
+    if (!atLineEnd) {
         this.pos = startpos;
         return 0;
     }
@@ -4480,7 +2237,7 @@ function InlineParser(options){
 
 module.exports = InlineParser;
 
-},{"./common":2,"./from-code-point.js":5,"./html5-entities.js":7,"./node":10,"./normalize-reference":11}],10:[function(require,module,exports){
+},{"./common":2,"./from-code-point.js":3,"./node":7,"./normalize-reference":8,"entities":10,"string.prototype.repeat":20}],7:[function(require,module,exports){
 "use strict";
 
 function isContainer(node) {
@@ -4739,7 +2496,7 @@ module.exports = Node;
 
  */
 
-},{}],11:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 /* The bulk of this code derives from https://github.com/dmoscrop/fold-case
@@ -4783,7 +2540,7 @@ module.exports = function(string) {
     });
 };
 
-},{}],12:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 var escapeXml = require('./common').escapeXml;
@@ -4842,7 +2599,7 @@ var renderNodes = function(block) {
         if (lastOut !== '\n') {
             buffer += '\n';
             lastOut = '\n';
-            for (var i = indentLevel; i--;) {
+            for (var i = indentLevel; i > 0; i--) {
                 buffer += indent;
             }
         }
@@ -4862,7 +2619,7 @@ var renderNodes = function(block) {
 
         container = node.isContainer;
         selfClosing = nodetype === 'HorizontalRule' || nodetype === 'Hardbreak' ||
-            nodetype === 'Softbreak' || nodetype === 'Image';
+            nodetype === 'Softbreak';
         unescapedContents = nodetype === 'Html' || nodetype === 'HtmlInline';
         tagname = toTagName(nodetype);
 
@@ -4956,5 +2713,501 @@ function XmlRenderer(options){
 
 module.exports = XmlRenderer;
 
-},{"./common":2}]},{},[8])(8)
+},{"./common":2}],10:[function(require,module,exports){
+var encode = require("./lib/encode.js"),
+    decode = require("./lib/decode.js");
+
+exports.decode = function(data, level){
+	return (!level || level <= 0 ? decode.XML : decode.HTML)(data);
+};
+
+exports.decodeStrict = function(data, level){
+	return (!level || level <= 0 ? decode.XML : decode.HTMLStrict)(data);
+};
+
+exports.encode = function(data, level){
+	return (!level || level <= 0 ? encode.XML : encode.HTML)(data);
+};
+
+exports.encodeXML = encode.XML;
+
+exports.encodeHTML4 =
+exports.encodeHTML5 =
+exports.encodeHTML  = encode.HTML;
+
+exports.decodeXML =
+exports.decodeXMLStrict = decode.XML;
+
+exports.decodeHTML4 =
+exports.decodeHTML5 =
+exports.decodeHTML = decode.HTML;
+
+exports.decodeHTML4Strict =
+exports.decodeHTML5Strict =
+exports.decodeHTMLStrict = decode.HTMLStrict;
+
+exports.escape = encode.escape;
+
+},{"./lib/decode.js":11,"./lib/encode.js":13}],11:[function(require,module,exports){
+var entityMap = require("../maps/entities.json"),
+    legacyMap = require("../maps/legacy.json"),
+    xmlMap    = require("../maps/xml.json"),
+    decodeCodePoint = require("./decode_codepoint.js");
+
+var decodeXMLStrict  = getStrictDecoder(xmlMap),
+    decodeHTMLStrict = getStrictDecoder(entityMap);
+
+function getStrictDecoder(map){
+	var keys = Object.keys(map).join("|"),
+	    replace = getReplacer(map);
+
+	keys += "|#[xX][\\da-fA-F]+|#\\d+";
+
+	var re = new RegExp("&(?:" + keys + ");", "g");
+
+	return function(str){
+		return String(str).replace(re, replace);
+	};
+}
+
+var decodeHTML = (function(){
+	var legacy = Object.keys(legacyMap)
+		.sort(sorter);
+
+	var keys = Object.keys(entityMap)
+		.sort(sorter);
+
+	for(var i = 0, j = 0; i < keys.length; i++){
+		if(legacy[j] === keys[i]){
+			keys[i] += ";?";
+			j++;
+		} else {
+			keys[i] += ";";
+		}
+	}
+
+	var re = new RegExp("&(?:" + keys.join("|") + "|#[xX][\\da-fA-F]+;?|#\\d+;?)", "g"),
+	    replace = getReplacer(entityMap);
+
+	function replacer(str){
+		if(str.substr(-1) !== ";") str += ";";
+		return replace(str);
+	}
+
+	//TODO consider creating a merged map
+	return function(str){
+		return String(str).replace(re, replacer);
+	};
+}());
+
+function sorter(a, b){
+	return a < b ? 1 : -1;
+}
+
+function getReplacer(map){
+	return function replace(str){
+		if(str.charAt(1) === "#"){
+			if(str.charAt(2) === "X" || str.charAt(2) === "x"){
+				return decodeCodePoint(parseInt(str.substr(3), 16));
+			}
+			return decodeCodePoint(parseInt(str.substr(2), 10));
+		}
+		return map[str.slice(1, -1)];
+	};
+}
+
+module.exports = {
+	XML: decodeXMLStrict,
+	HTML: decodeHTML,
+	HTMLStrict: decodeHTMLStrict
+};
+},{"../maps/entities.json":15,"../maps/legacy.json":16,"../maps/xml.json":17,"./decode_codepoint.js":12}],12:[function(require,module,exports){
+var decodeMap = require("../maps/decode.json");
+
+module.exports = decodeCodePoint;
+
+// modified version of https://github.com/mathiasbynens/he/blob/master/src/he.js#L94-L119
+function decodeCodePoint(codePoint){
+
+	if((codePoint >= 0xD800 && codePoint <= 0xDFFF) || codePoint > 0x10FFFF){
+		return "\uFFFD";
+	}
+
+	if(codePoint in decodeMap){
+		codePoint = decodeMap[codePoint];
+	}
+
+	var output = "";
+
+	if(codePoint > 0xFFFF){
+		codePoint -= 0x10000;
+		output += String.fromCharCode(codePoint >>> 10 & 0x3FF | 0xD800);
+		codePoint = 0xDC00 | codePoint & 0x3FF;
+	}
+
+	output += String.fromCharCode(codePoint);
+	return output;
+}
+
+},{"../maps/decode.json":14}],13:[function(require,module,exports){
+var inverseXML = getInverseObj(require("../maps/xml.json")),
+    xmlReplacer = getInverseReplacer(inverseXML);
+
+exports.XML = getInverse(inverseXML, xmlReplacer);
+
+var inverseHTML = getInverseObj(require("../maps/entities.json")),
+    htmlReplacer = getInverseReplacer(inverseHTML);
+
+exports.HTML = getInverse(inverseHTML, htmlReplacer);
+
+function getInverseObj(obj){
+	return Object.keys(obj).sort().reduce(function(inverse, name){
+		inverse[obj[name]] = "&" + name + ";";
+		return inverse;
+	}, {});
+}
+
+function getInverseReplacer(inverse){
+	var single = [],
+	    multiple = [];
+
+	Object.keys(inverse).forEach(function(k){
+		if(k.length === 1){
+			single.push("\\" + k);
+		} else {
+			multiple.push(k);
+		}
+	});
+
+	//TODO add ranges
+	multiple.unshift("[" + single.join("") + "]");
+
+	return new RegExp(multiple.join("|"), "g");
+}
+
+var re_nonASCII = /[^\0-\x7F]/g,
+    re_astralSymbols = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+
+function singleCharReplacer(c){
+	return "&#x" + c.charCodeAt(0).toString(16).toUpperCase() + ";";
+}
+
+function astralReplacer(c){
+	// http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+	var high = c.charCodeAt(0);
+	var low  = c.charCodeAt(1);
+	var codePoint = (high - 0xD800) * 0x400 + low - 0xDC00 + 0x10000;
+	return "&#x" + codePoint.toString(16).toUpperCase() + ";";
+}
+
+function getInverse(inverse, re){
+	function func(name){
+		return inverse[name];
+	}
+
+	return function(data){
+		return data
+				.replace(re, func)
+				.replace(re_astralSymbols, astralReplacer)
+				.replace(re_nonASCII, singleCharReplacer);
+	};
+}
+
+var re_xmlChars = getInverseReplacer(inverseXML);
+
+function escapeXML(data){
+	return data
+			.replace(re_xmlChars, singleCharReplacer)
+			.replace(re_astralSymbols, astralReplacer)
+			.replace(re_nonASCII, singleCharReplacer);
+}
+
+exports.escape = escapeXML;
+
+},{"../maps/entities.json":15,"../maps/xml.json":17}],14:[function(require,module,exports){
+module.exports={"0":65533,"128":8364,"130":8218,"131":402,"132":8222,"133":8230,"134":8224,"135":8225,"136":710,"137":8240,"138":352,"139":8249,"140":338,"142":381,"145":8216,"146":8217,"147":8220,"148":8221,"149":8226,"150":8211,"151":8212,"152":732,"153":8482,"154":353,"155":8250,"156":339,"158":382,"159":376}
+},{}],15:[function(require,module,exports){
+module.exports={"Aacute":"\u00C1","aacute":"\u00E1","Abreve":"\u0102","abreve":"\u0103","ac":"\u223E","acd":"\u223F","acE":"\u223E\u0333","Acirc":"\u00C2","acirc":"\u00E2","acute":"\u00B4","Acy":"\u0410","acy":"\u0430","AElig":"\u00C6","aelig":"\u00E6","af":"\u2061","Afr":"\uD835\uDD04","afr":"\uD835\uDD1E","Agrave":"\u00C0","agrave":"\u00E0","alefsym":"\u2135","aleph":"\u2135","Alpha":"\u0391","alpha":"\u03B1","Amacr":"\u0100","amacr":"\u0101","amalg":"\u2A3F","amp":"&","AMP":"&","andand":"\u2A55","And":"\u2A53","and":"\u2227","andd":"\u2A5C","andslope":"\u2A58","andv":"\u2A5A","ang":"\u2220","ange":"\u29A4","angle":"\u2220","angmsdaa":"\u29A8","angmsdab":"\u29A9","angmsdac":"\u29AA","angmsdad":"\u29AB","angmsdae":"\u29AC","angmsdaf":"\u29AD","angmsdag":"\u29AE","angmsdah":"\u29AF","angmsd":"\u2221","angrt":"\u221F","angrtvb":"\u22BE","angrtvbd":"\u299D","angsph":"\u2222","angst":"\u00C5","angzarr":"\u237C","Aogon":"\u0104","aogon":"\u0105","Aopf":"\uD835\uDD38","aopf":"\uD835\uDD52","apacir":"\u2A6F","ap":"\u2248","apE":"\u2A70","ape":"\u224A","apid":"\u224B","apos":"'","ApplyFunction":"\u2061","approx":"\u2248","approxeq":"\u224A","Aring":"\u00C5","aring":"\u00E5","Ascr":"\uD835\uDC9C","ascr":"\uD835\uDCB6","Assign":"\u2254","ast":"*","asymp":"\u2248","asympeq":"\u224D","Atilde":"\u00C3","atilde":"\u00E3","Auml":"\u00C4","auml":"\u00E4","awconint":"\u2233","awint":"\u2A11","backcong":"\u224C","backepsilon":"\u03F6","backprime":"\u2035","backsim":"\u223D","backsimeq":"\u22CD","Backslash":"\u2216","Barv":"\u2AE7","barvee":"\u22BD","barwed":"\u2305","Barwed":"\u2306","barwedge":"\u2305","bbrk":"\u23B5","bbrktbrk":"\u23B6","bcong":"\u224C","Bcy":"\u0411","bcy":"\u0431","bdquo":"\u201E","becaus":"\u2235","because":"\u2235","Because":"\u2235","bemptyv":"\u29B0","bepsi":"\u03F6","bernou":"\u212C","Bernoullis":"\u212C","Beta":"\u0392","beta":"\u03B2","beth":"\u2136","between":"\u226C","Bfr":"\uD835\uDD05","bfr":"\uD835\uDD1F","bigcap":"\u22C2","bigcirc":"\u25EF","bigcup":"\u22C3","bigodot":"\u2A00","bigoplus":"\u2A01","bigotimes":"\u2A02","bigsqcup":"\u2A06","bigstar":"\u2605","bigtriangledown":"\u25BD","bigtriangleup":"\u25B3","biguplus":"\u2A04","bigvee":"\u22C1","bigwedge":"\u22C0","bkarow":"\u290D","blacklozenge":"\u29EB","blacksquare":"\u25AA","blacktriangle":"\u25B4","blacktriangledown":"\u25BE","blacktriangleleft":"\u25C2","blacktriangleright":"\u25B8","blank":"\u2423","blk12":"\u2592","blk14":"\u2591","blk34":"\u2593","block":"\u2588","bne":"=\u20E5","bnequiv":"\u2261\u20E5","bNot":"\u2AED","bnot":"\u2310","Bopf":"\uD835\uDD39","bopf":"\uD835\uDD53","bot":"\u22A5","bottom":"\u22A5","bowtie":"\u22C8","boxbox":"\u29C9","boxdl":"\u2510","boxdL":"\u2555","boxDl":"\u2556","boxDL":"\u2557","boxdr":"\u250C","boxdR":"\u2552","boxDr":"\u2553","boxDR":"\u2554","boxh":"\u2500","boxH":"\u2550","boxhd":"\u252C","boxHd":"\u2564","boxhD":"\u2565","boxHD":"\u2566","boxhu":"\u2534","boxHu":"\u2567","boxhU":"\u2568","boxHU":"\u2569","boxminus":"\u229F","boxplus":"\u229E","boxtimes":"\u22A0","boxul":"\u2518","boxuL":"\u255B","boxUl":"\u255C","boxUL":"\u255D","boxur":"\u2514","boxuR":"\u2558","boxUr":"\u2559","boxUR":"\u255A","boxv":"\u2502","boxV":"\u2551","boxvh":"\u253C","boxvH":"\u256A","boxVh":"\u256B","boxVH":"\u256C","boxvl":"\u2524","boxvL":"\u2561","boxVl":"\u2562","boxVL":"\u2563","boxvr":"\u251C","boxvR":"\u255E","boxVr":"\u255F","boxVR":"\u2560","bprime":"\u2035","breve":"\u02D8","Breve":"\u02D8","brvbar":"\u00A6","bscr":"\uD835\uDCB7","Bscr":"\u212C","bsemi":"\u204F","bsim":"\u223D","bsime":"\u22CD","bsolb":"\u29C5","bsol":"\\","bsolhsub":"\u27C8","bull":"\u2022","bullet":"\u2022","bump":"\u224E","bumpE":"\u2AAE","bumpe":"\u224F","Bumpeq":"\u224E","bumpeq":"\u224F","Cacute":"\u0106","cacute":"\u0107","capand":"\u2A44","capbrcup":"\u2A49","capcap":"\u2A4B","cap":"\u2229","Cap":"\u22D2","capcup":"\u2A47","capdot":"\u2A40","CapitalDifferentialD":"\u2145","caps":"\u2229\uFE00","caret":"\u2041","caron":"\u02C7","Cayleys":"\u212D","ccaps":"\u2A4D","Ccaron":"\u010C","ccaron":"\u010D","Ccedil":"\u00C7","ccedil":"\u00E7","Ccirc":"\u0108","ccirc":"\u0109","Cconint":"\u2230","ccups":"\u2A4C","ccupssm":"\u2A50","Cdot":"\u010A","cdot":"\u010B","cedil":"\u00B8","Cedilla":"\u00B8","cemptyv":"\u29B2","cent":"\u00A2","centerdot":"\u00B7","CenterDot":"\u00B7","cfr":"\uD835\uDD20","Cfr":"\u212D","CHcy":"\u0427","chcy":"\u0447","check":"\u2713","checkmark":"\u2713","Chi":"\u03A7","chi":"\u03C7","circ":"\u02C6","circeq":"\u2257","circlearrowleft":"\u21BA","circlearrowright":"\u21BB","circledast":"\u229B","circledcirc":"\u229A","circleddash":"\u229D","CircleDot":"\u2299","circledR":"\u00AE","circledS":"\u24C8","CircleMinus":"\u2296","CirclePlus":"\u2295","CircleTimes":"\u2297","cir":"\u25CB","cirE":"\u29C3","cire":"\u2257","cirfnint":"\u2A10","cirmid":"\u2AEF","cirscir":"\u29C2","ClockwiseContourIntegral":"\u2232","CloseCurlyDoubleQuote":"\u201D","CloseCurlyQuote":"\u2019","clubs":"\u2663","clubsuit":"\u2663","colon":":","Colon":"\u2237","Colone":"\u2A74","colone":"\u2254","coloneq":"\u2254","comma":",","commat":"@","comp":"\u2201","compfn":"\u2218","complement":"\u2201","complexes":"\u2102","cong":"\u2245","congdot":"\u2A6D","Congruent":"\u2261","conint":"\u222E","Conint":"\u222F","ContourIntegral":"\u222E","copf":"\uD835\uDD54","Copf":"\u2102","coprod":"\u2210","Coproduct":"\u2210","copy":"\u00A9","COPY":"\u00A9","copysr":"\u2117","CounterClockwiseContourIntegral":"\u2233","crarr":"\u21B5","cross":"\u2717","Cross":"\u2A2F","Cscr":"\uD835\uDC9E","cscr":"\uD835\uDCB8","csub":"\u2ACF","csube":"\u2AD1","csup":"\u2AD0","csupe":"\u2AD2","ctdot":"\u22EF","cudarrl":"\u2938","cudarrr":"\u2935","cuepr":"\u22DE","cuesc":"\u22DF","cularr":"\u21B6","cularrp":"\u293D","cupbrcap":"\u2A48","cupcap":"\u2A46","CupCap":"\u224D","cup":"\u222A","Cup":"\u22D3","cupcup":"\u2A4A","cupdot":"\u228D","cupor":"\u2A45","cups":"\u222A\uFE00","curarr":"\u21B7","curarrm":"\u293C","curlyeqprec":"\u22DE","curlyeqsucc":"\u22DF","curlyvee":"\u22CE","curlywedge":"\u22CF","curren":"\u00A4","curvearrowleft":"\u21B6","curvearrowright":"\u21B7","cuvee":"\u22CE","cuwed":"\u22CF","cwconint":"\u2232","cwint":"\u2231","cylcty":"\u232D","dagger":"\u2020","Dagger":"\u2021","daleth":"\u2138","darr":"\u2193","Darr":"\u21A1","dArr":"\u21D3","dash":"\u2010","Dashv":"\u2AE4","dashv":"\u22A3","dbkarow":"\u290F","dblac":"\u02DD","Dcaron":"\u010E","dcaron":"\u010F","Dcy":"\u0414","dcy":"\u0434","ddagger":"\u2021","ddarr":"\u21CA","DD":"\u2145","dd":"\u2146","DDotrahd":"\u2911","ddotseq":"\u2A77","deg":"\u00B0","Del":"\u2207","Delta":"\u0394","delta":"\u03B4","demptyv":"\u29B1","dfisht":"\u297F","Dfr":"\uD835\uDD07","dfr":"\uD835\uDD21","dHar":"\u2965","dharl":"\u21C3","dharr":"\u21C2","DiacriticalAcute":"\u00B4","DiacriticalDot":"\u02D9","DiacriticalDoubleAcute":"\u02DD","DiacriticalGrave":"`","DiacriticalTilde":"\u02DC","diam":"\u22C4","diamond":"\u22C4","Diamond":"\u22C4","diamondsuit":"\u2666","diams":"\u2666","die":"\u00A8","DifferentialD":"\u2146","digamma":"\u03DD","disin":"\u22F2","div":"\u00F7","divide":"\u00F7","divideontimes":"\u22C7","divonx":"\u22C7","DJcy":"\u0402","djcy":"\u0452","dlcorn":"\u231E","dlcrop":"\u230D","dollar":"$","Dopf":"\uD835\uDD3B","dopf":"\uD835\uDD55","Dot":"\u00A8","dot":"\u02D9","DotDot":"\u20DC","doteq":"\u2250","doteqdot":"\u2251","DotEqual":"\u2250","dotminus":"\u2238","dotplus":"\u2214","dotsquare":"\u22A1","doublebarwedge":"\u2306","DoubleContourIntegral":"\u222F","DoubleDot":"\u00A8","DoubleDownArrow":"\u21D3","DoubleLeftArrow":"\u21D0","DoubleLeftRightArrow":"\u21D4","DoubleLeftTee":"\u2AE4","DoubleLongLeftArrow":"\u27F8","DoubleLongLeftRightArrow":"\u27FA","DoubleLongRightArrow":"\u27F9","DoubleRightArrow":"\u21D2","DoubleRightTee":"\u22A8","DoubleUpArrow":"\u21D1","DoubleUpDownArrow":"\u21D5","DoubleVerticalBar":"\u2225","DownArrowBar":"\u2913","downarrow":"\u2193","DownArrow":"\u2193","Downarrow":"\u21D3","DownArrowUpArrow":"\u21F5","DownBreve":"\u0311","downdownarrows":"\u21CA","downharpoonleft":"\u21C3","downharpoonright":"\u21C2","DownLeftRightVector":"\u2950","DownLeftTeeVector":"\u295E","DownLeftVectorBar":"\u2956","DownLeftVector":"\u21BD","DownRightTeeVector":"\u295F","DownRightVectorBar":"\u2957","DownRightVector":"\u21C1","DownTeeArrow":"\u21A7","DownTee":"\u22A4","drbkarow":"\u2910","drcorn":"\u231F","drcrop":"\u230C","Dscr":"\uD835\uDC9F","dscr":"\uD835\uDCB9","DScy":"\u0405","dscy":"\u0455","dsol":"\u29F6","Dstrok":"\u0110","dstrok":"\u0111","dtdot":"\u22F1","dtri":"\u25BF","dtrif":"\u25BE","duarr":"\u21F5","duhar":"\u296F","dwangle":"\u29A6","DZcy":"\u040F","dzcy":"\u045F","dzigrarr":"\u27FF","Eacute":"\u00C9","eacute":"\u00E9","easter":"\u2A6E","Ecaron":"\u011A","ecaron":"\u011B","Ecirc":"\u00CA","ecirc":"\u00EA","ecir":"\u2256","ecolon":"\u2255","Ecy":"\u042D","ecy":"\u044D","eDDot":"\u2A77","Edot":"\u0116","edot":"\u0117","eDot":"\u2251","ee":"\u2147","efDot":"\u2252","Efr":"\uD835\uDD08","efr":"\uD835\uDD22","eg":"\u2A9A","Egrave":"\u00C8","egrave":"\u00E8","egs":"\u2A96","egsdot":"\u2A98","el":"\u2A99","Element":"\u2208","elinters":"\u23E7","ell":"\u2113","els":"\u2A95","elsdot":"\u2A97","Emacr":"\u0112","emacr":"\u0113","empty":"\u2205","emptyset":"\u2205","EmptySmallSquare":"\u25FB","emptyv":"\u2205","EmptyVerySmallSquare":"\u25AB","emsp13":"\u2004","emsp14":"\u2005","emsp":"\u2003","ENG":"\u014A","eng":"\u014B","ensp":"\u2002","Eogon":"\u0118","eogon":"\u0119","Eopf":"\uD835\uDD3C","eopf":"\uD835\uDD56","epar":"\u22D5","eparsl":"\u29E3","eplus":"\u2A71","epsi":"\u03B5","Epsilon":"\u0395","epsilon":"\u03B5","epsiv":"\u03F5","eqcirc":"\u2256","eqcolon":"\u2255","eqsim":"\u2242","eqslantgtr":"\u2A96","eqslantless":"\u2A95","Equal":"\u2A75","equals":"=","EqualTilde":"\u2242","equest":"\u225F","Equilibrium":"\u21CC","equiv":"\u2261","equivDD":"\u2A78","eqvparsl":"\u29E5","erarr":"\u2971","erDot":"\u2253","escr":"\u212F","Escr":"\u2130","esdot":"\u2250","Esim":"\u2A73","esim":"\u2242","Eta":"\u0397","eta":"\u03B7","ETH":"\u00D0","eth":"\u00F0","Euml":"\u00CB","euml":"\u00EB","euro":"\u20AC","excl":"!","exist":"\u2203","Exists":"\u2203","expectation":"\u2130","exponentiale":"\u2147","ExponentialE":"\u2147","fallingdotseq":"\u2252","Fcy":"\u0424","fcy":"\u0444","female":"\u2640","ffilig":"\uFB03","fflig":"\uFB00","ffllig":"\uFB04","Ffr":"\uD835\uDD09","ffr":"\uD835\uDD23","filig":"\uFB01","FilledSmallSquare":"\u25FC","FilledVerySmallSquare":"\u25AA","fjlig":"fj","flat":"\u266D","fllig":"\uFB02","fltns":"\u25B1","fnof":"\u0192","Fopf":"\uD835\uDD3D","fopf":"\uD835\uDD57","forall":"\u2200","ForAll":"\u2200","fork":"\u22D4","forkv":"\u2AD9","Fouriertrf":"\u2131","fpartint":"\u2A0D","frac12":"\u00BD","frac13":"\u2153","frac14":"\u00BC","frac15":"\u2155","frac16":"\u2159","frac18":"\u215B","frac23":"\u2154","frac25":"\u2156","frac34":"\u00BE","frac35":"\u2157","frac38":"\u215C","frac45":"\u2158","frac56":"\u215A","frac58":"\u215D","frac78":"\u215E","frasl":"\u2044","frown":"\u2322","fscr":"\uD835\uDCBB","Fscr":"\u2131","gacute":"\u01F5","Gamma":"\u0393","gamma":"\u03B3","Gammad":"\u03DC","gammad":"\u03DD","gap":"\u2A86","Gbreve":"\u011E","gbreve":"\u011F","Gcedil":"\u0122","Gcirc":"\u011C","gcirc":"\u011D","Gcy":"\u0413","gcy":"\u0433","Gdot":"\u0120","gdot":"\u0121","ge":"\u2265","gE":"\u2267","gEl":"\u2A8C","gel":"\u22DB","geq":"\u2265","geqq":"\u2267","geqslant":"\u2A7E","gescc":"\u2AA9","ges":"\u2A7E","gesdot":"\u2A80","gesdoto":"\u2A82","gesdotol":"\u2A84","gesl":"\u22DB\uFE00","gesles":"\u2A94","Gfr":"\uD835\uDD0A","gfr":"\uD835\uDD24","gg":"\u226B","Gg":"\u22D9","ggg":"\u22D9","gimel":"\u2137","GJcy":"\u0403","gjcy":"\u0453","gla":"\u2AA5","gl":"\u2277","glE":"\u2A92","glj":"\u2AA4","gnap":"\u2A8A","gnapprox":"\u2A8A","gne":"\u2A88","gnE":"\u2269","gneq":"\u2A88","gneqq":"\u2269","gnsim":"\u22E7","Gopf":"\uD835\uDD3E","gopf":"\uD835\uDD58","grave":"`","GreaterEqual":"\u2265","GreaterEqualLess":"\u22DB","GreaterFullEqual":"\u2267","GreaterGreater":"\u2AA2","GreaterLess":"\u2277","GreaterSlantEqual":"\u2A7E","GreaterTilde":"\u2273","Gscr":"\uD835\uDCA2","gscr":"\u210A","gsim":"\u2273","gsime":"\u2A8E","gsiml":"\u2A90","gtcc":"\u2AA7","gtcir":"\u2A7A","gt":">","GT":">","Gt":"\u226B","gtdot":"\u22D7","gtlPar":"\u2995","gtquest":"\u2A7C","gtrapprox":"\u2A86","gtrarr":"\u2978","gtrdot":"\u22D7","gtreqless":"\u22DB","gtreqqless":"\u2A8C","gtrless":"\u2277","gtrsim":"\u2273","gvertneqq":"\u2269\uFE00","gvnE":"\u2269\uFE00","Hacek":"\u02C7","hairsp":"\u200A","half":"\u00BD","hamilt":"\u210B","HARDcy":"\u042A","hardcy":"\u044A","harrcir":"\u2948","harr":"\u2194","hArr":"\u21D4","harrw":"\u21AD","Hat":"^","hbar":"\u210F","Hcirc":"\u0124","hcirc":"\u0125","hearts":"\u2665","heartsuit":"\u2665","hellip":"\u2026","hercon":"\u22B9","hfr":"\uD835\uDD25","Hfr":"\u210C","HilbertSpace":"\u210B","hksearow":"\u2925","hkswarow":"\u2926","hoarr":"\u21FF","homtht":"\u223B","hookleftarrow":"\u21A9","hookrightarrow":"\u21AA","hopf":"\uD835\uDD59","Hopf":"\u210D","horbar":"\u2015","HorizontalLine":"\u2500","hscr":"\uD835\uDCBD","Hscr":"\u210B","hslash":"\u210F","Hstrok":"\u0126","hstrok":"\u0127","HumpDownHump":"\u224E","HumpEqual":"\u224F","hybull":"\u2043","hyphen":"\u2010","Iacute":"\u00CD","iacute":"\u00ED","ic":"\u2063","Icirc":"\u00CE","icirc":"\u00EE","Icy":"\u0418","icy":"\u0438","Idot":"\u0130","IEcy":"\u0415","iecy":"\u0435","iexcl":"\u00A1","iff":"\u21D4","ifr":"\uD835\uDD26","Ifr":"\u2111","Igrave":"\u00CC","igrave":"\u00EC","ii":"\u2148","iiiint":"\u2A0C","iiint":"\u222D","iinfin":"\u29DC","iiota":"\u2129","IJlig":"\u0132","ijlig":"\u0133","Imacr":"\u012A","imacr":"\u012B","image":"\u2111","ImaginaryI":"\u2148","imagline":"\u2110","imagpart":"\u2111","imath":"\u0131","Im":"\u2111","imof":"\u22B7","imped":"\u01B5","Implies":"\u21D2","incare":"\u2105","in":"\u2208","infin":"\u221E","infintie":"\u29DD","inodot":"\u0131","intcal":"\u22BA","int":"\u222B","Int":"\u222C","integers":"\u2124","Integral":"\u222B","intercal":"\u22BA","Intersection":"\u22C2","intlarhk":"\u2A17","intprod":"\u2A3C","InvisibleComma":"\u2063","InvisibleTimes":"\u2062","IOcy":"\u0401","iocy":"\u0451","Iogon":"\u012E","iogon":"\u012F","Iopf":"\uD835\uDD40","iopf":"\uD835\uDD5A","Iota":"\u0399","iota":"\u03B9","iprod":"\u2A3C","iquest":"\u00BF","iscr":"\uD835\uDCBE","Iscr":"\u2110","isin":"\u2208","isindot":"\u22F5","isinE":"\u22F9","isins":"\u22F4","isinsv":"\u22F3","isinv":"\u2208","it":"\u2062","Itilde":"\u0128","itilde":"\u0129","Iukcy":"\u0406","iukcy":"\u0456","Iuml":"\u00CF","iuml":"\u00EF","Jcirc":"\u0134","jcirc":"\u0135","Jcy":"\u0419","jcy":"\u0439","Jfr":"\uD835\uDD0D","jfr":"\uD835\uDD27","jmath":"\u0237","Jopf":"\uD835\uDD41","jopf":"\uD835\uDD5B","Jscr":"\uD835\uDCA5","jscr":"\uD835\uDCBF","Jsercy":"\u0408","jsercy":"\u0458","Jukcy":"\u0404","jukcy":"\u0454","Kappa":"\u039A","kappa":"\u03BA","kappav":"\u03F0","Kcedil":"\u0136","kcedil":"\u0137","Kcy":"\u041A","kcy":"\u043A","Kfr":"\uD835\uDD0E","kfr":"\uD835\uDD28","kgreen":"\u0138","KHcy":"\u0425","khcy":"\u0445","KJcy":"\u040C","kjcy":"\u045C","Kopf":"\uD835\uDD42","kopf":"\uD835\uDD5C","Kscr":"\uD835\uDCA6","kscr":"\uD835\uDCC0","lAarr":"\u21DA","Lacute":"\u0139","lacute":"\u013A","laemptyv":"\u29B4","lagran":"\u2112","Lambda":"\u039B","lambda":"\u03BB","lang":"\u27E8","Lang":"\u27EA","langd":"\u2991","langle":"\u27E8","lap":"\u2A85","Laplacetrf":"\u2112","laquo":"\u00AB","larrb":"\u21E4","larrbfs":"\u291F","larr":"\u2190","Larr":"\u219E","lArr":"\u21D0","larrfs":"\u291D","larrhk":"\u21A9","larrlp":"\u21AB","larrpl":"\u2939","larrsim":"\u2973","larrtl":"\u21A2","latail":"\u2919","lAtail":"\u291B","lat":"\u2AAB","late":"\u2AAD","lates":"\u2AAD\uFE00","lbarr":"\u290C","lBarr":"\u290E","lbbrk":"\u2772","lbrace":"{","lbrack":"[","lbrke":"\u298B","lbrksld":"\u298F","lbrkslu":"\u298D","Lcaron":"\u013D","lcaron":"\u013E","Lcedil":"\u013B","lcedil":"\u013C","lceil":"\u2308","lcub":"{","Lcy":"\u041B","lcy":"\u043B","ldca":"\u2936","ldquo":"\u201C","ldquor":"\u201E","ldrdhar":"\u2967","ldrushar":"\u294B","ldsh":"\u21B2","le":"\u2264","lE":"\u2266","LeftAngleBracket":"\u27E8","LeftArrowBar":"\u21E4","leftarrow":"\u2190","LeftArrow":"\u2190","Leftarrow":"\u21D0","LeftArrowRightArrow":"\u21C6","leftarrowtail":"\u21A2","LeftCeiling":"\u2308","LeftDoubleBracket":"\u27E6","LeftDownTeeVector":"\u2961","LeftDownVectorBar":"\u2959","LeftDownVector":"\u21C3","LeftFloor":"\u230A","leftharpoondown":"\u21BD","leftharpoonup":"\u21BC","leftleftarrows":"\u21C7","leftrightarrow":"\u2194","LeftRightArrow":"\u2194","Leftrightarrow":"\u21D4","leftrightarrows":"\u21C6","leftrightharpoons":"\u21CB","leftrightsquigarrow":"\u21AD","LeftRightVector":"\u294E","LeftTeeArrow":"\u21A4","LeftTee":"\u22A3","LeftTeeVector":"\u295A","leftthreetimes":"\u22CB","LeftTriangleBar":"\u29CF","LeftTriangle":"\u22B2","LeftTriangleEqual":"\u22B4","LeftUpDownVector":"\u2951","LeftUpTeeVector":"\u2960","LeftUpVectorBar":"\u2958","LeftUpVector":"\u21BF","LeftVectorBar":"\u2952","LeftVector":"\u21BC","lEg":"\u2A8B","leg":"\u22DA","leq":"\u2264","leqq":"\u2266","leqslant":"\u2A7D","lescc":"\u2AA8","les":"\u2A7D","lesdot":"\u2A7F","lesdoto":"\u2A81","lesdotor":"\u2A83","lesg":"\u22DA\uFE00","lesges":"\u2A93","lessapprox":"\u2A85","lessdot":"\u22D6","lesseqgtr":"\u22DA","lesseqqgtr":"\u2A8B","LessEqualGreater":"\u22DA","LessFullEqual":"\u2266","LessGreater":"\u2276","lessgtr":"\u2276","LessLess":"\u2AA1","lesssim":"\u2272","LessSlantEqual":"\u2A7D","LessTilde":"\u2272","lfisht":"\u297C","lfloor":"\u230A","Lfr":"\uD835\uDD0F","lfr":"\uD835\uDD29","lg":"\u2276","lgE":"\u2A91","lHar":"\u2962","lhard":"\u21BD","lharu":"\u21BC","lharul":"\u296A","lhblk":"\u2584","LJcy":"\u0409","ljcy":"\u0459","llarr":"\u21C7","ll":"\u226A","Ll":"\u22D8","llcorner":"\u231E","Lleftarrow":"\u21DA","llhard":"\u296B","lltri":"\u25FA","Lmidot":"\u013F","lmidot":"\u0140","lmoustache":"\u23B0","lmoust":"\u23B0","lnap":"\u2A89","lnapprox":"\u2A89","lne":"\u2A87","lnE":"\u2268","lneq":"\u2A87","lneqq":"\u2268","lnsim":"\u22E6","loang":"\u27EC","loarr":"\u21FD","lobrk":"\u27E6","longleftarrow":"\u27F5","LongLeftArrow":"\u27F5","Longleftarrow":"\u27F8","longleftrightarrow":"\u27F7","LongLeftRightArrow":"\u27F7","Longleftrightarrow":"\u27FA","longmapsto":"\u27FC","longrightarrow":"\u27F6","LongRightArrow":"\u27F6","Longrightarrow":"\u27F9","looparrowleft":"\u21AB","looparrowright":"\u21AC","lopar":"\u2985","Lopf":"\uD835\uDD43","lopf":"\uD835\uDD5D","loplus":"\u2A2D","lotimes":"\u2A34","lowast":"\u2217","lowbar":"_","LowerLeftArrow":"\u2199","LowerRightArrow":"\u2198","loz":"\u25CA","lozenge":"\u25CA","lozf":"\u29EB","lpar":"(","lparlt":"\u2993","lrarr":"\u21C6","lrcorner":"\u231F","lrhar":"\u21CB","lrhard":"\u296D","lrm":"\u200E","lrtri":"\u22BF","lsaquo":"\u2039","lscr":"\uD835\uDCC1","Lscr":"\u2112","lsh":"\u21B0","Lsh":"\u21B0","lsim":"\u2272","lsime":"\u2A8D","lsimg":"\u2A8F","lsqb":"[","lsquo":"\u2018","lsquor":"\u201A","Lstrok":"\u0141","lstrok":"\u0142","ltcc":"\u2AA6","ltcir":"\u2A79","lt":"<","LT":"<","Lt":"\u226A","ltdot":"\u22D6","lthree":"\u22CB","ltimes":"\u22C9","ltlarr":"\u2976","ltquest":"\u2A7B","ltri":"\u25C3","ltrie":"\u22B4","ltrif":"\u25C2","ltrPar":"\u2996","lurdshar":"\u294A","luruhar":"\u2966","lvertneqq":"\u2268\uFE00","lvnE":"\u2268\uFE00","macr":"\u00AF","male":"\u2642","malt":"\u2720","maltese":"\u2720","Map":"\u2905","map":"\u21A6","mapsto":"\u21A6","mapstodown":"\u21A7","mapstoleft":"\u21A4","mapstoup":"\u21A5","marker":"\u25AE","mcomma":"\u2A29","Mcy":"\u041C","mcy":"\u043C","mdash":"\u2014","mDDot":"\u223A","measuredangle":"\u2221","MediumSpace":"\u205F","Mellintrf":"\u2133","Mfr":"\uD835\uDD10","mfr":"\uD835\uDD2A","mho":"\u2127","micro":"\u00B5","midast":"*","midcir":"\u2AF0","mid":"\u2223","middot":"\u00B7","minusb":"\u229F","minus":"\u2212","minusd":"\u2238","minusdu":"\u2A2A","MinusPlus":"\u2213","mlcp":"\u2ADB","mldr":"\u2026","mnplus":"\u2213","models":"\u22A7","Mopf":"\uD835\uDD44","mopf":"\uD835\uDD5E","mp":"\u2213","mscr":"\uD835\uDCC2","Mscr":"\u2133","mstpos":"\u223E","Mu":"\u039C","mu":"\u03BC","multimap":"\u22B8","mumap":"\u22B8","nabla":"\u2207","Nacute":"\u0143","nacute":"\u0144","nang":"\u2220\u20D2","nap":"\u2249","napE":"\u2A70\u0338","napid":"\u224B\u0338","napos":"\u0149","napprox":"\u2249","natural":"\u266E","naturals":"\u2115","natur":"\u266E","nbsp":"\u00A0","nbump":"\u224E\u0338","nbumpe":"\u224F\u0338","ncap":"\u2A43","Ncaron":"\u0147","ncaron":"\u0148","Ncedil":"\u0145","ncedil":"\u0146","ncong":"\u2247","ncongdot":"\u2A6D\u0338","ncup":"\u2A42","Ncy":"\u041D","ncy":"\u043D","ndash":"\u2013","nearhk":"\u2924","nearr":"\u2197","neArr":"\u21D7","nearrow":"\u2197","ne":"\u2260","nedot":"\u2250\u0338","NegativeMediumSpace":"\u200B","NegativeThickSpace":"\u200B","NegativeThinSpace":"\u200B","NegativeVeryThinSpace":"\u200B","nequiv":"\u2262","nesear":"\u2928","nesim":"\u2242\u0338","NestedGreaterGreater":"\u226B","NestedLessLess":"\u226A","NewLine":"\n","nexist":"\u2204","nexists":"\u2204","Nfr":"\uD835\uDD11","nfr":"\uD835\uDD2B","ngE":"\u2267\u0338","nge":"\u2271","ngeq":"\u2271","ngeqq":"\u2267\u0338","ngeqslant":"\u2A7E\u0338","nges":"\u2A7E\u0338","nGg":"\u22D9\u0338","ngsim":"\u2275","nGt":"\u226B\u20D2","ngt":"\u226F","ngtr":"\u226F","nGtv":"\u226B\u0338","nharr":"\u21AE","nhArr":"\u21CE","nhpar":"\u2AF2","ni":"\u220B","nis":"\u22FC","nisd":"\u22FA","niv":"\u220B","NJcy":"\u040A","njcy":"\u045A","nlarr":"\u219A","nlArr":"\u21CD","nldr":"\u2025","nlE":"\u2266\u0338","nle":"\u2270","nleftarrow":"\u219A","nLeftarrow":"\u21CD","nleftrightarrow":"\u21AE","nLeftrightarrow":"\u21CE","nleq":"\u2270","nleqq":"\u2266\u0338","nleqslant":"\u2A7D\u0338","nles":"\u2A7D\u0338","nless":"\u226E","nLl":"\u22D8\u0338","nlsim":"\u2274","nLt":"\u226A\u20D2","nlt":"\u226E","nltri":"\u22EA","nltrie":"\u22EC","nLtv":"\u226A\u0338","nmid":"\u2224","NoBreak":"\u2060","NonBreakingSpace":"\u00A0","nopf":"\uD835\uDD5F","Nopf":"\u2115","Not":"\u2AEC","not":"\u00AC","NotCongruent":"\u2262","NotCupCap":"\u226D","NotDoubleVerticalBar":"\u2226","NotElement":"\u2209","NotEqual":"\u2260","NotEqualTilde":"\u2242\u0338","NotExists":"\u2204","NotGreater":"\u226F","NotGreaterEqual":"\u2271","NotGreaterFullEqual":"\u2267\u0338","NotGreaterGreater":"\u226B\u0338","NotGreaterLess":"\u2279","NotGreaterSlantEqual":"\u2A7E\u0338","NotGreaterTilde":"\u2275","NotHumpDownHump":"\u224E\u0338","NotHumpEqual":"\u224F\u0338","notin":"\u2209","notindot":"\u22F5\u0338","notinE":"\u22F9\u0338","notinva":"\u2209","notinvb":"\u22F7","notinvc":"\u22F6","NotLeftTriangleBar":"\u29CF\u0338","NotLeftTriangle":"\u22EA","NotLeftTriangleEqual":"\u22EC","NotLess":"\u226E","NotLessEqual":"\u2270","NotLessGreater":"\u2278","NotLessLess":"\u226A\u0338","NotLessSlantEqual":"\u2A7D\u0338","NotLessTilde":"\u2274","NotNestedGreaterGreater":"\u2AA2\u0338","NotNestedLessLess":"\u2AA1\u0338","notni":"\u220C","notniva":"\u220C","notnivb":"\u22FE","notnivc":"\u22FD","NotPrecedes":"\u2280","NotPrecedesEqual":"\u2AAF\u0338","NotPrecedesSlantEqual":"\u22E0","NotReverseElement":"\u220C","NotRightTriangleBar":"\u29D0\u0338","NotRightTriangle":"\u22EB","NotRightTriangleEqual":"\u22ED","NotSquareSubset":"\u228F\u0338","NotSquareSubsetEqual":"\u22E2","NotSquareSuperset":"\u2290\u0338","NotSquareSupersetEqual":"\u22E3","NotSubset":"\u2282\u20D2","NotSubsetEqual":"\u2288","NotSucceeds":"\u2281","NotSucceedsEqual":"\u2AB0\u0338","NotSucceedsSlantEqual":"\u22E1","NotSucceedsTilde":"\u227F\u0338","NotSuperset":"\u2283\u20D2","NotSupersetEqual":"\u2289","NotTilde":"\u2241","NotTildeEqual":"\u2244","NotTildeFullEqual":"\u2247","NotTildeTilde":"\u2249","NotVerticalBar":"\u2224","nparallel":"\u2226","npar":"\u2226","nparsl":"\u2AFD\u20E5","npart":"\u2202\u0338","npolint":"\u2A14","npr":"\u2280","nprcue":"\u22E0","nprec":"\u2280","npreceq":"\u2AAF\u0338","npre":"\u2AAF\u0338","nrarrc":"\u2933\u0338","nrarr":"\u219B","nrArr":"\u21CF","nrarrw":"\u219D\u0338","nrightarrow":"\u219B","nRightarrow":"\u21CF","nrtri":"\u22EB","nrtrie":"\u22ED","nsc":"\u2281","nsccue":"\u22E1","nsce":"\u2AB0\u0338","Nscr":"\uD835\uDCA9","nscr":"\uD835\uDCC3","nshortmid":"\u2224","nshortparallel":"\u2226","nsim":"\u2241","nsime":"\u2244","nsimeq":"\u2244","nsmid":"\u2224","nspar":"\u2226","nsqsube":"\u22E2","nsqsupe":"\u22E3","nsub":"\u2284","nsubE":"\u2AC5\u0338","nsube":"\u2288","nsubset":"\u2282\u20D2","nsubseteq":"\u2288","nsubseteqq":"\u2AC5\u0338","nsucc":"\u2281","nsucceq":"\u2AB0\u0338","nsup":"\u2285","nsupE":"\u2AC6\u0338","nsupe":"\u2289","nsupset":"\u2283\u20D2","nsupseteq":"\u2289","nsupseteqq":"\u2AC6\u0338","ntgl":"\u2279","Ntilde":"\u00D1","ntilde":"\u00F1","ntlg":"\u2278","ntriangleleft":"\u22EA","ntrianglelefteq":"\u22EC","ntriangleright":"\u22EB","ntrianglerighteq":"\u22ED","Nu":"\u039D","nu":"\u03BD","num":"#","numero":"\u2116","numsp":"\u2007","nvap":"\u224D\u20D2","nvdash":"\u22AC","nvDash":"\u22AD","nVdash":"\u22AE","nVDash":"\u22AF","nvge":"\u2265\u20D2","nvgt":">\u20D2","nvHarr":"\u2904","nvinfin":"\u29DE","nvlArr":"\u2902","nvle":"\u2264\u20D2","nvlt":"<\u20D2","nvltrie":"\u22B4\u20D2","nvrArr":"\u2903","nvrtrie":"\u22B5\u20D2","nvsim":"\u223C\u20D2","nwarhk":"\u2923","nwarr":"\u2196","nwArr":"\u21D6","nwarrow":"\u2196","nwnear":"\u2927","Oacute":"\u00D3","oacute":"\u00F3","oast":"\u229B","Ocirc":"\u00D4","ocirc":"\u00F4","ocir":"\u229A","Ocy":"\u041E","ocy":"\u043E","odash":"\u229D","Odblac":"\u0150","odblac":"\u0151","odiv":"\u2A38","odot":"\u2299","odsold":"\u29BC","OElig":"\u0152","oelig":"\u0153","ofcir":"\u29BF","Ofr":"\uD835\uDD12","ofr":"\uD835\uDD2C","ogon":"\u02DB","Ograve":"\u00D2","ograve":"\u00F2","ogt":"\u29C1","ohbar":"\u29B5","ohm":"\u03A9","oint":"\u222E","olarr":"\u21BA","olcir":"\u29BE","olcross":"\u29BB","oline":"\u203E","olt":"\u29C0","Omacr":"\u014C","omacr":"\u014D","Omega":"\u03A9","omega":"\u03C9","Omicron":"\u039F","omicron":"\u03BF","omid":"\u29B6","ominus":"\u2296","Oopf":"\uD835\uDD46","oopf":"\uD835\uDD60","opar":"\u29B7","OpenCurlyDoubleQuote":"\u201C","OpenCurlyQuote":"\u2018","operp":"\u29B9","oplus":"\u2295","orarr":"\u21BB","Or":"\u2A54","or":"\u2228","ord":"\u2A5D","order":"\u2134","orderof":"\u2134","ordf":"\u00AA","ordm":"\u00BA","origof":"\u22B6","oror":"\u2A56","orslope":"\u2A57","orv":"\u2A5B","oS":"\u24C8","Oscr":"\uD835\uDCAA","oscr":"\u2134","Oslash":"\u00D8","oslash":"\u00F8","osol":"\u2298","Otilde":"\u00D5","otilde":"\u00F5","otimesas":"\u2A36","Otimes":"\u2A37","otimes":"\u2297","Ouml":"\u00D6","ouml":"\u00F6","ovbar":"\u233D","OverBar":"\u203E","OverBrace":"\u23DE","OverBracket":"\u23B4","OverParenthesis":"\u23DC","para":"\u00B6","parallel":"\u2225","par":"\u2225","parsim":"\u2AF3","parsl":"\u2AFD","part":"\u2202","PartialD":"\u2202","Pcy":"\u041F","pcy":"\u043F","percnt":"%","period":".","permil":"\u2030","perp":"\u22A5","pertenk":"\u2031","Pfr":"\uD835\uDD13","pfr":"\uD835\uDD2D","Phi":"\u03A6","phi":"\u03C6","phiv":"\u03D5","phmmat":"\u2133","phone":"\u260E","Pi":"\u03A0","pi":"\u03C0","pitchfork":"\u22D4","piv":"\u03D6","planck":"\u210F","planckh":"\u210E","plankv":"\u210F","plusacir":"\u2A23","plusb":"\u229E","pluscir":"\u2A22","plus":"+","plusdo":"\u2214","plusdu":"\u2A25","pluse":"\u2A72","PlusMinus":"\u00B1","plusmn":"\u00B1","plussim":"\u2A26","plustwo":"\u2A27","pm":"\u00B1","Poincareplane":"\u210C","pointint":"\u2A15","popf":"\uD835\uDD61","Popf":"\u2119","pound":"\u00A3","prap":"\u2AB7","Pr":"\u2ABB","pr":"\u227A","prcue":"\u227C","precapprox":"\u2AB7","prec":"\u227A","preccurlyeq":"\u227C","Precedes":"\u227A","PrecedesEqual":"\u2AAF","PrecedesSlantEqual":"\u227C","PrecedesTilde":"\u227E","preceq":"\u2AAF","precnapprox":"\u2AB9","precneqq":"\u2AB5","precnsim":"\u22E8","pre":"\u2AAF","prE":"\u2AB3","precsim":"\u227E","prime":"\u2032","Prime":"\u2033","primes":"\u2119","prnap":"\u2AB9","prnE":"\u2AB5","prnsim":"\u22E8","prod":"\u220F","Product":"\u220F","profalar":"\u232E","profline":"\u2312","profsurf":"\u2313","prop":"\u221D","Proportional":"\u221D","Proportion":"\u2237","propto":"\u221D","prsim":"\u227E","prurel":"\u22B0","Pscr":"\uD835\uDCAB","pscr":"\uD835\uDCC5","Psi":"\u03A8","psi":"\u03C8","puncsp":"\u2008","Qfr":"\uD835\uDD14","qfr":"\uD835\uDD2E","qint":"\u2A0C","qopf":"\uD835\uDD62","Qopf":"\u211A","qprime":"\u2057","Qscr":"\uD835\uDCAC","qscr":"\uD835\uDCC6","quaternions":"\u210D","quatint":"\u2A16","quest":"?","questeq":"\u225F","quot":"\"","QUOT":"\"","rAarr":"\u21DB","race":"\u223D\u0331","Racute":"\u0154","racute":"\u0155","radic":"\u221A","raemptyv":"\u29B3","rang":"\u27E9","Rang":"\u27EB","rangd":"\u2992","range":"\u29A5","rangle":"\u27E9","raquo":"\u00BB","rarrap":"\u2975","rarrb":"\u21E5","rarrbfs":"\u2920","rarrc":"\u2933","rarr":"\u2192","Rarr":"\u21A0","rArr":"\u21D2","rarrfs":"\u291E","rarrhk":"\u21AA","rarrlp":"\u21AC","rarrpl":"\u2945","rarrsim":"\u2974","Rarrtl":"\u2916","rarrtl":"\u21A3","rarrw":"\u219D","ratail":"\u291A","rAtail":"\u291C","ratio":"\u2236","rationals":"\u211A","rbarr":"\u290D","rBarr":"\u290F","RBarr":"\u2910","rbbrk":"\u2773","rbrace":"}","rbrack":"]","rbrke":"\u298C","rbrksld":"\u298E","rbrkslu":"\u2990","Rcaron":"\u0158","rcaron":"\u0159","Rcedil":"\u0156","rcedil":"\u0157","rceil":"\u2309","rcub":"}","Rcy":"\u0420","rcy":"\u0440","rdca":"\u2937","rdldhar":"\u2969","rdquo":"\u201D","rdquor":"\u201D","rdsh":"\u21B3","real":"\u211C","realine":"\u211B","realpart":"\u211C","reals":"\u211D","Re":"\u211C","rect":"\u25AD","reg":"\u00AE","REG":"\u00AE","ReverseElement":"\u220B","ReverseEquilibrium":"\u21CB","ReverseUpEquilibrium":"\u296F","rfisht":"\u297D","rfloor":"\u230B","rfr":"\uD835\uDD2F","Rfr":"\u211C","rHar":"\u2964","rhard":"\u21C1","rharu":"\u21C0","rharul":"\u296C","Rho":"\u03A1","rho":"\u03C1","rhov":"\u03F1","RightAngleBracket":"\u27E9","RightArrowBar":"\u21E5","rightarrow":"\u2192","RightArrow":"\u2192","Rightarrow":"\u21D2","RightArrowLeftArrow":"\u21C4","rightarrowtail":"\u21A3","RightCeiling":"\u2309","RightDoubleBracket":"\u27E7","RightDownTeeVector":"\u295D","RightDownVectorBar":"\u2955","RightDownVector":"\u21C2","RightFloor":"\u230B","rightharpoondown":"\u21C1","rightharpoonup":"\u21C0","rightleftarrows":"\u21C4","rightleftharpoons":"\u21CC","rightrightarrows":"\u21C9","rightsquigarrow":"\u219D","RightTeeArrow":"\u21A6","RightTee":"\u22A2","RightTeeVector":"\u295B","rightthreetimes":"\u22CC","RightTriangleBar":"\u29D0","RightTriangle":"\u22B3","RightTriangleEqual":"\u22B5","RightUpDownVector":"\u294F","RightUpTeeVector":"\u295C","RightUpVectorBar":"\u2954","RightUpVector":"\u21BE","RightVectorBar":"\u2953","RightVector":"\u21C0","ring":"\u02DA","risingdotseq":"\u2253","rlarr":"\u21C4","rlhar":"\u21CC","rlm":"\u200F","rmoustache":"\u23B1","rmoust":"\u23B1","rnmid":"\u2AEE","roang":"\u27ED","roarr":"\u21FE","robrk":"\u27E7","ropar":"\u2986","ropf":"\uD835\uDD63","Ropf":"\u211D","roplus":"\u2A2E","rotimes":"\u2A35","RoundImplies":"\u2970","rpar":")","rpargt":"\u2994","rppolint":"\u2A12","rrarr":"\u21C9","Rrightarrow":"\u21DB","rsaquo":"\u203A","rscr":"\uD835\uDCC7","Rscr":"\u211B","rsh":"\u21B1","Rsh":"\u21B1","rsqb":"]","rsquo":"\u2019","rsquor":"\u2019","rthree":"\u22CC","rtimes":"\u22CA","rtri":"\u25B9","rtrie":"\u22B5","rtrif":"\u25B8","rtriltri":"\u29CE","RuleDelayed":"\u29F4","ruluhar":"\u2968","rx":"\u211E","Sacute":"\u015A","sacute":"\u015B","sbquo":"\u201A","scap":"\u2AB8","Scaron":"\u0160","scaron":"\u0161","Sc":"\u2ABC","sc":"\u227B","sccue":"\u227D","sce":"\u2AB0","scE":"\u2AB4","Scedil":"\u015E","scedil":"\u015F","Scirc":"\u015C","scirc":"\u015D","scnap":"\u2ABA","scnE":"\u2AB6","scnsim":"\u22E9","scpolint":"\u2A13","scsim":"\u227F","Scy":"\u0421","scy":"\u0441","sdotb":"\u22A1","sdot":"\u22C5","sdote":"\u2A66","searhk":"\u2925","searr":"\u2198","seArr":"\u21D8","searrow":"\u2198","sect":"\u00A7","semi":";","seswar":"\u2929","setminus":"\u2216","setmn":"\u2216","sext":"\u2736","Sfr":"\uD835\uDD16","sfr":"\uD835\uDD30","sfrown":"\u2322","sharp":"\u266F","SHCHcy":"\u0429","shchcy":"\u0449","SHcy":"\u0428","shcy":"\u0448","ShortDownArrow":"\u2193","ShortLeftArrow":"\u2190","shortmid":"\u2223","shortparallel":"\u2225","ShortRightArrow":"\u2192","ShortUpArrow":"\u2191","shy":"\u00AD","Sigma":"\u03A3","sigma":"\u03C3","sigmaf":"\u03C2","sigmav":"\u03C2","sim":"\u223C","simdot":"\u2A6A","sime":"\u2243","simeq":"\u2243","simg":"\u2A9E","simgE":"\u2AA0","siml":"\u2A9D","simlE":"\u2A9F","simne":"\u2246","simplus":"\u2A24","simrarr":"\u2972","slarr":"\u2190","SmallCircle":"\u2218","smallsetminus":"\u2216","smashp":"\u2A33","smeparsl":"\u29E4","smid":"\u2223","smile":"\u2323","smt":"\u2AAA","smte":"\u2AAC","smtes":"\u2AAC\uFE00","SOFTcy":"\u042C","softcy":"\u044C","solbar":"\u233F","solb":"\u29C4","sol":"/","Sopf":"\uD835\uDD4A","sopf":"\uD835\uDD64","spades":"\u2660","spadesuit":"\u2660","spar":"\u2225","sqcap":"\u2293","sqcaps":"\u2293\uFE00","sqcup":"\u2294","sqcups":"\u2294\uFE00","Sqrt":"\u221A","sqsub":"\u228F","sqsube":"\u2291","sqsubset":"\u228F","sqsubseteq":"\u2291","sqsup":"\u2290","sqsupe":"\u2292","sqsupset":"\u2290","sqsupseteq":"\u2292","square":"\u25A1","Square":"\u25A1","SquareIntersection":"\u2293","SquareSubset":"\u228F","SquareSubsetEqual":"\u2291","SquareSuperset":"\u2290","SquareSupersetEqual":"\u2292","SquareUnion":"\u2294","squarf":"\u25AA","squ":"\u25A1","squf":"\u25AA","srarr":"\u2192","Sscr":"\uD835\uDCAE","sscr":"\uD835\uDCC8","ssetmn":"\u2216","ssmile":"\u2323","sstarf":"\u22C6","Star":"\u22C6","star":"\u2606","starf":"\u2605","straightepsilon":"\u03F5","straightphi":"\u03D5","strns":"\u00AF","sub":"\u2282","Sub":"\u22D0","subdot":"\u2ABD","subE":"\u2AC5","sube":"\u2286","subedot":"\u2AC3","submult":"\u2AC1","subnE":"\u2ACB","subne":"\u228A","subplus":"\u2ABF","subrarr":"\u2979","subset":"\u2282","Subset":"\u22D0","subseteq":"\u2286","subseteqq":"\u2AC5","SubsetEqual":"\u2286","subsetneq":"\u228A","subsetneqq":"\u2ACB","subsim":"\u2AC7","subsub":"\u2AD5","subsup":"\u2AD3","succapprox":"\u2AB8","succ":"\u227B","succcurlyeq":"\u227D","Succeeds":"\u227B","SucceedsEqual":"\u2AB0","SucceedsSlantEqual":"\u227D","SucceedsTilde":"\u227F","succeq":"\u2AB0","succnapprox":"\u2ABA","succneqq":"\u2AB6","succnsim":"\u22E9","succsim":"\u227F","SuchThat":"\u220B","sum":"\u2211","Sum":"\u2211","sung":"\u266A","sup1":"\u00B9","sup2":"\u00B2","sup3":"\u00B3","sup":"\u2283","Sup":"\u22D1","supdot":"\u2ABE","supdsub":"\u2AD8","supE":"\u2AC6","supe":"\u2287","supedot":"\u2AC4","Superset":"\u2283","SupersetEqual":"\u2287","suphsol":"\u27C9","suphsub":"\u2AD7","suplarr":"\u297B","supmult":"\u2AC2","supnE":"\u2ACC","supne":"\u228B","supplus":"\u2AC0","supset":"\u2283","Supset":"\u22D1","supseteq":"\u2287","supseteqq":"\u2AC6","supsetneq":"\u228B","supsetneqq":"\u2ACC","supsim":"\u2AC8","supsub":"\u2AD4","supsup":"\u2AD6","swarhk":"\u2926","swarr":"\u2199","swArr":"\u21D9","swarrow":"\u2199","swnwar":"\u292A","szlig":"\u00DF","Tab":"\t","target":"\u2316","Tau":"\u03A4","tau":"\u03C4","tbrk":"\u23B4","Tcaron":"\u0164","tcaron":"\u0165","Tcedil":"\u0162","tcedil":"\u0163","Tcy":"\u0422","tcy":"\u0442","tdot":"\u20DB","telrec":"\u2315","Tfr":"\uD835\uDD17","tfr":"\uD835\uDD31","there4":"\u2234","therefore":"\u2234","Therefore":"\u2234","Theta":"\u0398","theta":"\u03B8","thetasym":"\u03D1","thetav":"\u03D1","thickapprox":"\u2248","thicksim":"\u223C","ThickSpace":"\u205F\u200A","ThinSpace":"\u2009","thinsp":"\u2009","thkap":"\u2248","thksim":"\u223C","THORN":"\u00DE","thorn":"\u00FE","tilde":"\u02DC","Tilde":"\u223C","TildeEqual":"\u2243","TildeFullEqual":"\u2245","TildeTilde":"\u2248","timesbar":"\u2A31","timesb":"\u22A0","times":"\u00D7","timesd":"\u2A30","tint":"\u222D","toea":"\u2928","topbot":"\u2336","topcir":"\u2AF1","top":"\u22A4","Topf":"\uD835\uDD4B","topf":"\uD835\uDD65","topfork":"\u2ADA","tosa":"\u2929","tprime":"\u2034","trade":"\u2122","TRADE":"\u2122","triangle":"\u25B5","triangledown":"\u25BF","triangleleft":"\u25C3","trianglelefteq":"\u22B4","triangleq":"\u225C","triangleright":"\u25B9","trianglerighteq":"\u22B5","tridot":"\u25EC","trie":"\u225C","triminus":"\u2A3A","TripleDot":"\u20DB","triplus":"\u2A39","trisb":"\u29CD","tritime":"\u2A3B","trpezium":"\u23E2","Tscr":"\uD835\uDCAF","tscr":"\uD835\uDCC9","TScy":"\u0426","tscy":"\u0446","TSHcy":"\u040B","tshcy":"\u045B","Tstrok":"\u0166","tstrok":"\u0167","twixt":"\u226C","twoheadleftarrow":"\u219E","twoheadrightarrow":"\u21A0","Uacute":"\u00DA","uacute":"\u00FA","uarr":"\u2191","Uarr":"\u219F","uArr":"\u21D1","Uarrocir":"\u2949","Ubrcy":"\u040E","ubrcy":"\u045E","Ubreve":"\u016C","ubreve":"\u016D","Ucirc":"\u00DB","ucirc":"\u00FB","Ucy":"\u0423","ucy":"\u0443","udarr":"\u21C5","Udblac":"\u0170","udblac":"\u0171","udhar":"\u296E","ufisht":"\u297E","Ufr":"\uD835\uDD18","ufr":"\uD835\uDD32","Ugrave":"\u00D9","ugrave":"\u00F9","uHar":"\u2963","uharl":"\u21BF","uharr":"\u21BE","uhblk":"\u2580","ulcorn":"\u231C","ulcorner":"\u231C","ulcrop":"\u230F","ultri":"\u25F8","Umacr":"\u016A","umacr":"\u016B","uml":"\u00A8","UnderBar":"_","UnderBrace":"\u23DF","UnderBracket":"\u23B5","UnderParenthesis":"\u23DD","Union":"\u22C3","UnionPlus":"\u228E","Uogon":"\u0172","uogon":"\u0173","Uopf":"\uD835\uDD4C","uopf":"\uD835\uDD66","UpArrowBar":"\u2912","uparrow":"\u2191","UpArrow":"\u2191","Uparrow":"\u21D1","UpArrowDownArrow":"\u21C5","updownarrow":"\u2195","UpDownArrow":"\u2195","Updownarrow":"\u21D5","UpEquilibrium":"\u296E","upharpoonleft":"\u21BF","upharpoonright":"\u21BE","uplus":"\u228E","UpperLeftArrow":"\u2196","UpperRightArrow":"\u2197","upsi":"\u03C5","Upsi":"\u03D2","upsih":"\u03D2","Upsilon":"\u03A5","upsilon":"\u03C5","UpTeeArrow":"\u21A5","UpTee":"\u22A5","upuparrows":"\u21C8","urcorn":"\u231D","urcorner":"\u231D","urcrop":"\u230E","Uring":"\u016E","uring":"\u016F","urtri":"\u25F9","Uscr":"\uD835\uDCB0","uscr":"\uD835\uDCCA","utdot":"\u22F0","Utilde":"\u0168","utilde":"\u0169","utri":"\u25B5","utrif":"\u25B4","uuarr":"\u21C8","Uuml":"\u00DC","uuml":"\u00FC","uwangle":"\u29A7","vangrt":"\u299C","varepsilon":"\u03F5","varkappa":"\u03F0","varnothing":"\u2205","varphi":"\u03D5","varpi":"\u03D6","varpropto":"\u221D","varr":"\u2195","vArr":"\u21D5","varrho":"\u03F1","varsigma":"\u03C2","varsubsetneq":"\u228A\uFE00","varsubsetneqq":"\u2ACB\uFE00","varsupsetneq":"\u228B\uFE00","varsupsetneqq":"\u2ACC\uFE00","vartheta":"\u03D1","vartriangleleft":"\u22B2","vartriangleright":"\u22B3","vBar":"\u2AE8","Vbar":"\u2AEB","vBarv":"\u2AE9","Vcy":"\u0412","vcy":"\u0432","vdash":"\u22A2","vDash":"\u22A8","Vdash":"\u22A9","VDash":"\u22AB","Vdashl":"\u2AE6","veebar":"\u22BB","vee":"\u2228","Vee":"\u22C1","veeeq":"\u225A","vellip":"\u22EE","verbar":"|","Verbar":"\u2016","vert":"|","Vert":"\u2016","VerticalBar":"\u2223","VerticalLine":"|","VerticalSeparator":"\u2758","VerticalTilde":"\u2240","VeryThinSpace":"\u200A","Vfr":"\uD835\uDD19","vfr":"\uD835\uDD33","vltri":"\u22B2","vnsub":"\u2282\u20D2","vnsup":"\u2283\u20D2","Vopf":"\uD835\uDD4D","vopf":"\uD835\uDD67","vprop":"\u221D","vrtri":"\u22B3","Vscr":"\uD835\uDCB1","vscr":"\uD835\uDCCB","vsubnE":"\u2ACB\uFE00","vsubne":"\u228A\uFE00","vsupnE":"\u2ACC\uFE00","vsupne":"\u228B\uFE00","Vvdash":"\u22AA","vzigzag":"\u299A","Wcirc":"\u0174","wcirc":"\u0175","wedbar":"\u2A5F","wedge":"\u2227","Wedge":"\u22C0","wedgeq":"\u2259","weierp":"\u2118","Wfr":"\uD835\uDD1A","wfr":"\uD835\uDD34","Wopf":"\uD835\uDD4E","wopf":"\uD835\uDD68","wp":"\u2118","wr":"\u2240","wreath":"\u2240","Wscr":"\uD835\uDCB2","wscr":"\uD835\uDCCC","xcap":"\u22C2","xcirc":"\u25EF","xcup":"\u22C3","xdtri":"\u25BD","Xfr":"\uD835\uDD1B","xfr":"\uD835\uDD35","xharr":"\u27F7","xhArr":"\u27FA","Xi":"\u039E","xi":"\u03BE","xlarr":"\u27F5","xlArr":"\u27F8","xmap":"\u27FC","xnis":"\u22FB","xodot":"\u2A00","Xopf":"\uD835\uDD4F","xopf":"\uD835\uDD69","xoplus":"\u2A01","xotime":"\u2A02","xrarr":"\u27F6","xrArr":"\u27F9","Xscr":"\uD835\uDCB3","xscr":"\uD835\uDCCD","xsqcup":"\u2A06","xuplus":"\u2A04","xutri":"\u25B3","xvee":"\u22C1","xwedge":"\u22C0","Yacute":"\u00DD","yacute":"\u00FD","YAcy":"\u042F","yacy":"\u044F","Ycirc":"\u0176","ycirc":"\u0177","Ycy":"\u042B","ycy":"\u044B","yen":"\u00A5","Yfr":"\uD835\uDD1C","yfr":"\uD835\uDD36","YIcy":"\u0407","yicy":"\u0457","Yopf":"\uD835\uDD50","yopf":"\uD835\uDD6A","Yscr":"\uD835\uDCB4","yscr":"\uD835\uDCCE","YUcy":"\u042E","yucy":"\u044E","yuml":"\u00FF","Yuml":"\u0178","Zacute":"\u0179","zacute":"\u017A","Zcaron":"\u017D","zcaron":"\u017E","Zcy":"\u0417","zcy":"\u0437","Zdot":"\u017B","zdot":"\u017C","zeetrf":"\u2128","ZeroWidthSpace":"\u200B","Zeta":"\u0396","zeta":"\u03B6","zfr":"\uD835\uDD37","Zfr":"\u2128","ZHcy":"\u0416","zhcy":"\u0436","zigrarr":"\u21DD","zopf":"\uD835\uDD6B","Zopf":"\u2124","Zscr":"\uD835\uDCB5","zscr":"\uD835\uDCCF","zwj":"\u200D","zwnj":"\u200C"}
+},{}],16:[function(require,module,exports){
+module.exports={"Aacute":"\u00C1","aacute":"\u00E1","Acirc":"\u00C2","acirc":"\u00E2","acute":"\u00B4","AElig":"\u00C6","aelig":"\u00E6","Agrave":"\u00C0","agrave":"\u00E0","amp":"&","AMP":"&","Aring":"\u00C5","aring":"\u00E5","Atilde":"\u00C3","atilde":"\u00E3","Auml":"\u00C4","auml":"\u00E4","brvbar":"\u00A6","Ccedil":"\u00C7","ccedil":"\u00E7","cedil":"\u00B8","cent":"\u00A2","copy":"\u00A9","COPY":"\u00A9","curren":"\u00A4","deg":"\u00B0","divide":"\u00F7","Eacute":"\u00C9","eacute":"\u00E9","Ecirc":"\u00CA","ecirc":"\u00EA","Egrave":"\u00C8","egrave":"\u00E8","ETH":"\u00D0","eth":"\u00F0","Euml":"\u00CB","euml":"\u00EB","frac12":"\u00BD","frac14":"\u00BC","frac34":"\u00BE","gt":">","GT":">","Iacute":"\u00CD","iacute":"\u00ED","Icirc":"\u00CE","icirc":"\u00EE","iexcl":"\u00A1","Igrave":"\u00CC","igrave":"\u00EC","iquest":"\u00BF","Iuml":"\u00CF","iuml":"\u00EF","laquo":"\u00AB","lt":"<","LT":"<","macr":"\u00AF","micro":"\u00B5","middot":"\u00B7","nbsp":"\u00A0","not":"\u00AC","Ntilde":"\u00D1","ntilde":"\u00F1","Oacute":"\u00D3","oacute":"\u00F3","Ocirc":"\u00D4","ocirc":"\u00F4","Ograve":"\u00D2","ograve":"\u00F2","ordf":"\u00AA","ordm":"\u00BA","Oslash":"\u00D8","oslash":"\u00F8","Otilde":"\u00D5","otilde":"\u00F5","Ouml":"\u00D6","ouml":"\u00F6","para":"\u00B6","plusmn":"\u00B1","pound":"\u00A3","quot":"\"","QUOT":"\"","raquo":"\u00BB","reg":"\u00AE","REG":"\u00AE","sect":"\u00A7","shy":"\u00AD","sup1":"\u00B9","sup2":"\u00B2","sup3":"\u00B3","szlig":"\u00DF","THORN":"\u00DE","thorn":"\u00FE","times":"\u00D7","Uacute":"\u00DA","uacute":"\u00FA","Ucirc":"\u00DB","ucirc":"\u00FB","Ugrave":"\u00D9","ugrave":"\u00F9","uml":"\u00A8","Uuml":"\u00DC","uuml":"\u00FC","Yacute":"\u00DD","yacute":"\u00FD","yen":"\u00A5","yuml":"\u00FF"}
+},{}],17:[function(require,module,exports){
+module.exports={"amp":"&","apos":"'","gt":">","lt":"<","quot":"\""}
+
+},{}],18:[function(require,module,exports){
+
+'use strict';
+
+
+/* eslint-disable no-bitwise */
+
+var decodeCache = {};
+
+function getDecodeCache(exclude) {
+  var i, ch, cache = decodeCache[exclude];
+  if (cache) { return cache; }
+
+  cache = decodeCache[exclude] = [];
+
+  for (i = 0; i < 128; i++) {
+    ch = String.fromCharCode(i);
+    cache.push(ch);
+  }
+
+  for (i = 0; i < exclude.length; i++) {
+    ch = exclude.charCodeAt(i);
+    cache[ch] = '%' + ('0' + ch.toString(16).toUpperCase()).slice(-2);
+  }
+
+  return cache;
+}
+
+
+// Decode percent-encoded string.
+//
+function decode(string, exclude) {
+  var cache;
+
+  if (typeof exclude !== 'string') {
+    exclude = decode.defaultChars;
+  }
+
+  cache = getDecodeCache(exclude);
+
+  return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
+    var i, l, b1, b2, b3, b4, char,
+        result = '';
+
+    for (i = 0, l = seq.length; i < l; i += 3) {
+      b1 = parseInt(seq.slice(i + 1, i + 3), 16);
+
+      if (b1 < 0x80) {
+        result += cache[b1];
+        continue;
+      }
+
+      if ((b1 & 0xE0) === 0xC0 && (i + 3 < l)) {
+        // 110xxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+
+        if ((b2 & 0xC0) === 0x80) {
+          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
+
+          if (char < 0x80) {
+            result += '\ufffd\ufffd';
+          } else {
+            result += String.fromCharCode(char);
+          }
+
+          i += 3;
+          continue;
+        }
+      }
+
+      if ((b1 & 0xF0) === 0xE0 && (i + 6 < l)) {
+        // 1110xxxx 10xxxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
+
+        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
+          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
+
+          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
+            result += '\ufffd\ufffd\ufffd';
+          } else {
+            result += String.fromCharCode(char);
+          }
+
+          i += 6;
+          continue;
+        }
+      }
+
+      if ((b1 & 0xF8) === 0xF0 && (i + 9 < l)) {
+        // 111110xx 10xxxxxx 10xxxxxx 10xxxxxx
+        b2 = parseInt(seq.slice(i + 4, i + 6), 16);
+        b3 = parseInt(seq.slice(i + 7, i + 9), 16);
+        b4 = parseInt(seq.slice(i + 10, i + 12), 16);
+
+        if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
+          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
+
+          if (char < 0x10000 || char > 0x10FFFF) {
+            result += '\ufffd\ufffd\ufffd\ufffd';
+          } else {
+            char -= 0x10000;
+            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
+          }
+
+          i += 9;
+          continue;
+        }
+      }
+
+      result += '\ufffd';
+    }
+
+    return result;
+  });
+}
+
+
+decode.defaultChars   = ';/?:@&=+$,#';
+decode.componentChars = '';
+
+
+module.exports = decode;
+
+},{}],19:[function(require,module,exports){
+
+'use strict';
+
+
+var encodeCache = {};
+
+
+// Create a lookup array where anything but characters in `chars` string
+// and alphanumeric chars is percent-encoded.
+//
+function getEncodeCache(exclude) {
+  var i, ch, cache = encodeCache[exclude];
+  if (cache) { return cache; }
+
+  cache = encodeCache[exclude] = [];
+
+  for (i = 0; i < 128; i++) {
+    ch = String.fromCharCode(i);
+
+    if (/^[0-9a-z]$/i.test(ch)) {
+      // always allow unencoded alphanumeric characters
+      cache.push(ch);
+    } else {
+      cache.push('%' + ('0' + i.toString(16).toUpperCase()).slice(-2));
+    }
+  }
+
+  for (i = 0; i < exclude.length; i++) {
+    cache[exclude.charCodeAt(i)] = exclude[i];
+  }
+
+  return cache;
+}
+
+
+// Encode unsafe characters with percent-encoding, skipping already
+// encoded sequences.
+//
+//  - string       - string to encode
+//  - exclude      - list of characters to ignore (in addition to a-zA-Z0-9)
+//  - keepEscaped  - don't encode '%' in a correct escape sequence (default: true)
+//
+function encode(string, exclude, keepEscaped) {
+  var i, l, code, nextCode, cache,
+      result = '';
+
+  if (typeof exclude !== 'string') {
+    // encode(string, keepEscaped)
+    keepEscaped  = exclude;
+    exclude = encode.defaultChars;
+  }
+
+  if (typeof keepEscaped === 'undefined') {
+    keepEscaped = true;
+  }
+
+  cache = getEncodeCache(exclude);
+
+  for (i = 0, l = string.length; i < l; i++) {
+    code = string.charCodeAt(i);
+
+    if (keepEscaped && code === 0x25 /* % */ && i + 2 < l) {
+      if (/^[0-9a-f]{2}$/i.test(string.slice(i + 1, i + 3))) {
+        result += string.slice(i, i + 3);
+        i += 2;
+        continue;
+      }
+    }
+
+    if (code < 128) {
+      result += cache[code];
+      continue;
+    }
+
+    if (code >= 0xD800 && code <= 0xDFFF) {
+      if (code >= 0xD800 && code <= 0xDBFF && i + 1 < l) {
+        nextCode = string.charCodeAt(i + 1);
+        if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
+          result += encodeURIComponent(string[i] + string[i + 1]);
+          i++;
+          continue;
+        }
+      }
+      result += '%EF%BF%BD';
+      continue;
+    }
+
+    result += encodeURIComponent(string[i]);
+  }
+
+  return result;
+}
+
+encode.defaultChars   = ";/?:@&=+$,-_.!~*'()#";
+encode.componentChars = "-_.!~*'()";
+
+
+module.exports = encode;
+
+},{}],20:[function(require,module,exports){
+/*! http://mths.be/repeat v0.2.0 by @mathias */
+if (!String.prototype.repeat) {
+	(function() {
+		'use strict'; // needed to support `apply`/`call` with `undefined`/`null`
+		var defineProperty = (function() {
+			// IE 8 only supports `Object.defineProperty` on DOM elements
+			try {
+				var object = {};
+				var $defineProperty = Object.defineProperty;
+				var result = $defineProperty(object, object, object) && $defineProperty;
+			} catch(error) {}
+			return result;
+		}());
+		var repeat = function(count) {
+			if (this == null) {
+				throw TypeError();
+			}
+			var string = String(this);
+			// `ToInteger`
+			var n = count ? Number(count) : 0;
+			if (n != n) { // better `isNaN`
+				n = 0;
+			}
+			// Account for out-of-bounds indices
+			if (n < 0 || n == Infinity) {
+				throw RangeError();
+			}
+			var result = '';
+			while (n) {
+				if (n % 2 == 1) {
+					result += string;
+				}
+				if (n > 1) {
+					string += string;
+				}
+				n >>= 1;
+			}
+			return result;
+		};
+		if (defineProperty) {
+			defineProperty(String.prototype, 'repeat', {
+				'value': repeat,
+				'configurable': true,
+				'writable': true
+			});
+		} else {
+			String.prototype.repeat = repeat;
+		}
+	}());
+}
+
+},{}]},{},[5])(5)
 });
