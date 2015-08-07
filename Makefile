@@ -25,10 +25,10 @@ test: $(SPEC)
 	node test/test.js
 
 bench:
-	sudo renice 99 $$$$; node bench/bench.js ${BENCHINP}
+	sudo renice -10 $$$$; node bench/bench.js ${BENCHINP}
 
 bench-detailed:
-	sudo renice 99 $$$$; \
+	sudo renice -10 $$$$; \
 	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
 	awk -f bench/format_benchmarks.awk
 
