@@ -15,4 +15,5 @@ _ update dingus:
     make
     cd ../../CommonMark-site
     make update
+    make
     make upload
