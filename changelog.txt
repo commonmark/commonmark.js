@@ -1,3 +1,28 @@
+[0.22.0]
+
+  * Added `iframe` to whitelist of HTML block tags (as per spec).
+  * Removed `pre` from rule 6 of html blocks (see jgm/CommonMark#355).
+  * Fixed logic error in calculation of offset.  Here's a test case this
+    fixes:
+    ```
+    % echo -en "1. \t\tthere" | bin/commonmark
+    <ol>
+    <li>
+    <pre><code>ere
+    </code></pre>
+    </li>
+    </ol>
+    ```
+  * Disallow list item starting with multiple blank lines
+    (jgm/CommonMark#332).
+  * Fixed bug in list-start parser (#60).
+  * Changed smart quote algorithm to agree with cmark (#61).  The change only
+    involves double quotes, which now need to be both left flanking and
+    not right flanking to count as "can open."
+  * Fix replacement of multiple apostrophes in the same paragraph with
+    `--smart` (Brandon Frohs).
+  * `make bench`: renice to -10 rather than 99.
+
 [0.21.0]
 
   * Updated to version 0.21 of spec.
