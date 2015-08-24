@@ -23,7 +23,7 @@ var reHtmlBlockOpen = [
    /^<[?]/,
    /^<![A-Z]/,
    /^<!\[CDATA\[/,
-   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|head|header|hr|html|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|pre|section|source|title|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
+   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|section|source|title|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
     new RegExp('^(?:' + OPENTAG + '|' + CLOSETAG + ')\s*$', 'i')
 ];
 
@@ -255,7 +255,7 @@ var blocks = {
     },
     Item: {
         continue: function(parser, container) {
-            if (parser.blank) {
+            if (parser.blank && container._firstChild !== null) {
                 parser.advanceNextNonspace();
             } else if (parser.indent >=
                        container._listData.markerOffset +
@@ -504,11 +504,9 @@ var blockStarts = [
         var data;
         var i;
         if ((data = parseListMarker(parser.currentLine,
-                                    parser.nextNonspace, parser.indent))) {
+                                    parser.nextNonspace, parser.indent)) &&
+            (!parser.indented || container.type === 'List')) {
             parser.closeUnmatchedBlocks();
-            if (parser.indented && parser.tip.type !== 'List') {
-                return 0;
-            }
             parser.advanceNextNonspace();
             // recalculate data.padding, taking into account tabs:
             i = parser.column;
@@ -554,7 +552,7 @@ var advanceOffset = function(count, columns) {
     var currentLine = this.currentLine;
     while (columns ? (cols < count) : (i < count)) {
         if (currentLine[this.offset + i] === '\t') {
-            cols += (4 - (this.column % 4));
+            cols += (4 - ((this.column + cols) % 4));
         } else {
             cols += 1;
         }
@@ -1574,6 +1572,9 @@ var scanDelims = function(cc) {
             (!right_flanking || before_is_punctuation);
         can_close = right_flanking &&
             (!left_flanking || after_is_punctuation);
+    } else if (cc === C_SINGLEQUOTE || cc === C_DOUBLEQUOTE) {
+        can_open = left_flanking && !right_flanking;
+        can_close = right_flanking;
     } else {
         can_open = left_flanking;
         can_close = right_flanking;
