@@ -151,8 +151,8 @@ Nodes have the following public methods:
 
 - `appendChild(child)`:  Append a Node `child` to the end of the
   Node's children.
-- `prependChild(child)`:  Prepend a Node `child` to the end of the
-  Node's children.
+- `prependChild(child)`:  Prepend a Node `child` to the
+  beginning of the Node's children.
 - `unlink()`:  Remove the Node from the tree, severing its links
   with siblings and parents, and closing up gaps as needed.
 - `insertAfter(sibling)`: Insert a Node `sibling` after the Node.
