@@ -35,8 +35,9 @@ command-line executable, `commonmark`.
 For client-side use, you can do `make dist` to produce
 a standalone JavaScript file `js/dist/commonmark.js`,
 suitable for linking into a web page, or fetch the latest
-from <http://spec.commonmark.org/js/commonmark.js>, or
-`bower install commonmark`.
+from
+<https://raw.githubusercontent.com/jgm/commonmark.js/master/dist/commonmark.js>,
+or `bower install commonmark`.
 
 To run tests for the JavaScript library:
 
