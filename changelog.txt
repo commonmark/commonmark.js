@@ -1,3 +1,13 @@
+[0.22.1]
+
+  * README: Use an https URL for commonmark.js (#71).
+  * README: Fixed typo (#70).
+  * Reset `container` after closing containing lists (#67).
+  * Use mdurl 1.0.1, to avoid problems with Google closure
+    compiler (#66).
+  * Adjusted .npmignore so the package doesn't include
+    extraneous files (#72, Hypercubed).
+
 [0.22.0]
 
   * Added `iframe` to whitelist of HTML block tags (as per spec).

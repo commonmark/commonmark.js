@@ -643,6 +643,7 @@ var incorporateLine = function(ln) {
     // Check to see if we've hit 2nd blank line; if so break out of list:
     if (this.blank && container._lastLineBlank) {
         this.breakOutOfLists(container);
+        container = this.tip;
     }
 
     var matchedLeaf = container.type !== 'Paragraph' &&
