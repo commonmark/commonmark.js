@@ -1,3 +1,4 @@
-commonmark.js
-*.tgz
-index.html
+*
+!bin/*
+!dist/*
+!lib/*
