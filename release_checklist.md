@@ -9,7 +9,7 @@ _ git push
 _ git push --tags
 _ npm publish
 _ create github release
-_ update dingus:
+_ for releases involving a spec change: update dingus:
 
     cd dingus
     make
