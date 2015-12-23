@@ -128,7 +128,7 @@ The parser returns a Node.  The following public properties are defined
   `Text`, `Softbreak`, `Hardbreak`, `Emph`, `Strong`,
   `Html`, `Link`, `Image`, `Code`, `Document`, `Paragraph`,
   `BlockQuote`, `Item`, `List`, `Heading`, `CodeBlock`,
-  `HtmlBlock` `HorizontalRule`.
+  `HtmlBlock` `ThematicBreak`.
 - `firstChild` (read-only):  a Node or null.
 - `lastChild` (read-only): a Node or null.
 - `next` (read-only): a Node or null.
