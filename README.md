@@ -127,7 +127,7 @@ The parser returns a Node.  The following public properties are defined
 - `type` (read-only):  a String, one of
   `Text`, `Softbreak`, `Hardbreak`, `Emph`, `Strong`,
   `Html`, `Link`, `Image`, `Code`, `Document`, `Paragraph`,
-  `BlockQuote`, `Item`, `List`, `Header`, `CodeBlock`,
+  `BlockQuote`, `Item`, `List`, `Heading`, `CodeBlock`,
   `HtmlBlock` `HorizontalRule`.
 - `firstChild` (read-only):  a Node or null.
 - `lastChild` (read-only): a Node or null.
@@ -142,7 +142,7 @@ The parser returns a Node.  The following public properties are defined
 - `destination`: link or image destination (String) or null.
 - `title`: link or image title (String) or null.
 - `info`: fenced code block info string (String) or null.
-- `level`: header level (Number).
+- `level`: heading level (Number).
 - `listType`: a String, either `Bullet` or `Ordered`.
 - `listTight`: `true` if list is tight.
 - `listStart`: a Number, the starting number of an ordered list.
