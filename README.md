@@ -147,6 +147,8 @@ The parser returns a Node.  The following public properties are defined
 - `listTight`: `true` if list is tight.
 - `listStart`: a Number, the starting number of an ordered list.
 - `listDelimiter`: a String, either `)` or `.` for an ordered list.
+- `onEnter`, `onExit`: Strings, used only for `CustomBlock` or
+  `CustomInline`.
 
 Nodes have the following public methods:
 
