@@ -36,7 +36,7 @@ var reHtmlBlockClose = [
    /\]\]>/
 ];
 
-var reHrule = /^(?:(?:\* *){3,}|(?:_ *){3,}|(?:- *){3,}) *$/;
+var reThematicBreak = /^(?:(?:\* *){3,}|(?:_ *){3,}|(?:- *){3,}) *$/;
 
 var reMaybeSpecial = /^[#`~*+_=<>0-9-]/;
 
@@ -46,13 +46,13 @@ var reBulletListMarker = /^[*+-]( +|$)/;
 
 var reOrderedListMarker = /^(\d{1,9})([.)])( +|$)/;
 
-var reATXHeaderMarker = /^#{1,6}(?: +|$)/;
+var reATXHeadingMarker = /^#{1,6}(?: +|$)/;
 
 var reCodeFence = /^`{3,}(?!.*`)|^~{3,}(?!.*~)/;
 
 var reClosingCodeFence = /^(?:`{3,}|~{3,})(?= *$)/;
 
-var reSetextHeaderLine = /^(?:=+|-+) *$/;
+var reSetextHeadingLine = /^(?:=+|-+) *$/;
 
 var reLineEnding = /\r\n|\n|\r/;
 
@@ -93,7 +93,7 @@ var endsWithBlankLine = function(block) {
 // Break out of all containing lists, resetting the tip of the
 // document to the parent of the highest list, and finalizing
 // all the lists.  (This is used to implement the "two blank lines
-// break of of all lists" feature.)
+// break out of all lists" feature.)
 var breakOutOfLists = function(block) {
     var b = block;
     var last_list = null;
@@ -271,18 +271,18 @@ var blocks = {
         canContain: function(t) { return (t !== 'Item'); },
         acceptsLines: false
     },
-    Header: {
+    Heading: {
         continue: function() {
-            // a header can never container > 1 line, so fail to match:
+            // a heading can never container > 1 line, so fail to match:
             return 1;
         },
         finalize: function() { return; },
         canContain: function() { return false; },
         acceptsLines: false
     },
-    HorizontalRule: {
+    ThematicBreak: {
         continue: function() {
-            // an hrule can never container > 1 line, so fail to match:
+            // a thematic break can never container > 1 line, so fail to match:
             return 1;
         },
         finalize: function() { return; },
@@ -398,15 +398,15 @@ var blockStarts = [
         }
     },
 
-    // ATX header
+    // ATX heading
     function(parser) {
         var match;
         if (!parser.indented &&
-            (match = parser.currentLine.slice(parser.nextNonspace).match(reATXHeaderMarker))) {
+            (match = parser.currentLine.slice(parser.nextNonspace).match(reATXHeadingMarker))) {
             parser.advanceNextNonspace();
             parser.advanceOffset(match[0].length, false);
             parser.closeUnmatchedBlocks();
-            var container = parser.addChild('Header', parser.nextNonspace);
+            var container = parser.addChild('Heading', parser.nextNonspace);
             container.level = match[0].trim().length; // number of #s
             // remove trailing ###s:
             container._string_content =
@@ -464,21 +464,21 @@ var blockStarts = [
 
     },
 
-    // Setext header
+    // Setext heading
     function(parser, container) {
         var match;
         if (!parser.indented &&
             container.type === 'Paragraph' &&
                    (container._string_content.indexOf('\n') ===
                       container._string_content.length - 1) &&
-                   ((match = parser.currentLine.slice(parser.nextNonspace).match(reSetextHeaderLine)))) {
+                   ((match = parser.currentLine.slice(parser.nextNonspace).match(reSetextHeadingLine)))) {
             parser.closeUnmatchedBlocks();
-            var header = new Node('Header', container.sourcepos);
-            header.level = match[0][0] === '=' ? 1 : 2;
-            header._string_content = container._string_content;
-            container.insertAfter(header);
+            var heading = new Node('Heading', container.sourcepos);
+            heading.level = match[0][0] === '=' ? 1 : 2;
+            heading._string_content = container._string_content;
+            container.insertAfter(heading);
             container.unlink();
-            parser.tip = header;
+            parser.tip = heading;
             parser.advanceOffset(parser.currentLine.length - parser.offset, false);
             return 2;
         } else {
@@ -486,12 +486,12 @@ var blockStarts = [
         }
     },
 
-    // hrule
+    // thematic break
     function(parser) {
         if (!parser.indented &&
-            reHrule.test(parser.currentLine.slice(parser.nextNonspace))) {
+            reThematicBreak.test(parser.currentLine.slice(parser.nextNonspace))) {
             parser.closeUnmatchedBlocks();
-            parser.addChild('HorizontalRule', parser.nextNonspace);
+            parser.addChild('ThematicBreak', parser.nextNonspace);
             parser.advanceOffset(parser.currentLine.length - parser.offset, false);
             return 2;
         } else {
@@ -766,7 +766,7 @@ var processInlines = function(block) {
     while ((event = walker.next())) {
         node = event.node;
         t = node.type;
-        if (!event.entering && (t === 'Paragraph' || t === 'Header')) {
+        if (!event.entering && (t === 'Paragraph' || t === 'Heading')) {
             this.inlineParser.parse(node);
         }
     }
@@ -1223,7 +1223,7 @@ var renderNodes = function(block) {
             }
             break;
 
-        case 'Header':
+        case 'Heading':
             tagname = 'h' + node.level;
             if (entering) {
                 cr();
@@ -1256,7 +1256,7 @@ var renderNodes = function(block) {
             cr();
             break;
 
-        case 'HorizontalRule':
+        case 'ThematicBreak':
             cr();
             out(tag('hr', attrs, true));
             cr();
@@ -2249,7 +2249,7 @@ function isContainer(node) {
     case 'List':
     case 'Item':
     case 'Paragraph':
-    case 'Header':
+    case 'Heading':
     case 'Emph':
     case 'Strong':
     case 'Link':
@@ -2319,7 +2319,7 @@ var Node = function(nodeType, sourcepos) {
     this._open = true;
     this._string_content = null;
     this._literal = null;
-    this._listData = null;
+    this._listData = {};
     this._info = null;
     this._destination = null;
     this._title = null;
@@ -2620,7 +2620,7 @@ var renderNodes = function(block) {
         nodetype = node.type;
 
         container = node.isContainer;
-        selfClosing = nodetype === 'HorizontalRule' || nodetype === 'Hardbreak' ||
+        selfClosing = nodetype === 'ThematicBreak' || nodetype === 'Hardbreak' ||
             nodetype === 'Softbreak';
         unescapedContents = nodetype === 'Html' || nodetype === 'HtmlInline';
         tagname = toTagName(nodetype);
@@ -2630,6 +2630,9 @@ var renderNodes = function(block) {
             attrs = [];
 
             switch (nodetype) {
+            case 'Document':
+                attrs.push(['xmlns', 'http://commonmark.org/xml/1.0']);
+                break;
             case 'List':
                 if (node.listType !== null) {
                     attrs.push(['type', node.listType.toLowerCase()]);
@@ -2656,7 +2659,7 @@ var renderNodes = function(block) {
                     attrs.push(['info', node.info]);
                 }
                 break;
-            case 'Header':
+            case 'Heading':
                 attrs.push(['level', String(node.level)]);
                 break;
             case 'Link':

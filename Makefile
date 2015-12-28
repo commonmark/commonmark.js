@@ -16,6 +16,7 @@ dist/commonmark.js: lib/index.js ${JSMODULES}
 
 # 'npm install -g uglify-js' for the uglifyjs tool:
 dist/commonmark.min.js: dist/commonmark.js
+	uglifyjs --version  # version should be at least 2.5.0
 	uglifyjs $< --compress keep_fargs=true,pure_getters=true --preamble "/* commonmark $(VERSION) https://github.com/jgm/CommonMark @license BSD3 */" > $@
 
 update-spec:
