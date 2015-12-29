@@ -8,6 +8,7 @@ var CLOSETAG = require('./common').CLOSETAG;
 
 var CODE_INDENT = 4;
 
+var C_TAB = 9;
 var C_NEWLINE = 10;
 var C_GREATERTHAN = 62;
 var C_LESSTHAN = 60;
@@ -42,9 +43,9 @@ var reMaybeSpecial = /^[#`~*+_=<>0-9-]/;
 
 var reNonSpace = /[^ \t\f\v\r\n]/;
 
-var reBulletListMarker = /^[*+-]( +|$)/;
+var reBulletListMarker = /^[*+-]/;
 
-var reOrderedListMarker = /^(\d{1,9})([.)])( +|$)/;
+var reOrderedListMarker = /^(\d{1,9})([.)])/;
 
 var reATXHeadingMarker = /^#{1,6}(?: +|$)/;
 
@@ -138,37 +139,61 @@ var addChild = function(tag, offset) {
 
 // Parse a list marker and return data on the marker (type,
 // start, delimiter, bullet character, padding) or null.
-var parseListMarker = function(ln, offset, indent) {
-    var rest = ln.slice(offset);
+var parseListMarker = function(parser) {
+    var rest = parser.currentLine.slice(parser.nextNonspace);
     var match;
-    var spaces_after_marker;
+    var nextc;
+    var markerStartCol;
+    var spacesStartCol;
+    var spacesStartOffset;
     var data = { type: null,
                  tight: true,  // lists are tight by default
                  bulletChar: null,
                  start: null,
                  delimiter: null,
                  padding: null,
-                 markerOffset: indent };
+                 markerOffset: parser.indent };
     if ((match = rest.match(reBulletListMarker))) {
-        spaces_after_marker = match[1].length;
         data.type = 'Bullet';
         data.bulletChar = match[0][0];
 
     } else if ((match = rest.match(reOrderedListMarker))) {
-        spaces_after_marker = match[3].length;
         data.type = 'Ordered';
         data.start = parseInt(match[1]);
         data.delimiter = match[2];
     } else {
         return null;
     }
-    var blank_item = match[0].length === rest.length;
+    // make sure we have spaces after
+    nextc = peek(parser.currentLine, parser.nextNonspace + match[0].length);
+    if (!(nextc === -1 || nextc === C_TAB || nextc === C_SPACE)) {
+        return null;
+    }
+
+    // we've got a match! advance offset and calculate padding
+    parser.advanceNextNonspace(); // to start of marker
+    markerStartCol = parser.column;
+    parser.advanceOffset(match[0].length, true); // to end of marker
+    spacesStartCol = parser.column;
+    spacesStartOffset = parser.offset;
+    do {
+        parser.advanceOffset(1, true);
+        nextc = peek(parser.currentLine, parser.offset);
+    } while (parser.column - spacesStartCol < 5 &&
+           (nextc === C_SPACE || nextc === C_TAB));
+    var blank_item = peek(parser.currentLine, parser.offset) === -1;
+    var spaces_after_marker = parser.column - spacesStartCol;
     if (spaces_after_marker >= 5 ||
         spaces_after_marker < 1 ||
         blank_item) {
-        data.padding = match[0].length - spaces_after_marker + 1;
+        data.padding = match[0].length + 1;
+        parser.column = spacesStartCol;
+        parser.offset = spacesStartOffset;
+        if (peek(parser.currentLine, parser.offset) === C_SPACE) {
+            parser.advanceOffset(1, true);
+        }
     } else {
-        data.padding = match[0].length;
+        data.padding = match[0].length + spaces_after_marker;
     }
     return data;
 };
@@ -502,16 +527,10 @@ var blockStarts = [
     // list item
     function(parser, container) {
         var data;
-        var i;
-        if ((data = parseListMarker(parser.currentLine,
-                                    parser.nextNonspace, parser.indent)) &&
-            (!parser.indented || container.type === 'List')) {
+
+        if ((!parser.indented || container.type === 'List')
+                && (data = parseListMarker(parser))) {
             parser.closeUnmatchedBlocks();
-            parser.advanceNextNonspace();
-            // recalculate data.padding, taking into account tabs:
-            i = parser.column;
-            parser.advanceOffset(data.padding, false);
-            data.padding = parser.column - i;
 
             // add the list if needed
             if (parser.tip.type !== 'List' ||
@@ -547,19 +566,23 @@ var blockStarts = [
 ];
 
 var advanceOffset = function(count, columns) {
-    var i = 0;
     var cols = 0;
     var currentLine = this.currentLine;
-    while (columns ? (cols < count) : (i < count)) {
-        if (currentLine[this.offset + i] === '\t') {
-            cols += (4 - ((this.column + cols) % 4));
+    var charsToTab;
+    var c;
+    while (count > 0 && (c = currentLine[this.offset])) {
+        if (c === '\t') {
+            charsToTab = 4 - (this.column % 4);
+            this.column += charsToTab;
+            this.offset += 1;
+            count -= (columns ? charsToTab : 1);
         } else {
             cols += 1;
+            this.offset += 1;
+            this.column += 1; // assume ascii; block starts are ascii
+            count -= 1;
         }
-        i++;
     }
-    this.offset += i;
-    this.column += cols;
 };
 
 var advanceNextNonspace = function() {
@@ -601,6 +624,7 @@ var incorporateLine = function(ln) {
     var container = this.doc;
     this.oldtip = this.tip;
     this.offset = 0;
+    this.column = 0;
     this.lineNumber += 1;
 
     // replace NUL characters for security
@@ -1116,11 +1140,19 @@ var renderNodes = function(block) {
             out(tag(entering ? 'strong' : '/strong'));
             break;
 
-        case 'Html':
+        case 'HtmlInline':
             if (options.safe) {
                 out('<!-- raw HTML omitted -->');
             } else {
                 out(node.literal);
+            }
+            break;
+
+        case 'CustomInline':
+            if (entering && node.onEnter) {
+                out(node.onEnter);
+            } else if (!entering && node.onExit) {
+                out(node.onExit);
             }
             break;
 
@@ -1252,6 +1284,16 @@ var renderNodes = function(block) {
                 out('<!-- raw HTML omitted -->');
             } else {
                 out(node.literal);
+            }
+            cr();
+            break;
+
+        case 'CustomBlock':
+            cr();
+            if (entering && node.onEnter) {
+                out(node.onEnter);
+            } else if (!entering && node.onExit) {
+                out(node.onExit);
             }
             cr();
             break;
@@ -1518,7 +1560,7 @@ var parseHtmlTag = function(block) {
     if (m === null) {
         return false;
     } else {
-        var node = new Node('Html');
+        var node = new Node('HtmlInline');
         node._literal = m;
         block.appendChild(node);
         return true;
@@ -1931,7 +1973,6 @@ var parseCloseBracket = function(block) {
 
         // Next, see if there's a link label
         var savepos = this.pos;
-        this.spnl();
         var beforelabel = this.pos;
         var n = this.parseLinkLabel();
         if (n === 0 || n === 2) {
@@ -2254,6 +2295,8 @@ function isContainer(node) {
     case 'Strong':
     case 'Link':
     case 'Image':
+    case 'CustomInline':
+    case 'CustomBlock':
         return true;
     default:
         return false;
@@ -2328,6 +2371,8 @@ var Node = function(nodeType, sourcepos) {
     this._fenceLength = 0;
     this._fenceOffset = null;
     this._level = null;
+    this._onEnter = null;
+    this._onExit = null;
 };
 
 var proto = Node.prototype;
@@ -2407,6 +2452,16 @@ Object.defineProperty(proto, 'listStart', {
 Object.defineProperty(proto, 'listDelimiter', {
     get: function() { return this._listData.delimiter; },
     set: function(delim) { this._listData.delimiter = delim; }
+});
+
+Object.defineProperty(proto, 'onEnter', {
+    get: function() { return this._onEnter; },
+    set: function(s) { this._onEnter = s; }
+});
+
+Object.defineProperty(proto, 'onExit', {
+    get: function() { return this._onExit; },
+    set: function(s) { this._onExit = s; }
 });
 
 Node.prototype.appendChild = function(child) {
@@ -2583,7 +2638,6 @@ var renderNodes = function(block) {
     var disableTags = 0;
     var indentLevel = 0;
     var indent = '  ';
-    var unescapedContents;
     var container;
     var selfClosing;
     var nodetype;
@@ -2622,7 +2676,6 @@ var renderNodes = function(block) {
         container = node.isContainer;
         selfClosing = nodetype === 'ThematicBreak' || nodetype === 'Hardbreak' ||
             nodetype === 'Softbreak';
-        unescapedContents = nodetype === 'Html' || nodetype === 'HtmlInline';
         tagname = toTagName(nodetype);
 
         if (entering) {
@@ -2667,6 +2720,11 @@ var renderNodes = function(block) {
                 attrs.push(['destination', node.destination]);
                 attrs.push(['title', node.title]);
                 break;
+            case 'CustomInline':
+            case 'CustomBlock':
+                attrs.push(['on_enter', node.onEnter]);
+                attrs.push(['on_exit', node.onExit]);
+                break;
             default:
                 break;
             }
@@ -2686,7 +2744,7 @@ var renderNodes = function(block) {
             } else if (!container && !selfClosing) {
                 var lit = node.literal;
                 if (lit) {
-                    out(unescapedContents ? lit : esc(lit));
+                    out(esc(lit));
                 }
                 out(tag('/' + tagname));
             }
@@ -2979,7 +3037,7 @@ function decode(string, exclude) {
   cache = getDecodeCache(exclude);
 
   return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
-    var i, l, b1, b2, b3, b4, char,
+    var i, l, b1, b2, b3, b4, chr,
         result = '';
 
     for (i = 0, l = seq.length; i < l; i += 3) {
@@ -2995,12 +3053,12 @@ function decode(string, exclude) {
         b2 = parseInt(seq.slice(i + 4, i + 6), 16);
 
         if ((b2 & 0xC0) === 0x80) {
-          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
+          chr = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
 
-          if (char < 0x80) {
+          if (chr < 0x80) {
             result += '\ufffd\ufffd';
           } else {
-            result += String.fromCharCode(char);
+            result += String.fromCharCode(chr);
           }
 
           i += 3;
@@ -3014,12 +3072,12 @@ function decode(string, exclude) {
         b3 = parseInt(seq.slice(i + 7, i + 9), 16);
 
         if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
-          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
+          chr = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
 
-          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
+          if (chr < 0x800 || (chr >= 0xD800 && chr <= 0xDFFF)) {
             result += '\ufffd\ufffd\ufffd';
           } else {
-            result += String.fromCharCode(char);
+            result += String.fromCharCode(chr);
           }
 
           i += 6;
@@ -3034,13 +3092,13 @@ function decode(string, exclude) {
         b4 = parseInt(seq.slice(i + 10, i + 12), 16);
 
         if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
-          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
+          chr = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
 
-          if (char < 0x10000 || char > 0x10FFFF) {
+          if (chr < 0x10000 || chr > 0x10FFFF) {
             result += '\ufffd\ufffd\ufffd\ufffd';
           } else {
-            char -= 0x10000;
-            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
+            chr -= 0x10000;
+            result += String.fromCharCode(0xD800 + (chr >> 10), 0xDC00 + (chr & 0x3FF));
           }
 
           i += 9;
