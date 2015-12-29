@@ -1,3 +1,23 @@
+[0.23.0]
+
+  * [API change] Rename nodes: "Html" -> "HtmlInline" (#63).
+  * [API change] Add `CustomBlock`, `CustomInline`.
+  * [API change] Rename "HorizontalRule" -> "ThematicBreak".
+  * [API change] Rename "Header" -> "Heading" (spec change).
+  * Don't allow whitespace between link text and link label
+    of a reference link (spec change.)
+  * Fixed calculation of list offsets (#59).
+  * Allow tab after bullet list marker (#59).
+  * `advanceOffset` - copy the code from `libcmark`.
+  * Fixed a list/tab/padding corner case (#59).
+  * Escape HTML contents in xml output, as the DTD requires PCDATA.
+  * xml renderer - added xmlns attribute (jgm/CommonMark#87).
+  * Test on node.js 5.x and 4.x (Nik Nyby).  Remove testing on iojs.
+  * Initialize `_listData` to `{}` when creating `Node` (#74).
+  * Added version check for uglify; updated dist files (#69).
+  * Fix typo in breakOutOfLists description (Nik Nyby).
+  * Updated benchmarks in README.md.
+
 [0.22.1]
 
   * README: Use an https URL for commonmark.js (#71).
