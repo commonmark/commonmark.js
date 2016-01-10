@@ -17,3 +17,6 @@ _ for releases involving a spec change: update dingus:
     make update
     make
     make upload
+
+_ update babelmark2: copy commonmark.js to src/babelmark2/js on server
+
