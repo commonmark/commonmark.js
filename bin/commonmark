@@ -26,6 +26,9 @@ for (i = 2; i < process.argv.length; i++) {
         options.safe = true;
     } else if (arg === '--sourcepos') {
         options.sourcepos = true;
+    } else if (arg === '--version') {
+        process.stdout.write('commonmark.js ' + commonmark.version + '\n');
+        process.exit(0);
     } else if (/^--/.test(arg)) {
         process.stderr.write('Unknown option ' + arg + '\n');
         process.exit(1);
