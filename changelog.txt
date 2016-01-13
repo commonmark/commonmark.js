@@ -1,3 +1,17 @@
+[0.24.0]
+
+  * [API change] Added version.
+  * Added `--version` to cli program.
+  * Updated spec.txt to 0.24.
+  * Updated test runner to new spec format.
+  * Allow multiline setext header content.
+  * Don't allow spaces in link destinations, even in `<>`.
+  * Updated recognizer for absolute URIs...
+    We no longer use a whitelist of valid schemes.
+  * Remove unused variable `markerStartCol` (Nik Nyby).
+  * Fix inaccurate comment about `closeUnmatchedBlocks` (Nik Nyby).
+    This function is void, and doesn't return true.
+
 [0.23.0]
 
   * [API change] Rename nodes: "Html" -> "HtmlInline" (#63).
