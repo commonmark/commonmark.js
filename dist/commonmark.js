@@ -143,7 +143,6 @@ var parseListMarker = function(parser) {
     var rest = parser.currentLine.slice(parser.nextNonspace);
     var match;
     var nextc;
-    var markerStartCol;
     var spacesStartCol;
     var spacesStartOffset;
     var data = { type: null,
@@ -172,7 +171,6 @@ var parseListMarker = function(parser) {
 
     // we've got a match! advance offset and calculate padding
     parser.advanceNextNonspace(); // to start of marker
-    markerStartCol = parser.column;
     parser.advanceOffset(match[0].length, true); // to end of marker
     spacesStartCol = parser.column;
     spacesStartOffset = parser.offset;
@@ -207,7 +205,7 @@ var listsMatch = function(list_data, item_data) {
             list_data.bulletChar === item_data.bulletChar);
 };
 
-// Finalize and close any unmatched blocks. Returns true.
+// Finalize and close any unmatched blocks.
 var closeUnmatchedBlocks = function() {
     if (!this.allClosed) {
         // finalize any blocks not matched
@@ -494,8 +492,6 @@ var blockStarts = [
         var match;
         if (!parser.indented &&
             container.type === 'Paragraph' &&
-                   (container._string_content.indexOf('\n') ===
-                      container._string_content.length - 1) &&
                    ((match = parser.currentLine.slice(parser.nextNonspace).match(reSetextHeadingLine)))) {
             parser.closeUnmatchedBlocks();
             var heading = new Node('Heading', container.sourcepos);
@@ -1342,6 +1338,7 @@ module.exports = HtmlRenderer;
 // var renderer = new commonmark.HtmlRenderer();
 // console.log(renderer.render(parser.parse('Hello *world*')));
 
+module.exports.version = '0.24.0'
 module.exports.Node = require('./node');
 module.exports.Parser = require('./blocks');
 module.exports.HtmlRenderer = require('./html');
@@ -1398,7 +1395,7 @@ var reLinkTitle = new RegExp(
         '\\((' + ESCAPED_CHAR + '|[^)\\x00])*\\))');
 
 var reLinkDestinationBraces = new RegExp(
-    '^(?:[<](?:[^<>\\n\\\\\\x00]' + '|' + ESCAPED_CHAR + '|' + '\\\\)*[>])');
+    '^(?:[<](?:[^ <>\\t\\n\\\\\\x00]' + '|' + ESCAPED_CHAR + '|' + '\\\\)*[>])');
 
 var reLinkDestination = new RegExp(
     '^(?:' + REG_CHAR + '+|' + ESCAPED_CHAR + '|\\\\|' + IN_PARENS_NOSP + ')*');
@@ -1417,7 +1414,7 @@ var reDash = /--+/g;
 
 var reEmailAutolink = /^<([a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)>/;
 
-var reAutolink = /^<(?:coap|doi|javascript|aaa|aaas|about|acap|cap|cid|crid|data|dav|dict|dns|file|ftp|geo|go|gopher|h323|http|https|iax|icap|im|imap|info|ipp|iris|iris.beep|iris.xpc|iris.xpcs|iris.lwz|ldap|mailto|mid|msrp|msrps|mtqp|mupdate|news|nfs|ni|nih|nntp|opaquelocktoken|pop|pres|rtsp|service|session|shttp|sieve|sip|sips|sms|snmp|soap.beep|soap.beeps|tag|tel|telnet|tftp|thismessage|tn3270|tip|tv|urn|vemmi|ws|wss|xcon|xcon-userid|xmlrpc.beep|xmlrpc.beeps|xmpp|z39.50r|z39.50s|adiumxtra|afp|afs|aim|apt|attachment|aw|beshare|bitcoin|bolo|callto|chrome|chrome-extension|com-eventbrite-attendee|content|cvs|dlna-playsingle|dlna-playcontainer|dtn|dvb|ed2k|facetime|feed|finger|fish|gg|git|gizmoproject|gtalk|hcp|icon|ipn|irc|irc6|ircs|itms|jar|jms|keyparc|lastfm|ldaps|magnet|maps|market|message|mms|ms-help|msnim|mumble|mvn|notes|oid|palm|paparazzi|platform|proxy|psyc|query|res|resource|rmi|rsync|rtmp|secondlife|sftp|sgn|skype|smb|soldat|spotify|ssh|steam|svn|teamspeak|things|udp|unreal|ut2004|ventrilo|view-source|webcal|wtai|wyciwyg|xfire|xri|ymsgr):[^<>\x00-\x20]*>/i;
+var reAutolink = /^<[A-Za-z][A-Za-z0-9.+-]{1,31}:[^<>\x00-\x20]*>/i;
 
 var reSpnl = /^ *(?:\n *)?/;
 
