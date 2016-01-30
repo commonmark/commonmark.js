@@ -230,23 +230,18 @@ Exercises for the reader:  write a transform to
 Command line
 ------------
 
-The command line executable parses Markdown files and concatenates
-the result to an output stream.
+The command line executable parses CommonMark input from the
+specified files, or from stdin if no files are specified, and
+renders the result to stdout as HTML.  If multiple input files
+are specified, their contents are concatenated before parsing,
+with newlines between them.
 
-``` sh
-commonmark inputfile.md > outputfile.html 
-commonmark intro.md chapter1.md chapter2.md > book.html 
 ```
-if you do not supply file names as arguments, `commonmark` will
-listen on the `stdin` input stream.
+commonmark inputfile.md > outputfile.html
+commonmark intro.md chapter1.md chapter2.md > book.html
+```
 
-By default the output format is HTML.  Use `--xml` or `--ast` 
-arguments to produce output in those formats.  The `--time` argument 
-changes the output to a summary of the time spent processing the 
-files.
-
-`--smart`, `--safe` and `--sourcepos` arguments will engage those
-options as described above.
+Use `commonmark --help` to get a summary of options.
 
 A note on security
 ------------------
