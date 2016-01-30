@@ -54,6 +54,7 @@ the library:
 
     make dingus
 
+
 Usage
 -----
 
@@ -226,6 +227,27 @@ Exercises for the reader:  write a transform to
 4. Print warnings to the console for images without image
    descriptions or titles.
 
+Command line
+------------
+
+The command line executable parses Markdown files and concatenates
+the result to an output stream.
+
+``` sh
+commonmark inputfile.md > outputfile.html 
+commonmark intro.md chapter1.md chapter2.md > book.html 
+```
+if you do not supply file names as arguments, `commonmark` will
+listen on the `stdin` input stream.
+
+By default the output format is HTML.  Use `--xml` or `--ast` 
+arguments to produce output in those formats.  The `--time` argument 
+changes the output to a summary of the time spent processing the 
+files.
+
+`--smart`, `--safe` and `--sourcepos` arguments will engage those
+options as described above.
+
 A note on security
 ------------------
 
@@ -317,6 +339,8 @@ To generate this table,
 
     npm install showdown marked markdown-it benchmark
     make bench-detailed
+
+
 
 Authors
 -------
