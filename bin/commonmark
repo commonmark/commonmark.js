@@ -9,6 +9,7 @@ var args = process.argv.slice(2);
 var argv = parseArgs(args,
   {boolean: ["ast","xml","time","smart",
              "safe","sourcepos","help","version"],
+   string: ["to", "t"],
    unknown: function(o) {
      if (/^-/.test(o)) {
       process.stderr.write("Unknown option " + o + "\n");
@@ -18,21 +19,19 @@ var argv = parseArgs(args,
   });
 
 var inps = [];
-var format;
 var i;
 
 var usage = function() {
     process.stdout.write("commonmark [options] [file..]\n\n" +
     "Convert CommonMark to HTML.  Files are concatenated before\n" +
     "parsing.  If no files are given, input is read from stdin.\n\n" +
-    "--xml        Produce an XML version of the AST instead of HTML\n" +
-    "--ast        Produce a JavaScript version of the AST instead of HTML\n" +
-    "--time       Produce timings for phases of parsing and rendering\n" +
-    "--smart      Parse 'smart' punctuation\n" +
-    "--safe       Omit raw HTML and potentially unsafe attributes\n" +
-    "--sourcepos  Include source position attributes in HTML tags\n" +
-    "--version    Print version information\n" +
-    "--help       Print usage information\n");
+    "-t,--to FORMAT  Specify output format (xml, html, ast)\n" +
+    "--time          Produce timings for phases of parsing and rendering\n" +
+    "--smart         Parse 'smart' punctuation\n" +
+    "--safe          Omit raw HTML and potentially unsafe attributes\n" +
+    "--sourcepos     Include source position attributes in HTML tags\n" +
+    "--version       Print version information\n" +
+    "--help          Print usage information\n");
     process.exit(0);
 }
 
@@ -45,13 +44,8 @@ if (argv.version) {
     process.exit(0);
 }
 
-if (argv.ast) {
-    format = 'ast';
-} else if (argv.xml) {
-    format = 'xml';
-} else {
-    format = 'html';
-}
+var format = argv.to || argv.t || (argv.xml ? 'xml' :
+                                      (argv.ast ? 'ast' : 'html'));
 
 var options = {
   time: argv.time,
@@ -74,6 +68,9 @@ if (format === 'html') {
                    return util.inspect(node, null, 20, true) + '\n';
                  },
                  options: {} };
+} else {
+    process.stderr.write("Unknown format: " + format + "\n");
+    process.exit(1);
 }
 
 if (files.length === 0) {
