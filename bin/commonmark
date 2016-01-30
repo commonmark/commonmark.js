@@ -4,38 +4,63 @@
 var util = require('util');
 var fs = require('fs');
 var commonmark = require('../lib/index.js');
+var parseArgs = require('minimist');
+var args = process.argv.slice(2);
+var argv = parseArgs(args,
+  {boolean: ["ast","xml","time","smart",
+             "safe","sourcepos","help","version"],
+   unknown: function(o) {
+     if (/^-/.test(o)) {
+      process.stderr.write("Unknown option " + o + "\n");
+      process.exit(1);
+     }
+   }
+  });
 
 var inps = [];
-var file;
-var files = [];
-var options = { sourcepos: false, time: false };
-var format = 'html';
+var format;
 var i;
 
-for (i = 2; i < process.argv.length; i++) {
-    var arg = process.argv[i];
-    if (arg === '--ast') {
-        format = 'ast';
-    } else if (arg === '--xml') {
-        format = 'xml';
-    } else if (arg === '--time') {
-        options.time = true;
-    } else if (arg === '--smart') {
-        options.smart = true;
-    } else if (arg === '--safe') {
-        options.safe = true;
-    } else if (arg === '--sourcepos') {
-        options.sourcepos = true;
-    } else if (arg === '--version') {
-        process.stdout.write('commonmark.js ' + commonmark.version + '\n');
-        process.exit(0);
-    } else if (/^--/.test(arg)) {
-        process.stderr.write('Unknown option ' + arg + '\n');
-        process.exit(1);
-    } else {
-      files.push(arg);
-    }
+var usage = function() {
+    process.stdout.write("commonmark [options] [file..]\n\n" +
+    "Convert CommonMark to HTML.  Files are concatenated before\n" +
+    "parsing.  If no files are given, input is read from stdin.\n\n" +
+    "--xml        Produce an XML version of the AST instead of HTML\n" +
+    "--ast        Produce a JavaScript version of the AST instead of HTML\n" +
+    "--time       Produce timings for phases of parsing and rendering\n" +
+    "--smart      Parse 'smart' punctuation\n" +
+    "--safe       Omit raw HTML and potentially unsafe attributes\n" +
+    "--sourcepos  Include source position attributes in HTML tags\n" +
+    "--version    Print version information\n" +
+    "--help       Print usage information\n");
+    process.exit(0);
 }
+
+if (argv.help) {
+    usage();
+    process.exit(0);
+}
+if (argv.version) {
+    process.stdout.write('commonmark.js ' + commonmark.version + '\n');
+    process.exit(0);
+}
+
+if (argv.ast) {
+    format = 'ast';
+} else if (argv.xml) {
+    format = 'xml';
+} else {
+    format = 'html';
+}
+
+var options = {
+  time: argv.time,
+  smart: argv.smart,
+  safe: argv.safe,
+  sourcepos: argv.sourcepos
+};
+
+var files = argv._;
 
 var parser = new commonmark.Parser(options);
 var renderer;
@@ -56,7 +81,7 @@ if (files.length === 0) {
 }
 
 for (i = 0; i < files.length; i++) {
-  file = files[i];
+  var file = files[i];
   inps.push(fs.readFileSync(file, 'utf8'));
 }
 
