@@ -94,10 +94,8 @@ var specTest = function(testcase, res, converter) {
         cursor.write(showSpaces(markdown));
         cursor.write('=== expected ===============\n');
         cursor.write(showSpaces(expected));
-        console.dir(expected);
         cursor.write('=== got ====================\n');
         cursor.write(showSpaces(actual));
-        console.dir(actual);
         cursor.reset();
     }
 };

@@ -184,7 +184,7 @@ var event, node;
 
 while ((event = walker.next())) {
   node = event.node;
-  if (event.entering && node.type === 'Text') {
+  if (event.entering && node.type === 'text') {
     node.literal = node.literal.toUpperCase();
   }
 }
@@ -199,7 +199,7 @@ var inEmph = false;
 
 while ((event = walker.next())) {
   node = event.node;
-  if (node.type === 'Emph') {
+  if (node.type === 'emph') {
     if (event.entering) {
       inEmph = true;
     } else {
@@ -211,7 +211,7 @@ while ((event = walker.next())) {
       // remove the empty Emph node
       node.unlink()
     }
-  } else if (inEmph && node.type === 'Text') {
+  } else if (inEmph && node.type === 'text') {
       node.literal = node.literal.toUpperCase();
   }
 }
