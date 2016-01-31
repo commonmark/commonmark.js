@@ -7,8 +7,8 @@ var commonmark = require('../lib/index.js');
 var parseArgs = require('minimist');
 var args = process.argv.slice(2);
 var argv = parseArgs(args,
-  {boolean: ["ast","xml","time","smart",
-             "safe","sourcepos","help","version"],
+  {boolean: ["ast", "xml", "time", "smart",
+             "safe", "sourcepos", "help", "version"],
    string: ["to", "t"],
    unknown: function(o) {
      if (/^-/.test(o)) {
@@ -33,7 +33,7 @@ var usage = function() {
     "--version       Print version information\n" +
     "--help          Print usage information\n");
     process.exit(0);
-}
+};
 
 if (argv.help) {
     usage();
