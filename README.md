@@ -89,11 +89,22 @@ The following options are currently supported:
 - `smart`:  if `true`, straight quotes will be made curly, `--` will
   be changed to an en dash, `---` will be changed to an em dash, and
   `...` will be changed to ellipses.
-- `safe`: if `true`, raw HTML will not be passed through to HTML
-  output (it will be replaced by comments), and potentially unsafe
-  URLs in links and images (those beginning with `javascript:`,
-  `vbscript:`, `file:`, and with a few exceptions `data:`) will
-  be replaced with empty strings.
+- `safe`: if `true`, raw HTML will be passed through the `sanitize`
+  function before inserting in the target document. Image urls and 
+  links will be passed true the `isUrlSafe` function to determin if they are considered safe.
+- `sanitize`: When the `safe`option is `true` this function will be used to 
+  sanitize the raw html fragments. The function will get the html 
+  (HtmlBlock or HtmlInline) AST node as parameter and should return 
+  the html string replacement as output. The AST node will have a
+  `literal` property containing the raw html to be sanitized.
+  Default implementation is: `function(node) { return '<!-- raw HTML omitted -->'; }`
+- `isUrlSafe`: When the `safe` option is `true` this function will be used to
+  verify if image and link url's are considered safe. The function gets the 
+  string containing the image source or link url as parameter and should return
+  a truthy value if the url is safe. If unsafe, the src and href attributes 
+  will be omitted from the output html.
+  Default: Strings beginning with `javascript:`, `vbscript:`, `file:`, and 
+  with a few exceptions `data:` are considered to be 'unsafe' and will be omitted. 
 
 It is also possible to override the `escape` and `softbreak`
 properties of a renderer.  So, to make soft breaks render as hard

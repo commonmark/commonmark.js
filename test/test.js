@@ -39,6 +39,12 @@ var cursor = {
 };
 
 var writer = new commonmark.HtmlRenderer();
+var writerSanitized = new commonmark.HtmlRenderer({safe: true, isUrlSafe: function(url){ return url === 'https://saved-by-the-bell'; }, sanitize: function(htmlFragment) { 
+    if(htmlFragment.literal === '<table>' || htmlFragment.literal === '</table>'){
+       return htmlFragment.literal;
+    }else{
+        return '<!-- unsafe html omitted -->';
+    } }});
 var reader = new commonmark.Parser();
 var readerSmart = new commonmark.Parser({smart: true});
 
@@ -152,6 +158,10 @@ specTests('test/spec.txt', results, function(z) {
 
 specTests('test/smart_punct.txt', results, function(z) {
         return writer.render(readerSmart.parse(z));
+    });
+
+specTests('test/sanitize.txt', results, function(z){
+        return writerSanitized.render(reader.parse(z));
     });
 
 // pathological cases

@@ -1,0 +1,47 @@
+## Sanitization options 
+
+A safe html block should be preserved
+
+```````````````````````````````` example
+Should be preserved:
+
+<table>
+
+</table>
+.
+<p>Should be preserved:</p>
+<table>
+</table>
+````````````````````````````````
+
+An unsafe html block should be omitted
+```````````````````````````````` example
+should be omitted:
+
+<script>
+</script>
+.
+<p>should be omitted:</p>
+<!-- unsafe html omitted -->
+````````````````````````````````
+
+A safe inline html should be preserved
+```````````````````````````````` example
+Should be preserved: <table></table>
+.
+<p>Should be preserved: <table></table></p>
+````````````````````````````````
+
+An unsafe inline html should be omitted
+```````````````````````````````` example
+Should be omitted: <script></script>
+.
+<p>Should be omitted: <!-- unsafe html omitted --><!-- unsafe html omitted --></p>
+````````````````````````````````
+
+An safe url should be preserved:
+```````````````````````````````` example
+Should be preserved: ![image](https://saved-by-the-bell)
+.
+<p>Should be preserved: <img src="https://saved-by-the-bell" alt="image" /></p>
+````````````````````````````````
