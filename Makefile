@@ -26,7 +26,7 @@ test: $(SPEC)
 	node test/test.js
 
 bench:
-	sudo renice -10 $$$$; node bench/bench.js ${BENCHINP}
+	node bench/bench.js ${BENCHINP}
 
 bench-detailed:
 	sudo renice -10 $$$$; \
