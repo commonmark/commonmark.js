@@ -1,20 +1,20 @@
 {
     "env": {
         "browser": false,
-        "node": true,
+        "node": true
     },
     "rules": {
-        "no-constant-condition": false,
-        "no-underscore-dangle": false,
-        "camelcase": false,
-        "quotes": false,
-        "no-process-exit": false,
-        "no-empty": false,
-        "new-caps": {
+        "no-constant-condition": 0,
+        "no-underscore-dangle": 0,
+        "camelcase": 0,
+        "quotes": 0,
+        "no-process-exit": 0,
+        "no-empty": 0,
+        "new-cap": [2, {
             "newIsCap": true,
             "capIsNew": true,
             "newIsCapExceptions": [],
             "capIsNewExceptions": []
-        }
+        }]
     }
 }
