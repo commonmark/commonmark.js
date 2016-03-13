@@ -2,3 +2,4 @@
 !bin/*
 !dist/*
 !lib/*
+!lib/render/*
