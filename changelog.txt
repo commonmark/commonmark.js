@@ -1,3 +1,23 @@
+[0.25.0]
+
+  * [API change] Added abstract renderer; adjusted HTML renderer to use
+    its prototype (muji, jgm).
+  * Fix tabs in list indentation (#86).  This fixes `advanceOffset`
+    to better handle cases where a list indent doesn't consume all of
+    the virtual spaces represented by a tab.
+  * Proper tab handling with blockquotes, fenced code, lists.
+  * Fixed handling of partially consumed tabs.
+  * Fixed logic bug with blank line after empty list item (#78).
+  * Ensured render directory is installed by npm (muji).
+  * Better ECMAScript 5 style inheritance (muji).
+  * Don't require sudo for make bench.
+  * Added command line usage (Daniel Baird).
+  * Brought CLI options in line with cmark.  Now you say `-t xml`
+    instead of `--xml`.
+  * Use minima for cli option parsing, add `--help` (#81).
+  * Tweaked description of commonmark program.  Now that we have `--help`
+    we can forego a detailed description of options.
+
 [0.24.0]
 
   * [API change] Added version.
