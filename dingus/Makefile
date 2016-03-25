@@ -12,7 +12,7 @@ bower_components/%:
 	bower install $(notdir $@)
 
 lodash.min.js: bower_components/lodash
-	cp $</lodash.min.js $@
+	cp $</dist/lodash.min.js $@
 
 jquery.min.js: bower_components/jquery
 	cp $</dist/$@ $@
