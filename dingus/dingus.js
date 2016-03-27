@@ -28,7 +28,7 @@ var render = function(parsed) {
     var result = writer.render(parsed);
     var endTime = new Date().getTime();
     var renderTime = endTime - startTime;
-    $("#preview").html(result);
+    $("#preview iframe").contents().find('body').get(0).innerHTML = result;
     $("#html").text(result);
     $("#ast").text(xmlwriter.render(parsed));
     $("#rendertime").text(renderTime);
