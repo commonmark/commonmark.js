@@ -1,12 +1,8 @@
 h1.title { font-family: monospace; font-size: 120%; font-weight: bold; margin-top: 0.5em; margin-bottom: 0; }
 pre#htmlpre { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
 pre#astpre  { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
-div#preview { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
-iframe{ height: 100%; width: 100%; border: none; padding: 0; margin: 0; }
-iframe body {
-  padding: 0;
-  margin: 0;
-}
+div#preview { height: 400px; resize: vertical; width: 100%; }
+iframe{ height: 400px; width: 100%; border: none; padding: 0; margin: 0; overflow: scroll; }
 div.row { margin-top: 1em; }
 blockquote { font-size: 100%; }
 footer { color: #555; text-align: center; margin: 1em; }
