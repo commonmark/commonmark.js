@@ -3,6 +3,10 @@ pre#htmlpre { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
 pre#astpre  { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
 div#preview { height: 400px; overflow: scroll; resize: vertical; width: 100%; }
 iframe{ height: 100%; width: 100%; border: none; padding: 0; margin: 0; }
+iframe body {
+  padding: 0;
+  margin: 0;
+}
 div.row { margin-top: 1em; }
 blockquote { font-size: 100%; }
 footer { color: #555; text-align: center; margin: 1em; }

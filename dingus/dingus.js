@@ -82,6 +82,7 @@ var parseAndRender = function() {
 };
 
 $(document).ready(function() {
+  $('iframe').load( function() {
     var textarea = $("#text");
     var initial_text = getQueryVariable("text");
     var smartSelected = getQueryVariable("smart") === "1";
@@ -117,4 +118,5 @@ $(document).ready(function() {
         reader.options.smart = $("#smart").prop('checked');
         parseAndRender();
     });
+  });
 });
