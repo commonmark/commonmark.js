@@ -39,10 +39,19 @@ var render = function(parsed) {
 var syncScroll = function() {
     var textarea = $("#text");
     var preview = $("#preview iframe").contents().find('body');
-    var amount = textarea.scrollTop() / textarea.prop('scrollHeight');
-    preview.animate({
-        scrollTop: preview.height() * amount
-    }, 50);
+    var lineHeight = parseFloat(textarea.css('line-height'));
+    // NOTE this assumes we don't have wrapped lines,
+    // so we have set white-space:nowrap on the textarea:
+    var lineNumber = Math.floor(textarea.scrollTop() / lineHeight) + 1;
+    var elt = preview.find("*[data-sourcepos^='" + lineNumber + ":']").last();
+    if (elt.length > 0) {
+        if (elt.offset()) {
+            console.log("Moving scrollTop to ", elt.offset().top - 100);
+            preview.animate({
+                scrollTop: elt.offset().top - 100
+            }, 50);
+        }
+    }
 };
 
 var markSelection = function() {
