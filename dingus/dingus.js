@@ -28,7 +28,8 @@ var render = function(parsed) {
     var result = writer.render(parsed);
     var endTime = new Date().getTime();
     var renderTime = endTime - startTime;
-    $("#preview iframe").contents().find('body').get(0).innerHTML = result;
+    var preview = $("#preview iframe").contents().find('body');
+    preview.get(0).innerHTML = result;
     $("#html").text(result);
     $("#ast").text(xmlwriter.render(parsed));
     $("#rendertime").text(renderTime);
@@ -36,19 +37,11 @@ var render = function(parsed) {
 
 var syncScroll = function() {
     var textarea = $("#text");
-    var lineHeight = parseFloat(textarea.css('line-height'));
-    // NOTE this assumes we don't have wrapped lines,
-    // so we set white-space: nowrap on the textarea:
-    var lineNumber = Math.floor(textarea.scrollTop() / lineHeight) + 1;
-    var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
-    if (elt.length > 0) {
-        if (elt.offset()) {
-            var curTop = $("#preview").scrollTop();
-            $("#preview").animate({
-                scrollTop: curTop + elt.offset().top - 100
-            }, 50);
-        }
-    }
+    var preview = $("#preview iframe").contents().find('body');
+    var amount = textarea.scrollTop() / textarea.prop('scrollHeight');
+    preview.animate({
+        scrollTop: preview.height() * amount
+    }, 50);
 };
 
 var markSelection = function() {
@@ -61,7 +54,8 @@ var markSelection = function() {
             lineNumber++;
         }
     }
-    var elt = $("#preview [data-sourcepos^='" + lineNumber + ":']").last();
+    var preview = $("#preview iframe").contents().find('body');
+    var elt = preview.find("[data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         $("#preview .selected").removeClass("selected");
         elt.addClass("selected");
@@ -110,7 +104,8 @@ $(document).ready(function() {
 
     textarea.bind('input propertychange',
                   _.debounce(parseAndRender, 50, { maxWait: 100 }));
-    textarea.on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
+    //textarea.on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
+    textarea.on('scroll', syncScroll);
     textarea.on('keydown click focus',
                 _.debounce(markSelection, 50, { maxWait: 100}));
 
