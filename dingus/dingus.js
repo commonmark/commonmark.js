@@ -5,7 +5,8 @@
 
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer({ sourcepos: true });
-var xmlwriter = new commonmark.XmlRenderer({ sourcepos: true });
+var htmlwriter = new commonmark.HtmlRenderer({ sourcepos: false });
+var xmlwriter = new commonmark.XmlRenderer({ sourcepos: false });
 var reader = new commonmark.Parser();
 
 function getQueryVariable(variable) {
@@ -30,7 +31,7 @@ var render = function(parsed) {
     var renderTime = endTime - startTime;
     var preview = $("#preview iframe").contents().find('body');
     preview.get(0).innerHTML = result;
-    $("#html").text(result);
+    $("#html").text(htmlwriter.render(parsed));
     $("#ast").text(xmlwriter.render(parsed));
     $("#rendertime").text(renderTime);
 };
