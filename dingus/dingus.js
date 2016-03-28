@@ -60,8 +60,8 @@ var markSelection = function() {
     if (elt.length > 0) {
         preview.find(".selected").removeClass("selected");
         elt.addClass("selected");
-        syncScroll();
     }
+    syncScroll();
 };
 
 var parseAndRender = function() {
