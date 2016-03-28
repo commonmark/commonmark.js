@@ -57,7 +57,7 @@ var markSelection = function() {
     var preview = $("#preview iframe").contents().find('body');
     var elt = preview.find("[data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
-        $("#preview .selected").removeClass("selected");
+        preview.find(".selected").removeClass("selected");
         elt.addClass("selected");
         syncScroll();
     }
