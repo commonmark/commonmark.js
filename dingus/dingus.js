@@ -94,8 +94,6 @@ $(document).ready(function() {
     reader.options.smart = smartSelected;
     if (initial_text) {
         textarea.val(initial_text);
-        // show HTML tab if text is from query
-        $('#result-tabs a[href="#result"]').tab('show');
     }
 
     parseAndRender();
