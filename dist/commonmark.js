@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.commonmark = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.commonmark=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
 var Node = require('./node');
@@ -584,11 +584,18 @@ var advanceOffset = function(count, columns) {
     while (count > 0 && (c = currentLine[this.offset])) {
         if (c === '\t') {
             charsToTab = 4 - (this.column % 4);
-            this.partiallyConsumedTab = columns && charsToTab > count;
-            charsToAdvance = charsToTab > count ? count : charsToTab;
-            this.column += charsToAdvance;
-            this.offset += this.partiallyConsumedTab ? 0 : 1;
-            count -= (columns ? charsToAdvance : 1);
+            if (columns) {
+                this.partiallyConsumedTab = charsToTab > count;
+                charsToAdvance = charsToTab > count ? count : charsToTab;
+                this.column += charsToAdvance;
+                this.offset += this.partiallyConsumedTab ? 0 : 1;
+                count -= (columns ? charsToAdvance : 1);
+            } else {
+                this.partiallyConsumedTab = false;
+                this.column += charsToTab;
+                this.offset += 1;
+                this.count -= 1;
+            }
         } else {
             this.partiallyConsumedTab = false;
             cols += 1;
@@ -602,6 +609,7 @@ var advanceOffset = function(count, columns) {
 var advanceNextNonspace = function() {
     this.offset = this.nextNonspace;
     this.column = this.nextNonspaceColumn;
+    this.partiallyConsumedTab = false;
 };
 
 var findNextNonspace = function() {
@@ -639,6 +647,8 @@ var incorporateLine = function(ln) {
     this.oldtip = this.tip;
     this.offset = 0;
     this.column = 0;
+    this.blank = false;
+    this.partiallyConsumedTab = false;
     this.lineNumber += 1;
 
     // replace NUL characters for security
@@ -1069,7 +1079,7 @@ if (String.fromCodePoint) {
 // var renderer = new commonmark.HtmlRenderer();
 // console.log(renderer.render(parser.parse('Hello *world*')));
 
-module.exports.version = '0.25.0';
+module.exports.version = '0.25.1';
 module.exports.Node = require('./node');
 module.exports.Parser = require('./blocks');
 // module.exports.HtmlRenderer = require('./html');
@@ -2694,7 +2704,7 @@ var tag = function(name, attrs, selfclosing) {
         var i = 0;
         var attrib;
         while ((attrib = attrs[i]) !== undefined) {
-            result += ' ' + attrib[0] + '="' + attrib[1] + '"';
+            result += ' ' + attrib[0] + '="' + escapeXml(attrib[1]) + '"';
             i++;
         }
     }
@@ -3122,7 +3132,7 @@ function decode(string, exclude) {
   cache = getDecodeCache(exclude);
 
   return string.replace(/(%[a-f0-9]{2})+/gi, function(seq) {
-    var i, l, b1, b2, b3, b4, char,
+    var i, l, b1, b2, b3, b4, chr,
         result = '';
 
     for (i = 0, l = seq.length; i < l; i += 3) {
@@ -3138,12 +3148,12 @@ function decode(string, exclude) {
         b2 = parseInt(seq.slice(i + 4, i + 6), 16);
 
         if ((b2 & 0xC0) === 0x80) {
-          char = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
+          chr = ((b1 << 6) & 0x7C0) | (b2 & 0x3F);
 
-          if (char < 0x80) {
+          if (chr < 0x80) {
             result += '\ufffd\ufffd';
           } else {
-            result += String.fromCharCode(char);
+            result += String.fromCharCode(chr);
           }
 
           i += 3;
@@ -3157,12 +3167,12 @@ function decode(string, exclude) {
         b3 = parseInt(seq.slice(i + 7, i + 9), 16);
 
         if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80) {
-          char = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
+          chr = ((b1 << 12) & 0xF000) | ((b2 << 6) & 0xFC0) | (b3 & 0x3F);
 
-          if (char < 0x800 || (char >= 0xD800 && char <= 0xDFFF)) {
+          if (chr < 0x800 || (chr >= 0xD800 && chr <= 0xDFFF)) {
             result += '\ufffd\ufffd\ufffd';
           } else {
-            result += String.fromCharCode(char);
+            result += String.fromCharCode(chr);
           }
 
           i += 6;
@@ -3177,13 +3187,13 @@ function decode(string, exclude) {
         b4 = parseInt(seq.slice(i + 10, i + 12), 16);
 
         if ((b2 & 0xC0) === 0x80 && (b3 & 0xC0) === 0x80 && (b4 & 0xC0) === 0x80) {
-          char = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
+          chr = ((b1 << 18) & 0x1C0000) | ((b2 << 12) & 0x3F000) | ((b3 << 6) & 0xFC0) | (b4 & 0x3F);
 
-          if (char < 0x10000 || char > 0x10FFFF) {
+          if (chr < 0x10000 || chr > 0x10FFFF) {
             result += '\ufffd\ufffd\ufffd\ufffd';
           } else {
-            char -= 0x10000;
-            result += String.fromCharCode(0xD800 + (char >> 10), 0xDC00 + (char & 0x3FF));
+            chr -= 0x10000;
+            result += String.fromCharCode(0xD800 + (chr >> 10), 0xDC00 + (chr & 0x3FF));
           }
 
           i += 9;
