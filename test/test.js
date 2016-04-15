@@ -154,6 +154,10 @@ specTests('test/smart_punct.txt', results, function(z) {
         return writer.render(readerSmart.parse(z));
     });
 
+specTests('test/regression.txt', results, function(z) {
+        return writer.render(reader.parse(z));
+    });
+
 // pathological cases
 cursor.write('Pathological cases:\n');
 

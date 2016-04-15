@@ -1,0 +1,15 @@
+# Regression tests
+
+Eating a character after a partially consumed tab.
+
+```````````````````````````````` example
+* foo
+→bar
+.
+<ul>
+<li>foo
+bar</li>
+</ul>
+````````````````````````````````
+
+
