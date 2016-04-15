@@ -1,3 +1,17 @@
+[0.25.1]
+
+  * Ensure that `advanceNextNonspace` resets `partiallyConsumedTab`.
+    This fixes a regression in which the first character after a tab
+    would sometimes be dropped.
+  * Added regression tests.
+  * XML renderer: escape attribute values (muji).
+  * Fix dingus vulnerability (muji).  Use an iframe and innerHTML to prevent
+    `<script>` tags from executing.
+  * Dingus:  let preview show when query has `text=`.  Previously we had
+    these URLs open the HTML pane first, but now that we have XSS protection
+    (the iframe), it should be okay to open the preview pane first.
+  * Dingus: don't print sourcepos attributes in HTML/AST view.
+
 [0.25.0]
 
   * [API change] Added abstract renderer; adjusted HTML renderer to use
