@@ -13,12 +13,90 @@ license: '[CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)'
 Markdown is a plain text format for writing structured documents,
 based on conventions used for indicating formatting in email and
 usenet posts.  It was developed in 2004 by John Gruber, who wrote
-the first Markdown-to-HTML converter in perl, and it soon became
-widely used in websites.  By 2014 there were dozens of
-implementations in many languages.  Some of them extended basic
-Markdown syntax with conventions for footnotes, definition lists,
-tables, and other constructs, and some allowed output not just in
-HTML but in LaTeX and many other formats.
+the first Markdown-to-HTML converter in Perl, and it soon became
+ubiquitous.  In the next decade, dozens of implementations were
+developed in many languages.  Some extended the original
+Markdown syntax with conventions for footnotes, tables, and
+other document elements.  Some allowed Markdown documents to be
+rendered in formats other than HTML.  Websites like Reddit,
+StackOverflow, and GitHub had millions of people using Markdown.
+And Markdown started to be used beyond the web, to author books,
+articles, slide shows, letters, and lecture notes.
+
+What distinguishes Markdown from many other lightweight markup
+syntaxes, which are often easier to write, is its readability.
+As Gruber writes:
+
+> The overriding design goal for Markdown's formatting syntax is
+> to make it as readable as possible. The idea is that a
+> Markdown-formatted document should be publishable as-is, as
+> plain text, without looking like it's been marked up with tags
+> or formatting instructions.
+> (<http://daringfireball.net/projects/markdown/>)
+
+The point can be illustrated by comparing a sample of
+[AsciiDoc](http://www.methods.co.nz/asciidoc/) with
+an equivalent sample of Markdown.  Here is a sample of
+AsciiDoc from the AsciiDoc manual:
+
+```
+1. List item one.
++
+List item one continued with a second paragraph followed by an
+Indented block.
++
+.................
+$ ls *.sh
+$ mv *.sh ~/tmp
+.................
++
+List item continued with a third paragraph.
+
+2. List item two continued with an open block.
++
+--
+This paragraph is part of the preceding list item.
+
+a. This list is nested and does not require explicit item
+continuation.
++
+This paragraph is part of the preceding list item.
+
+b. List item b.
+
+This paragraph belongs to item two of the outer list.
+--
+```
+
+And here is the equivalent in Markdown:
+```
+1.  List item one.
+
+    List item one continued with a second paragraph followed by an
+    Indented block.
+
+        $ ls *.sh
+        $ mv *.sh ~/tmp
+
+    List item continued with a third paragraph.
+
+2.  List item two continued with an open block.
+
+    This paragraph is part of the preceding list item.
+
+    1. This list is nested and does not require explicit item continuation.
+
+       This paragraph is part of the preceding list item.
+
+    2. List item b.
+
+    This paragraph belongs to item two of the outer list.
+```
+
+The AsciiDoc version is, arguably, easier to write. You don't need
+to worry about indentation.  But the Markdown version is much easier
+to read.  The nesting of list items is apparent to the eye in the
+source, not just in the processed document.
 
 ## Why is a spec needed?
 
@@ -2224,6 +2302,7 @@ import Text.HTML.TagSoup
 main :: IO ()
 main = print $ parseTags tags
 </code></pre>
+okay
 .
 <pre language="haskell"><code>
 import Text.HTML.TagSoup
@@ -2231,6 +2310,7 @@ import Text.HTML.TagSoup
 main :: IO ()
 main = print $ parseTags tags
 </code></pre>
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -2242,12 +2322,14 @@ A script tag (type 1):
 
 document.getElementById("demo").innerHTML = "Hello JavaScript!";
 </script>
+okay
 .
 <script type="text/javascript">
 // JavaScript example
 
 document.getElementById("demo").innerHTML = "Hello JavaScript!";
 </script>
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -2260,6 +2342,7 @@ h1 {color:red;}
 
 p {color:blue;}
 </style>
+okay
 .
 <style
   type="text/css">
@@ -2267,6 +2350,7 @@ h1 {color:red;}
 
 p {color:blue;}
 </style>
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -2355,11 +2439,13 @@ A comment (type 2):
 
 bar
    baz -->
+okay
 .
 <!-- Foo
 
 bar
    baz -->
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -2372,12 +2458,14 @@ A processing instruction (type 3):
   echo '>';
 
 ?>
+okay
 .
 <?php
 
   echo '>';
 
 ?>
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -2405,6 +2493,7 @@ function matchwo(a,b)
   }
 }
 ]]>
+okay
 .
 <![CDATA[
 function matchwo(a,b)
@@ -2418,6 +2507,7 @@ function matchwo(a,b)
   }
 }
 ]]>
+<p>okay</p>
 ````````````````````````````````
 
 
@@ -3162,8 +3252,8 @@ Four spaces gives us a code block:
 ````````````````````````````````
 
 
-The Laziness clause allows us to omit the `>` before a
-paragraph continuation line:
+The Laziness clause allows us to omit the `>` before
+[paragraph continuation text]:
 
 ```````````````````````````````` example
 > # Foo
@@ -3269,8 +3359,8 @@ foo
 ````````````````````````````````
 
 
-Note that in the following case, we have a paragraph
-continuation line:
+Note that in the following case, we have a [lazy
+continuation line]:
 
 ```````````````````````````````` example
 > foo
@@ -3292,7 +3382,7 @@ To see why, note that in
 
 the `- bar` is indented too far to start a list, and can't
 be an indented code block because indented code blocks cannot
-interrupt paragraphs, so it is a [paragraph continuation line].
+interrupt paragraphs, so it is [paragraph continuation text].
 
 A block quote can be empty:
 
@@ -4361,13 +4451,18 @@ So, in this case we need two spaces indent:
 - foo
   - bar
     - baz
+      - boo
 .
 <ul>
 <li>foo
 <ul>
 <li>bar
 <ul>
-<li>baz</li>
+<li>baz
+<ul>
+<li>boo</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -4382,11 +4477,13 @@ One is not enough:
 - foo
  - bar
   - baz
+   - boo
 .
 <ul>
 <li>foo</li>
 <li>bar</li>
 <li>baz</li>
+<li>boo</li>
 </ul>
 ````````````````````````````````
 
@@ -5867,18 +5964,22 @@ The following rules define emphasis and strong emphasis:
 
 9.  Emphasis begins with a delimiter that [can open emphasis] and ends
     with a delimiter that [can close emphasis], and that uses the same
-    character (`_` or `*`) as the opening delimiter.  There must
-    be a nonempty sequence of inlines between the open delimiter
-    and the closing delimiter; these form the contents of the emphasis
-    inline.
+    character (`_` or `*`) as the opening delimiter.  The
+    opening and closing delimiters must belong to separate
+    [delimiter runs].  If one of the delimiters can both
+    open and close emphasis, then the sum of the lengths of the
+    delimiter runs containing the opening and closing delimiters
+    must not be a multiple of 3.
 
 10. Strong emphasis begins with a delimiter that
     [can open strong emphasis] and ends with a delimiter that
     [can close strong emphasis], and that uses the same character
-    (`_` or `*`) as the opening delimiter.
-    There must be a nonempty sequence of inlines between the open
-    delimiter and the closing delimiter; these form the contents of
-    the strong emphasis inline.
+    (`_` or `*`) as the opening delimiter.  The
+    opening and closing delimiters must belong to separate
+    [delimiter runs].  If one of the delimiters can both open
+    and close strong emphasis, then the sum of the lengths of
+    the delimiter runs containing the opening and closing
+    delimiters must not be a multiple of 3.
 
 11. A literal `*` character cannot occur at the beginning or end of
     `*`-delimited emphasis or `**`-delimited strong emphasis, unless it
@@ -5902,9 +6003,7 @@ the following principles resolve ambiguity:
     so that the second begins before the first ends and ends after
     the first ends, the first takes precedence. Thus, for example,
     `*foo _bar* baz_` is parsed as `<em>foo _bar</em> baz_` rather
-    than `*foo <em>bar* baz</em>`.  For the same reason,
-    `**foo*bar**` is parsed as `<em><em>foo</em>bar</em>*`
-    rather than `<strong>foo*bar</strong>`.
+    than `*foo <em>bar* baz</em>`.
 
 16. When there are two potential emphasis or strong emphasis spans
     with the same closing delimiter, the shorter one (the one that
@@ -6484,18 +6583,30 @@ __foo_ bar_
 <p><em>foo <strong>bar</strong> baz</em></p>
 ````````````````````````````````
 
-
-But note:
-
 ```````````````````````````````` example
 *foo**bar**baz*
 .
-<p><em>foo</em><em>bar</em><em>baz</em></p>
+<p><em>foo<strong>bar</strong>baz</em></p>
 ````````````````````````````````
 
+Note that in the preceding case, the interpretation
 
-The difference is that in the preceding case, the internal delimiters
-[can close emphasis], while in the cases with spaces, they cannot.
+``` markdown
+<p><em>foo</em><em>bar<em></em>baz</em></p>
+```
+
+
+is precluded by the condition that a delimiter that
+can both open and close (like the `*` after `foo`
+cannot form emphasis if the sum of the lengths of
+the delimiter runs containing the opening and
+closing delimiters is a multiple of 3.
+
+The same condition ensures that the following
+cases are all strong emphasis nested inside
+emphasis, even when the interior spaces are
+omitted:
+
 
 ```````````````````````````````` example
 ***foo** bar*
@@ -6511,17 +6622,18 @@ The difference is that in the preceding case, the internal delimiters
 ````````````````````````````````
 
 
-Note, however, that in the following case we get no strong
-emphasis, because the opening delimiter is closed by the first
-`*` before `bar`:
+```````````````````````````````` example
+*foo**bar***
+.
+<p><em>foo<strong>bar</strong></em></p>
+````````````````````````````````
+
 
 ```````````````````````````````` example
 *foo**bar***
 .
-<p><em>foo</em><em>bar</em>**</p>
+<p><em>foo<strong>bar</strong></em></p>
 ````````````````````````````````
-
-
 
 Indefinite levels of nesting are possible:
 
@@ -6615,17 +6727,12 @@ ____foo__ bar__
 ````````````````````````````````
 
 
-But note:
-
 ```````````````````````````````` example
 **foo*bar*baz**
 .
-<p><em><em>foo</em>bar</em>baz**</p>
+<p><strong>foo<em>bar</em>baz</strong></p>
 ````````````````````````````````
 
-
-The difference is that in the preceding case, the internal delimiters
-[can close emphasis], while in the cases with spaces, they cannot.
 
 ```````````````````````````````` example
 ***foo* bar**
@@ -6938,13 +7045,6 @@ Rule 15:
 *foo _bar* baz_
 .
 <p><em>foo _bar</em> baz_</p>
-````````````````````````````````
-
-
-```````````````````````````````` example
-**foo*bar**
-.
-<p><em><em>foo</em>bar</em>*</p>
 ````````````````````````````````
 
 
@@ -7878,7 +7978,7 @@ consists of a [link label] that [matches] a
 [link reference definition] elsewhere in the
 document and is not followed by `[]` or a link label.
 The contents of the first link label are parsed as inlines,
-which are used as the link's text.  the link's URI and title
+which are used as the link's text.  The link's URI and title
 are provided by the matching link reference definition.
 Thus, `[foo]` is equivalent to `[foo][]`.
 
