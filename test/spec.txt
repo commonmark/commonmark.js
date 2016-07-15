@@ -1,8 +1,8 @@
 ---
 title: CommonMark Spec
 author: John MacFarlane
-version: 0.25
-date: '2016-03-24'
+version: 0.26
+date: '2016-07-15'
 license: '[CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)'
 ...
 
@@ -340,7 +340,7 @@ in contexts where whitespace helps to define block structure,
 tabs behave as if they were replaced by spaces with a tab stop
 of 4 characters.
 
-Thus, for exmaple, a tab can be used instead of four spaces
+Thus, for example, a tab can be used instead of four spaces
 in an indented code block.  (Note, however, that internal
 tabs are passed through as literal tabs, not expanded to
 spaces.)
