@@ -1,3 +1,34 @@
+[0.26.0]
+
+  * Implemented spec changes to lists:
+    - Don't allow ordered lists to interrupt a paragraph unless
+      they start with 1.
+    - Remove two-blanks-break-out-of-lists feature.
+    - Blank list item can't interrupt paragraph.
+  * Fixed minor regex bug with raw HTML blocks (#98).
+    This would affect things like:
+
+        <a>[SPACE][SPACE]
+        x
+
+    which, with the change, gets parsed as a raw HTML block, instead of a
+    single paragraph with inline HTML, a line break, and 'x'.  The new
+    behavior conforms to the spec.  See #7 in 4.6.  Added regression.
+  * Remove unnecessary check (Nik Ryby).  It looks like `columns` is always
+    true in this block, so there's no need to check it during the assignment
+    to `count`.
+  * Simplify and optimize brackets processing (links/images) (Robin Stocker).
+    Together, these changes make the "nested brackets 10000 deep"
+    pathological case go from 400 ms to 20 ms.
+  * Changes in emph/strong emph parsing to match changes in spec.
+    This implements the rule that we can't have emphasis matches
+    when (a) one of the delimiters can open AND can close, and (b)
+    the sum of the lengths of the delimiter runs containing open
+    and close delimiters is a multiple of 3.
+  * Fix not existing property usage (Maksim Dzikun).
+  * Fixed tabs in ATX headers and thematic breaks.
+  * Remove unused write-only variable (Maksim Dzikun).
+
 [0.25.1]
 
   * Ensure that `advanceNextNonspace` resets `partiallyConsumedTab`.
