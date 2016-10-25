@@ -126,10 +126,10 @@ The parser returns a Node.  The following public properties are defined
 (those marked "read-only" have only a getter, not a setter):
 
 - `type` (read-only):  a String, one of
-  `Text`, `Softbreak`, `Hardbreak`, `Emph`, `Strong`,
-  `Html`, `Link`, `Image`, `Code`, `Document`, `Paragraph`,
-  `BlockQuote`, `Item`, `List`, `Heading`, `CodeBlock`,
-  `HtmlBlock` `ThematicBreak`.
+  `text`, `softbreak`, `linebreak`, `emph`, `strong`,
+  `html_inline`, `link`, `image`, `code`, `document`, `paragraph`,
+  `block_quote`, `item`, `list`, `heading`, `code_block`,
+  `html_block`, `thematic_break`.
 - `firstChild` (read-only):  a Node or null.
 - `lastChild` (read-only): a Node or null.
 - `next` (read-only): a Node or null.
@@ -148,8 +148,8 @@ The parser returns a Node.  The following public properties are defined
 - `listTight`: `true` if list is tight.
 - `listStart`: a Number, the starting number of an ordered list.
 - `listDelimiter`: a String, either `)` or `.` for an ordered list.
-- `onEnter`, `onExit`: Strings, used only for `CustomBlock` or
-  `CustomInline`.
+- `onEnter`, `onExit`: Strings, used only for `custom_block` or
+  `custom_inline`.
 
 Nodes have the following public methods:
 
@@ -176,7 +176,7 @@ The NodeWalker returned by `walker()` has two methods:
 
 Here is an example of the use of a NodeWalker to iterate through
 the tree, making transformations.  This simple example converts
-the contents of all `Text` nodes to ALL CAPS:
+the contents of all `text` nodes to ALL CAPS:
 
 ``` js
 var walker = parsed.walker();
@@ -220,7 +220,7 @@ while ((event = walker.next())) {
 Exercises for the reader:  write a transform to
 
 1. De-linkify a document, transforming links to regular text.
-2. Remove all raw HTML (`Html` and `HtmlBlock` nodes).
+2. Remove all raw HTML (`html_inline` and `html_block` nodes).
 3. Run fenced code blocks marked with a language name through
    a syntax highlighting library, replacing them with an `HtmlBlock`
    containing the highlighted code.
