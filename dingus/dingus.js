@@ -86,7 +86,7 @@ var parseAndRender = function() {
 };
 
 $(document).ready(function() {
-  $('iframe').load( function() {
+  $('iframe').on('load', function() {
     var textarea = $("#text");
     var initial_text = getQueryVariable("text");
     var smartSelected = getQueryVariable("smart") === "1";
