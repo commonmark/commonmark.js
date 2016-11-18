@@ -1,3 +1,23 @@
+[0.27.0]
+
+  * Update spec to 0.27.
+  * Use correct name in DOCTYPE declaration for XML output.
+    It should be document, not CommonMark.
+  * Fix Node type names in README (Jan Marthedal Rasmussen).
+  * Allow shortcut link before a `(`.  See jgm/CommonMark#427.
+  * Added all characters in Pc, Pd, Pe, Pf, Pi, Po, Ps to rePunctuation
+    (#108, problem not recognizing East Asian punctuation).
+  * Allow tab after setext header line (#109).
+  * Recognize h2..h6 as block tags (see jgm/CommonMark#430).
+  * Enforce spec's distinction between Unicode whitespace and regular whitespace
+    (Timothy Gu, see jgm/CommonMark#343).  Per ECMA-262 6th Edition
+    ("ECMAScript 2015") §21.2.2.12 [CharacterClassEscape], the JavaScript `\s`
+    escape character matches the characters specified by "Unicode whitespace,"
+    but not "whitespace." Rename the existing regular expression variable to
+    `UnicodeWhitespace`, and create and use a new regular expression variable
+    that only matches the limited set of "whitespace" characters.
+  * Removed unused definition.
+
 [0.26.0]
 
   * Implemented spec changes to lists:
