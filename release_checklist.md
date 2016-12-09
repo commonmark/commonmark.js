@@ -2,7 +2,6 @@ Release checklist
 
 _ update changelog.txt
 _ update version in package.json
-_ update version in lib/index.js
 _ make dist
 _ test
 _ tag release

@@ -4,6 +4,7 @@
 var util = require('util');
 var fs = require('fs');
 var commonmark = require('../lib/index.js');
+var version = require('../package.json').version;
 var parseArgs = require('minimist');
 var args = process.argv.slice(2);
 var argv = parseArgs(args,
@@ -40,7 +41,7 @@ if (argv.help) {
     process.exit(0);
 }
 if (argv.version) {
-    process.stdout.write('commonmark.js ' + commonmark.version + '\n');
+    process.stdout.write('commonmark.js ' + version + '\n');
     process.exit(0);
 }
 
