@@ -7,9 +7,7 @@
      "commonmark",
      "md",
      "stmd" ],
-  "repository":
-   { "type": "git",
-     "url": "https://github.com/jgm/commonmark.js.git" },
+  "repository": "jgm/commonmark.js",
   "author": "John MacFarlane",
   "bugs": { "url": "https://github.com/jgm/commonmark.js/issues" },
   "license": "BSD-2-Clause",
