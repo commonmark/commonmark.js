@@ -71,3 +71,10 @@ a***b* c*
 <p>a*<em><em>b</em> c</em></p>
 ````````````````````````````````
 
+tabs before and after ATX closing heading
+
+```````````````````````````````` example
+# foo→#→
+.
+<h1>foo</h1>
+````````````````````````````````
