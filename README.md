@@ -122,6 +122,8 @@ will produce an XML representation of the AST:
 var writer = new commonmark.XmlRenderer({sourcepos: true});
 ```
 
+### AST node propeties
+
 The parser returns a Node.  The following public properties are defined
 (those marked "read-only" have only a getter, not a setter):
 
@@ -151,6 +153,8 @@ The parser returns a Node.  The following public properties are defined
 - `onEnter`, `onExit`: Strings, used only for `custom_block` or
   `custom_inline`.
 
+### AST node methods
+
 Nodes have the following public methods:
 
 - `appendChild(child)`:  Append a Node `child` to the end of the
@@ -163,6 +167,8 @@ Nodes have the following public methods:
 - `insertBefore(sibling)`: Insert a Node `sibling` before the Node.
 - `walker()`: Returns a NodeWalker that can be used to iterate through
   the Node tree rooted in the Node.
+
+### AST node‘s `walker` method
 
 The NodeWalker returned by `walker()` has two methods:
 
