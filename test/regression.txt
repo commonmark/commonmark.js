@@ -71,3 +71,11 @@ a***b* c*
 <p>a*<em><em>b</em> c</em></p>
 ````````````````````````````````
 
+Issue jgm/CommonMark#468 - backslash at end of link definition
+
+
+```````````````````````````````` example
+[\]: test
+.
+<p>[]: test</p>
+````````````````````````````````
