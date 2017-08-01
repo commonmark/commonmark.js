@@ -87,3 +87,10 @@ Issue jgm/commonmark.js#121 - punctuation set different
 .
 <p>^<em>test</em></p>
 ````````````````````````````````
+
+Issue #116 - tabs before and after ATX closing heading
+```````````````````````````````` example
+# foo→#→
+.
+<h1>foo</h1>
+````````````````````````````````
