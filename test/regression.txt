@@ -79,3 +79,11 @@ Issue jgm/CommonMark#468 - backslash at end of link definition
 .
 <p>[]: test</p>
 ````````````````````````````````
+
+Issue jgm/commonmark.js#121 - punctuation set different
+
+```````````````````````````````` example
+^_test_
+.
+<p>^<em>test</em></p>
+````````````````````````````````
