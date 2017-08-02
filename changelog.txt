@@ -17,6 +17,8 @@
     `UnicodeWhitespace`, and create and use a new regular expression variable
     that only matches the limited set of "whitespace" characters.
   * Removed unused definition.
+  * Update README.md on overriding softbreak and escaping in
+    renderer (#118).
 
 [0.26.0]
 
