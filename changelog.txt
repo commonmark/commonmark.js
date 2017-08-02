@@ -1,3 +1,44 @@
+[0.28.1]
+
+  * Update changelog (omitted from 0.28.0 release).
+
+[0.28.0]
+
+  * Update spec to 0.28.
+  * Align punctuation regex with spec (#121).  Previously some ASCII
+    punctuation characters were not being counted, so `^_test_` came out
+    without emphasis, for example.
+  * Simplified a logical test, making it closer to the wording of the spec.
+  * Don't parse reference def if last `]` is escaped (#468).
+    E.g.
+
+        [\ ]
+
+        [\]: test
+  * Dingus Makefile: remove ref to obsolete html.js.
+  * Removed obsolete lib/xml.js (replaced by lib/render/xml.js).
+  * Allow tabs before and after ATX closing header (Erik Edrosa).
+  * Change precedence of Strong/Emph when both nestings possible.
+    This accommodates the spec change to rule 14.
+    Note that commonmark.js was not previously in conformity
+    with rule 14 for things like `***hi****`.
+  * Calculate "mulitple of 3" for delim runs based on original number
+    of delims, not the number remaining after some have been
+    used.
+  * Make esc() method abstract and overridable (muji).
+  * README: update documentation for overriding softbreak and esc (#118).
+  * Remove old XMLRenderer implementation (muji).
+  * package.json: use shorter form for repository.
+  * Don't export version in lib/index.js.
+    Instead, users can get version from package.json:
+    `require('commonmark/package.json').version`.
+  * Removed remnants of old html renderer (#113).
+    Now we use lib/renderer/html.js.
+  * Hand-rolled parser for link destinations.
+    This allows nested parens, as now required by the spec.
+  * Fix regression test example (Colin O'Dell).
+  * dingus: Fixed iframe on load.
+
 [0.27.0]
 
   * Update spec to 0.27.
