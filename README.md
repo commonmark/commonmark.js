@@ -94,26 +94,25 @@ The following options are currently supported:
   URLs in links and images (those beginning with `javascript:`,
   `vbscript:`, `file:`, and with a few exceptions `data:`) will
   be replaced with empty strings.
+- `softbreak`: specify raw string to be used for a softbreak.
+- `esc`: specify a function to be used to escape strings.
 
-It is also possible to override the `escape` and `softbreak`
-properties of a renderer.  So, to make soft breaks render as hard
-breaks in HTML:
+For example, to make soft breaks render as hard breaks in HTML:
 
 ``` js
-var writer = new commonmark.HtmlRenderer;
-writer.softbreak = "<br />";
+var writer = new commonmark.HtmlRenderer({softbreak: "<br />"});
 ```
 
 To make them render as spaces:
 
 ``` js
-writer.softbreak = " ";
+var writer = new commonmark.HtmlRenderer({softbreak: " "});
 ```
 
-To override `escape`, pass it a function with two parameters:
+To override `esc`, pass it a function with two parameters:
 the first is the string to be escaped, the second is a boolean
-that is `true` if the escaped string is to be included in an
-attribute.
+that is `true` if entities in the string to be escaped should
+be preserved.
 
 In addition to the `HtmlRenderer`, there is an `XmlRenderer`, which
 will produce an XML representation of the AST:
