@@ -431,7 +431,7 @@ var blockStarts = [
             container.level = match[0].trim().length; // number of #s
             // remove trailing ###s:
             container._string_content =
-                parser.currentLine.slice(parser.offset).replace(/^ *#+ *$/, '').replace(/ +#+ *$/, '');
+                parser.currentLine.slice(parser.offset).replace(/^[ \t]*#+[ \t]*$/, '').replace(/[ \t]+#+[ \t]*$/, '');
             parser.advanceOffset(parser.currentLine.length - parser.offset);
             return 2;
         } else {
@@ -1053,14 +1053,12 @@ if (String.fromCodePoint) {
 // var renderer = new commonmark.HtmlRenderer();
 // console.log(renderer.render(parser.parse('Hello *world*')));
 
-module.exports.version = '0.27.0';
 module.exports.Node = require('./node');
 module.exports.Parser = require('./blocks');
-// module.exports.HtmlRenderer = require('./html');
 module.exports.HtmlRenderer = require('./render/html');
-module.exports.XmlRenderer = require('./xml');
+module.exports.XmlRenderer = require('./render/xml');
 
-},{"./blocks":1,"./node":6,"./render/html":8,"./xml":10}],5:[function(require,module,exports){
+},{"./blocks":1,"./node":6,"./render/html":8,"./render/xml":10}],5:[function(require,module,exports){
 "use strict";
 
 var Node = require('./node');
@@ -1095,13 +1093,11 @@ var C_DOUBLEQUOTE = 34;
 
 var ESCAPABLE = common.ESCAPABLE;
 var ESCAPED_CHAR = '\\\\' + ESCAPABLE;
-var REG_CHAR = '[^\\\\()\\x00-\\x20]';
-var IN_PARENS_NOSP = '\\((' + REG_CHAR + '|' + ESCAPED_CHAR + '|\\\\)*\\)';
 
 var ENTITY = common.ENTITY;
 var reHtmlTag = common.reHtmlTag;
 
-var rePunctuation = new RegExp(/[!-#%-\*,-/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E42\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDF3C-\uDF3E]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]/);
+var rePunctuation = new RegExp(/[!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E42\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDF3C-\uDF3E]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]/);
 
 var reLinkTitle = new RegExp(
     '^(?:"(' + ESCAPED_CHAR + '|[^"\\x00])*"' +
@@ -1112,9 +1108,6 @@ var reLinkTitle = new RegExp(
 
 var reLinkDestinationBraces = new RegExp(
     '^(?:[<](?:[^ <>\\t\\n\\\\\\x00]' + '|' + ESCAPED_CHAR + '|' + '\\\\)*[>])');
-
-var reLinkDestination = new RegExp(
-    '^(?:' + REG_CHAR + '+|' + ESCAPED_CHAR + '|\\\\|' + IN_PARENS_NOSP + ')*');
 
 var reEscapable = new RegExp('^' + ESCAPABLE);
 
@@ -1139,8 +1132,6 @@ var reWhitespaceChar = /^[ \t\n\x0b\x0c\x0d]/;
 var reWhitespace = /[ \t\n\x0b\x0c\x0d]+/g;
 
 var reUnicodeWhitespaceChar = /^\s/;
-
-var reUnicodeWhitespace = /\s+/g;
 
 var reFinalSpace = / *$/;
 
@@ -1324,9 +1315,9 @@ var scanDelims = function(cc) {
     before_is_punctuation = rePunctuation.test(char_before);
 
     left_flanking = !after_is_whitespace &&
-            !(after_is_punctuation && !before_is_whitespace && !before_is_punctuation);
+            (!after_is_punctuation || before_is_whitespace || before_is_punctuation);
     right_flanking = !before_is_whitespace &&
-            !(before_is_punctuation && !after_is_whitespace && !after_is_punctuation);
+            (!before_is_punctuation || after_is_whitespace || after_is_punctuation);
     if (cc === C_UNDERSCORE) {
         can_open = left_flanking &&
             (!right_flanking || before_is_punctuation);
@@ -1369,6 +1360,7 @@ var handleDelim = function(cc, block) {
     // Add entry to stack for this opener
     this.delimiters = { cc: cc,
                         numdelims: numdelims,
+                        origdelims: numdelims,
                         node: node,
                         previous: this.delimiters,
                         next: null,
@@ -1433,7 +1425,7 @@ var processEmphasis = function(stack_bottom) {
             while (opener !== null && opener !== stack_bottom &&
                    opener !== openers_bottom[closercc]) {
                 odd_match = (closer.can_open || opener.can_close) &&
-                    (opener.numdelims + closer.numdelims) % 3 === 0;
+                    (opener.origdelims + closer.origdelims) % 3 === 0;
                 if (opener.cc === closer.cc && opener.can_open && !odd_match) {
                     opener_found = true;
                     break;
@@ -1447,12 +1439,8 @@ var processEmphasis = function(stack_bottom) {
                     closer = closer.next;
                 } else {
                     // calculate actual number of delimiters used from closer
-                    if (closer.numdelims < 3 || opener.numdelims < 3) {
-                        use_delims = closer.numdelims <= opener.numdelims ?
-                            closer.numdelims : opener.numdelims;
-                    } else {
-                        use_delims = closer.numdelims % 2 === 0 ? 2 : 1;
-                    }
+                    use_delims =
+                      (closer.numdelims >= 2 && opener.numdelims >= 2) ? 2 : 1;
 
                     opener_inl = opener.node;
                     closer_inl = closer.node;
@@ -1553,12 +1541,34 @@ var parseLinkTitle = function() {
 var parseLinkDestination = function() {
     var res = this.match(reLinkDestinationBraces);
     if (res === null) {
-        res = this.match(reLinkDestination);
-        if (res === null) {
-            return null;
-        } else {
-            return normalizeURI(unescapeString(res));
+        // TODO handrolled parser; res should be null or the string
+        var savepos = this.pos;
+        var openparens = 0;
+        var c;
+        while ((c = this.peek()) !== -1) {
+            if (c === C_BACKSLASH) {
+                this.pos += 1;
+                if (this.peek() !== -1) {
+                    this.pos += 1;
+                }
+            } else if (c === C_OPEN_PAREN) {
+                this.pos += 1;
+                openparens += 1;
+            } else if (c === C_CLOSE_PAREN) {
+                if (openparens < 1) {
+                    break;
+                } else {
+                    this.pos += 1;
+                    openparens -= 1;
+                }
+            } else if (reWhitespaceChar.exec(fromCodePoint(c)) !== null) {
+                break;
+            } else {
+                this.pos += 1;
+            }
         }
+        res = this.subject.substr(savepos, this.pos - savepos);
+        return normalizeURI(unescapeString(res));
     } else {  // chop off surrounding <..>:
         return normalizeURI(unescapeString(res.substr(1, res.length - 2)));
     }
@@ -1567,7 +1577,9 @@ var parseLinkDestination = function() {
 // Attempt to parse a link label, returning number of characters parsed.
 var parseLinkLabel = function() {
     var m = this.match(reLinkLabel);
-    if (m === null || m.length > 1001) {
+    // Note:  our regex will allow something of form [..\];
+    // we disallow it here rather than using lookahead in the regex:
+    if (m === null || m.length > 1001 || /[^\\]\\\]$/.exec(m)) {
         return 0;
     } else {
         return m.length;
@@ -2319,37 +2331,34 @@ module.exports = function(string) {
 
 var Renderer = require('./renderer');
 
-var esc = require('../common').escapeXml;
-
 var reUnsafeProtocol = /^javascript:|vbscript:|file:|data:/i;
 var reSafeDataProtocol = /^data:image\/(?:png|gif|jpeg|webp)/i;
 
 var potentiallyUnsafe = function(url) {
-    return reUnsafeProtocol.test(url) &&
-        !reSafeDataProtocol.test(url);
+  return reUnsafeProtocol.test(url) &&
+      !reSafeDataProtocol.test(url);
 };
 
 // Helper function to produce an HTML tag.
 function tag(name, attrs, selfclosing) {
-    if (this.disableTags > 0) {
-        return;
+  if (this.disableTags > 0) {
+    return;
+  }
+  this.buffer += ('<' + name);
+  if (attrs && attrs.length > 0) {
+    var i = 0;
+    var attrib;
+    while ((attrib = attrs[i]) !== undefined) {
+      this.buffer += (' ' + attrib[0] + '="' + attrib[1] + '"');
+      i++;
     }
-    this.buffer += ('<' + name);
-    if (attrs && attrs.length > 0) {
-        var i = 0;
-        var attrib;
-        while ((attrib = attrs[i]) !== undefined) {
-            this.buffer += (' ' + attrib[0] + '="' + attrib[1] + '"');
-            i++;
-        }
-    }
-    if (selfclosing) {
-        this.buffer += ' /';
-    }
-    this.buffer += '>';
-    this.lastOut = '>';
+  }
+  if (selfclosing) {
+    this.buffer += ' /';
+  }
+  this.buffer += '>';
+  this.lastOut = '>';
 }
-
 
 function HtmlRenderer(options) {
   options = options || {};
@@ -2381,38 +2390,37 @@ function linebreak() {
 function link(node, entering) {
   var attrs = this.attrs(node);
   if (entering) {
-      if (!(this.options.safe && potentiallyUnsafe(node.destination))) {
-          attrs.push(['href', esc(node.destination, true)]);
-      }
-      if (node.title) {
-          attrs.push(['title', esc(node.title, true)]);
-      }
-      this.tag('a', attrs);
+    if (!(this.options.safe && potentiallyUnsafe(node.destination))) {
+      attrs.push(['href', this.esc(node.destination, true)]);
+    }
+    if (node.title) {
+      attrs.push(['title', this.esc(node.title, true)]);
+    }
+    this.tag('a', attrs);
   } else {
-      this.tag('/a');
+    this.tag('/a');
   }
 }
 
 function image(node, entering) {
   if (entering) {
-      if (this.disableTags === 0) {
-          if (this.options.safe &&
-               potentiallyUnsafe(node.destination)) {
-              this.lit('<img src="" alt="');
-          } else {
-              this.lit('<img src="' + esc(node.destination, true) +
-                  '" alt="');
-          }
+    if (this.disableTags === 0) {
+      if (this.options.safe && potentiallyUnsafe(node.destination)) {
+        this.lit('<img src="" alt="');
+      } else {
+        this.lit('<img src="' + this.esc(node.destination, true) +
+            '" alt="');
       }
-      this.disableTags += 1;
+    }
+    this.disableTags += 1;
   } else {
-      this.disableTags -= 1;
-      if (this.disableTags === 0) {
-          if (node.title) {
-              this.lit('" title="' + esc(node.title, true));
-          }
-          this.lit('" />');
+    this.disableTags -= 1;
+    if (this.disableTags === 0) {
+      if (node.title) {
+        this.lit('" title="' + this.esc(node.title, true));
       }
+      this.lit('" />');
+    }
   }
 }
 
@@ -2428,17 +2436,17 @@ function paragraph(node, entering) {
   var grandparent = node.parent.parent
     , attrs = this.attrs(node);
   if (grandparent !== null &&
-      grandparent.type === 'list') {
-      if (grandparent.listTight) {
-          return;
-      }
+    grandparent.type === 'list') {
+    if (grandparent.listTight) {
+      return;
+    }
   }
   if (entering) {
-      this.cr();
-      this.tag('p', attrs);
+    this.cr();
+    this.tag('p', attrs);
   } else {
-      this.tag('/p');
-      this.cr();
+    this.tag('/p');
+    this.cr();
   }
 }
 
@@ -2446,11 +2454,11 @@ function heading(node, entering) {
   var tagname = 'h' + node.level
     , attrs = this.attrs(node);
   if (entering) {
-      this.cr();
-      this.tag(tagname, attrs);
+    this.cr();
+    this.tag(tagname, attrs);
   } else {
-      this.tag('/' + tagname);
-      this.cr();
+    this.tag('/' + tagname);
+    this.cr();
   }
 }
 
@@ -2464,7 +2472,7 @@ function code_block(node) {
   var info_words = node.info ? node.info.split(/\s+/) : []
     , attrs = this.attrs(node);
   if (info_words.length > 0 && info_words[0].length > 0) {
-      attrs.push(['class', 'language-' + esc(info_words[0], true)]);
+    attrs.push(['class', 'language-' + this.esc(info_words[0], true)]);
   }
   this.cr();
   this.tag('pre');
@@ -2485,13 +2493,13 @@ function thematic_break(node) {
 function block_quote(node, entering) {
   var attrs = this.attrs(node);
   if (entering) {
-      this.cr();
-      this.tag('blockquote', attrs);
-      this.cr();
+    this.cr();
+    this.tag('blockquote', attrs);
+    this.cr();
   } else {
-      this.cr();
-      this.tag('/blockquote');
-      this.cr();
+    this.cr();
+    this.tag('/blockquote');
+    this.cr();
   }
 }
 
@@ -2500,62 +2508,62 @@ function list(node, entering) {
     , attrs = this.attrs(node);
 
   if (entering) {
-      var start = node.listStart;
-      if (start !== null && start !== 1) {
-          attrs.push(['start', start.toString()]);
-      }
-      this.cr();
-      this.tag(tagname, attrs);
-      this.cr();
+    var start = node.listStart;
+    if (start !== null && start !== 1) {
+      attrs.push(['start', start.toString()]);
+    }
+    this.cr();
+    this.tag(tagname, attrs);
+    this.cr();
   } else {
-      this.cr();
-      this.tag('/' + tagname);
-      this.cr();
+    this.cr();
+    this.tag('/' + tagname);
+    this.cr();
   }
 }
 
 function item(node, entering) {
   var attrs = this.attrs(node);
   if (entering) {
-      this.tag('li', attrs);
+    this.tag('li', attrs);
   } else {
-      this.tag('/li');
-      this.cr();
+    this.tag('/li');
+    this.cr();
   }
 }
 
 function html_inline(node) {
   if (this.options.safe) {
-      this.lit('<!-- raw HTML omitted -->');
+    this.lit('<!-- raw HTML omitted -->');
   } else {
-      this.lit(node.literal);
+    this.lit(node.literal);
   }
 }
 
 function html_block(node) {
   this.cr();
   if (this.options.safe) {
-      this.lit('<!-- raw HTML omitted -->');
+    this.lit('<!-- raw HTML omitted -->');
   } else {
-      this.lit(node.literal);
+    this.lit(node.literal);
   }
   this.cr();
 }
 
 function custom_inline(node, entering) {
   if (entering && node.onEnter) {
-      this.lit(node.onEnter);
+    this.lit(node.onEnter);
   } else if (!entering && node.onExit) {
-      this.lit(node.onExit);
+    this.lit(node.onExit);
   }
 }
 
 function custom_block(node, entering) {
   this.cr();
   if (entering && node.onEnter) {
-      this.lit(node.onEnter);
+    this.lit(node.onEnter);
   } else if (!entering && node.onExit) {
-      this.lit(node.onExit);
+    this.lit(node.onExit);
   }
   this.cr();
 }
@@ -2563,18 +2571,18 @@ function custom_block(node, entering) {
 /* Helper methods */
 
 function out(s) {
-  this.lit(esc(s, false));
+  this.lit(this.esc(s, false));
 }
 
 function attrs (node) {
   var att = [];
   if (this.options.sourcepos) {
-      var pos = node.sourcepos;
-      if (pos) {
-          att.push(['data-sourcepos', String(pos[0][0]) + ':' +
-                      String(pos[0][1]) + '-' + String(pos[1][0]) + ':' +
-                      String(pos[1][1])]);
-      }
+    var pos = node.sourcepos;
+    if (pos) {
+      att.push(['data-sourcepos', String(pos[0][0]) + ':' +
+        String(pos[0][1]) + '-' + String(pos[1][0]) + ':' +
+        String(pos[1][1])]);
+    }
   }
   return att;
 }
@@ -2601,6 +2609,8 @@ HtmlRenderer.prototype.list = list;
 HtmlRenderer.prototype.item = item;
 HtmlRenderer.prototype.custom_inline = custom_inline;
 HtmlRenderer.prototype.custom_block = custom_block;
+
+HtmlRenderer.prototype.esc = require('../common').escapeXml;
 
 HtmlRenderer.prototype.out = out;
 HtmlRenderer.prototype.tag = tag;
@@ -2645,10 +2655,13 @@ function lit(str) {
   this.lastOut = str;
 }
 
+/**
+ *  Output a newline to the buffer.
+ */
 function cr() {
-    if (this.lastOut !== '\n') {
-        this.lit('\n');
-    }
+  if (this.lastOut !== '\n') {
+    this.lit('\n');
+  }
 }
 
 /**
@@ -2662,193 +2675,211 @@ function out(str) {
   this.lit(str);
 }
 
+/**
+ *  Escape a string for the target renderer.
+ *
+ *  Abstract function that should be implemented by concrete 
+ *  renderer implementations.
+ *
+ *  @param str {String} The string to escape.
+ */
+function esc(str) {
+  return str;
+}
+
 Renderer.prototype.render = render;
 Renderer.prototype.out = out;
 Renderer.prototype.lit = lit;
 Renderer.prototype.cr  = cr;
+Renderer.prototype.esc  = esc;
 
 module.exports = Renderer;
 
 },{}],10:[function(require,module,exports){
 "use strict";
 
-var escapeXml = require('./common').escapeXml;
-
-// Helper function to produce an XML tag.
-var tag = function(name, attrs, selfclosing) {
-    var result = '<' + name;
-    if (attrs && attrs.length > 0) {
-        var i = 0;
-        var attrib;
-        while ((attrib = attrs[i]) !== undefined) {
-            result += ' ' + attrib[0] + '="' + escapeXml(attrib[1]) + '"';
-            i++;
-        }
-    }
-    if (selfclosing) {
-        result += ' /';
-    }
-
-    result += '>';
-    return result;
-};
+var Renderer = require('./renderer');
 
 var reXMLTag = /\<[^>]*\>/;
 
-var toTagName = function(s) {
-    return s.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
-};
-
-var renderNodes = function(block) {
-
-    var attrs;
-    var tagname;
-    var walker = block.walker();
-    var event, node, entering;
-    var buffer = "";
-    var lastOut = "\n";
-    var disableTags = 0;
-    var indentLevel = 0;
-    var indent = '  ';
-    var container;
-    var selfClosing;
-    var nodetype;
-
-    var out = function(s) {
-        if (disableTags > 0) {
-            buffer += s.replace(reXMLTag, '');
-        } else {
-            buffer += s;
-        }
-        lastOut = s;
-    };
-    var esc = this.escape;
-    var cr = function() {
-        if (lastOut !== '\n') {
-            buffer += '\n';
-            lastOut = '\n';
-            for (var i = indentLevel; i > 0; i--) {
-                buffer += indent;
-            }
-        }
-    };
-
-    var options = this.options;
-
-    if (options.time) { console.time("rendering"); }
-
-    buffer += '<?xml version="1.0" encoding="UTF-8"?>\n';
-    buffer += '<!DOCTYPE document SYSTEM "CommonMark.dtd">\n';
-
-    while ((event = walker.next())) {
-        entering = event.entering;
-        node = event.node;
-        nodetype = node.type;
-
-        container = node.isContainer;
-        selfClosing = nodetype === 'thematic_break' || nodetype === 'linebreak' ||
-            nodetype === 'softbreak';
-        tagname = toTagName(nodetype);
-
-        if (entering) {
-
-            attrs = [];
-
-            switch (nodetype) {
-            case 'document':
-                attrs.push(['xmlns', 'http://commonmark.org/xml/1.0']);
-                break;
-            case 'list':
-                if (node.listType !== null) {
-                    attrs.push(['type', node.listType.toLowerCase()]);
-                }
-                if (node.listStart !== null) {
-                    attrs.push(['start', String(node.listStart)]);
-                }
-                if (node.listTight !== null) {
-                    attrs.push(['tight', (node.listTight ? 'true' : 'false')]);
-                }
-                var delim = node.listDelimiter;
-                if (delim !== null) {
-                    var delimword = '';
-                    if (delim === '.') {
-                        delimword = 'period';
-                    } else {
-                        delimword = 'paren';
-                    }
-                    attrs.push(['delimiter', delimword]);
-                }
-                break;
-            case 'code_block':
-                if (node.info) {
-                    attrs.push(['info', node.info]);
-                }
-                break;
-            case 'heading':
-                attrs.push(['level', String(node.level)]);
-                break;
-            case 'link':
-            case 'image':
-                attrs.push(['destination', node.destination]);
-                attrs.push(['title', node.title]);
-                break;
-            case 'custom_inline':
-            case 'custom_block':
-                attrs.push(['on_enter', node.onEnter]);
-                attrs.push(['on_exit', node.onExit]);
-                break;
-            default:
-                break;
-            }
-            if (options.sourcepos) {
-                var pos = node.sourcepos;
-                if (pos) {
-                    attrs.push(['sourcepos', String(pos[0][0]) + ':' +
-                                String(pos[0][1]) + '-' + String(pos[1][0]) + ':' +
-                                String(pos[1][1])]);
-                }
-            }
-
-            cr();
-            out(tag(tagname, attrs, selfClosing));
-            if (container) {
-                indentLevel += 1;
-            } else if (!container && !selfClosing) {
-                var lit = node.literal;
-                if (lit) {
-                    out(esc(lit));
-                }
-                out(tag('/' + tagname));
-            }
-        } else {
-            indentLevel -= 1;
-            cr();
-            out(tag('/' + tagname));
-        }
-
-
-    }
-    if (options.time) { console.timeEnd("rendering"); }
-    buffer += '\n';
-    return buffer;
-};
-
-// The XmlRenderer object.
-function XmlRenderer(options){
-    return {
-        // default options:
-        softbreak: '\n', // by default, soft breaks are rendered as newlines in HTML
-        // set to "<br />" to make them hard breaks
-        // set to " " if you want to ignore line wrapping in source
-        escape: escapeXml,
-        options: options || {},
-        render: renderNodes
-    };
+function toTagName(s) {
+  return s.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
 }
+
+function XmlRenderer(options) {
+  options = options || {};
+
+  this.disableTags = 0;
+  this.lastOut = "\n";
+
+  this.indentLevel = 0;
+  this.indent = '  ';
+
+  this.options = options;
+}
+
+function render(ast) {
+
+  this.buffer = '';
+
+  var attrs;
+  var tagname;
+  var walker = ast.walker();
+  var event, node, entering;
+  var container;
+  var selfClosing;
+  var nodetype;
+
+  var options = this.options;
+
+  if (options.time) { console.time("rendering"); }
+
+  this.buffer += '<?xml version="1.0" encoding="UTF-8"?>\n';
+  this.buffer += '<!DOCTYPE document SYSTEM "CommonMark.dtd">\n';
+
+  while ((event = walker.next())) {
+    entering = event.entering;
+    node = event.node;
+    nodetype = node.type;
+
+    container = node.isContainer;
+
+    selfClosing = nodetype === 'thematic_break'
+      || nodetype === 'linebreak'
+      || nodetype === 'softbreak';
+
+    tagname = toTagName(nodetype);
+
+    if (entering) {
+
+        attrs = [];
+
+        switch (nodetype) {
+          case 'document':
+            attrs.push(['xmlns', 'http://commonmark.org/xml/1.0']);
+            break;
+          case 'list':
+            if (node.listType !== null) {
+              attrs.push(['type', node.listType.toLowerCase()]);
+            }
+            if (node.listStart !== null) {
+              attrs.push(['start', String(node.listStart)]);
+            }
+            if (node.listTight !== null) {
+              attrs.push(['tight', (node.listTight ? 'true' : 'false')]);
+            }
+            var delim = node.listDelimiter;
+            if (delim !== null) {
+              var delimword = '';
+              if (delim === '.') {
+                delimword = 'period';
+              } else {
+                delimword = 'paren';
+              }
+              attrs.push(['delimiter', delimword]);
+            }
+            break;
+          case 'code_block':
+            if (node.info) {
+              attrs.push(['info', node.info]);
+            }
+            break;
+          case 'heading':
+            attrs.push(['level', String(node.level)]);
+            break;
+          case 'link':
+          case 'image':
+            attrs.push(['destination', node.destination]);
+            attrs.push(['title', node.title]);
+            break;
+          case 'custom_inline':
+          case 'custom_block':
+            attrs.push(['on_enter', node.onEnter]);
+            attrs.push(['on_exit', node.onExit]);
+            break;
+          default:
+            break;
+        }
+        if (options.sourcepos) {
+          var pos = node.sourcepos;
+          if (pos) {
+            attrs.push(['sourcepos', String(pos[0][0]) + ':' +
+              String(pos[0][1]) + '-' + String(pos[1][0]) + ':' +
+              String(pos[1][1])]);
+          }
+        }
+
+        this.cr();
+        this.out(this.tag(tagname, attrs, selfClosing));
+        if (container) {
+          this.indentLevel += 1;
+        } else if (!container && !selfClosing) {
+          var lit = node.literal;
+          if (lit) {
+            this.out(this.esc(lit));
+          }
+          this.out(this.tag('/' + tagname));
+        }
+    } else {
+      this.indentLevel -= 1;
+      this.cr();
+      this.out(this.tag('/' + tagname));
+    }
+  }
+  if (options.time) { console.timeEnd("rendering"); }
+  this.buffer += '\n';
+  return this.buffer;
+}
+
+function out(s) {
+  if(this.disableTags > 0) {
+    this.buffer += s.replace(reXMLTag, '');
+  }else{
+    this.buffer += s;
+  }
+  this.lastOut = s;
+}
+
+function cr() {
+  if(this.lastOut !== '\n') {
+    this.buffer += '\n';
+    this.lastOut = '\n';
+    for(var i = this.indentLevel; i > 0; i--) {
+      this.buffer += this.indent;
+    }
+  }
+}
+
+// Helper function to produce an XML tag.
+function tag(name, attrs, selfclosing) {
+  var result = '<' + name;
+  if(attrs && attrs.length > 0) {
+    var i = 0;
+    var attrib;
+    while ((attrib = attrs[i]) !== undefined) {
+      result += ' ' + attrib[0] + '="' + this.esc(attrib[1]) + '"';
+      i++;
+    }
+  }
+  if(selfclosing) {
+    result += ' /';
+  }
+  result += '>';
+  return result;
+}
+
+// quick browser-compatible inheritance
+XmlRenderer.prototype = Object.create(Renderer.prototype);
+
+XmlRenderer.prototype.render = render;
+XmlRenderer.prototype.out = out;
+XmlRenderer.prototype.cr = cr;
+XmlRenderer.prototype.tag = tag;
+XmlRenderer.prototype.esc = require('../common').escapeXml;
 
 module.exports = XmlRenderer;
 
-},{"./common":2}],11:[function(require,module,exports){
+},{"../common":2,"./renderer":9}],11:[function(require,module,exports){
 var encode = require("./lib/encode.js"),
     decode = require("./lib/decode.js");
 
