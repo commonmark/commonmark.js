@@ -94,3 +94,11 @@ Issue #116 - tabs before and after ATX closing heading
 .
 <h1>foo</h1>
 ````````````````````````````````
+
+commonmark/CommonMark#493 - escaped space not allowed in link
+destination.
+```````````````````````````````` example
+[link](a\ b)
+.
+<p>[link](a\ b)</p>
+````````````````````````````````
