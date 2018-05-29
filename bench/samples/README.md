@@ -255,7 +255,7 @@ only for simple, clear, actionable issues.
 Authors
 -------
 
-The spec was written by John MacFarlane, drawing on
+The spec was written by John MacFarlane, drawing on:
 
 - his experience writing and maintaining Markdown implementations in several
   languages, including the first Markdown parser not based on regular
