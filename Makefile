@@ -15,11 +15,12 @@ lint:
 dist: dist/commonmark.js dist/commonmark.min.js
 
 dist/commonmark.js: lib/index.js ${JSMODULES}
-	$(BROWSERIFY) --standalone commonmark $< -o $@
+	echo '/* commonmark $(VERSION) https://github.com/CommonMark/commonmark.js @license BSD3 */' > $@
+	$(BROWSERIFY) --standalone commonmark $< >> $@
 
 dist/commonmark.min.js: dist/commonmark.js
 	$(UGLIFYJS) --version  # version should be at least 2.5.0
-	$(UGLIFYJS) $< --compress keep_fargs=true,pure_getters=true --preamble "/* commonmark $(VERSION) https://github.com/jgm/CommonMark @license BSD3 */" > $@
+	$(UGLIFYJS) $< --compress keep_fargs=true,pure_getters=true --comments > $@
 
 update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
