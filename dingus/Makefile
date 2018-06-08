@@ -1,6 +1,9 @@
 ALL=commonmark.js
 COMPONENTS=lodash.min.js jquery.min.js jquery.min.map bootstrap.min.js bootstrap.min.css
 LIBFILES=../lib/blocks.js ../lib/common.js ../lib/from-code-point.js ../lib/inlines.js ../lib/index.js ../lib/node.js ../lib/normalize-reference.js ../lib/render/xml.js ../lib/render/html.js ../lib/render/renderer.js
+BOWER=../node_modules/.bin/bower
+BROWSERIFY=../node_modules/.bin/browserify
+HTTPSERVER=../node_modules/.bin/http-server
 
 all: $(ALL) components
 
@@ -9,7 +12,7 @@ all: $(ALL) components
 components: $(COMPONENTS)
 
 bower_components/%:
-	bower install $(notdir $@)
+	$(BOWER) install $(notdir $@)
 
 lodash.min.js: bower_components/lodash
 	cp $</dist/lodash.min.js $@
@@ -31,8 +34,8 @@ clean:
 	rm -r bower_components
 
 commonmark.js: ../lib/index.js $(LIBFILES)
-	browserify --standalone commonmark $< -o $@
+	$(BROWSERIFY) --standalone commonmark $< -o $@
 
 dingus: all
 	echo "Starting dingus server at http://localhost:9000/"; \
-	http-server -p 9000 || python -m SimpleHTTPServer 9000
+	$(HTTPSERVER) -p 9000

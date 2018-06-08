@@ -1,19 +1,27 @@
-{ "name": "commonmark",
+{
+  "name": "commonmark",
   "description": "a strongly specified, highly compatible variant of Markdown",
   "version": "0.28.1",
   "homepage": "http://commonmark.org",
-  "keywords":
-   [ "markdown",
-     "commonmark",
-     "md",
-     "stmd" ],
+  "keywords": [
+    "markdown",
+    "commonmark",
+    "md",
+    "stmd"
+  ],
   "repository": "jgm/commonmark.js",
   "author": "John MacFarlane",
-  "bugs": { "url": "https://github.com/jgm/commonmark.js/issues" },
+  "bugs": {
+    "url": "https://github.com/jgm/commonmark.js/issues"
+  },
   "license": "BSD-2-Clause",
   "main": "./lib/index.js",
-  "bin": { "commonmark": "./bin/commonmark" },
-  "scripts": { "test": "node ./test/test.js" },
+  "bin": {
+    "commonmark": "./bin/commonmark"
+  },
+  "scripts": {
+    "test": "node ./test/test.js"
+  },
   "dependencies": {
     "entities": "~ 1.1.1",
     "mdurl": "~ 1.0.1",
@@ -21,9 +29,20 @@
     "minimist": "~ 1.2.0"
   },
   "directories": {
-      "lib": "./lib"
+    "lib": "./lib"
   },
   "engines": {
-      "node": "*"
+    "node": "*"
+  },
+  "devDependencies": {
+    "benchmark": "^2.1.4",
+    "bower": "^1.8.4",
+    "browserify": "^16.2.2",
+    "eslint": "^4.19.1",
+    "http-server": "^0.11.1",
+    "markdown-it": "^8.4.1",
+    "marked": "^0.4.0",
+    "showdown": "^1.8.6",
+    "uglify-js": "^3.4.0"
   }
 }

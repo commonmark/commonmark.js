@@ -4,12 +4,10 @@ var Benchmark = require('benchmark').Benchmark;
 var suite = new Benchmark.Suite();
 var fs = require('fs');
 var commonmark = require('../lib/index.js');
-// npm install showdown
 var Showdown = require('showdown');
-// npm install marked
 var marked = require('marked');
-// npm install markdown-it
 var markdownit = require('markdown-it')('commonmark');
+
 // disable expensive IDNa links encoding:
 var markdownit_encode = markdownit.utils.lib.mdurl.encode;
 markdownit.normalizeLink = function(url) { return markdownit_encode(url); };

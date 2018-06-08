@@ -3,25 +3,23 @@ SPECVERSION=$(shell perl -ne 'print $$1 if /^version: *([0-9.]+)/' $(SPEC))
 BENCHINP?=bench/samples/README.md
 JSMODULES=$(wildcard lib/*.js)
 VERSION?=$(SPECVERSION)
-UGLIFYJS=node_modules/uglify-js/bin/uglifyjs
+ESLINT=node_modules/.bin/eslint
+UGLIFYJS=node_modules/.bin/uglifyjs
+BROWSERIFY=node_modules/.bin/browserify
 
 .PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
 
 lint:
-	eslint -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
+	$(ESLINT) -c eslint.json ${JSMODULES} bin/commonmark test/test.js dingus/dingus.js
 
 dist: dist/commonmark.js dist/commonmark.min.js
 
 dist/commonmark.js: lib/index.js ${JSMODULES}
-	browserify --standalone commonmark $< -o $@
+	$(BROWSERIFY) --standalone commonmark $< -o $@
 
-# 'npm install -g uglify-js' for the uglifyjs tool:
-dist/commonmark.min.js: dist/commonmark.js $(UGLIFYJS)
+dist/commonmark.min.js: dist/commonmark.js
 	$(UGLIFYJS) --version  # version should be at least 2.5.0
 	$(UGLIFYJS) $< --compress keep_fargs=true,pure_getters=true --preamble "/* commonmark $(VERSION) https://github.com/jgm/CommonMark @license BSD3 */" > $@
-
-$(UGLIFYJS):
-	npm install uglify-js
 
 update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
