@@ -32,28 +32,34 @@ You can install the library using `npm`:
 This package includes the commonmark library and a
 command-line executable, `commonmark`.
 
-For client-side use, you can do `make dist` to produce
-a standalone JavaScript file `js/dist/commonmark.js`,
-suitable for linking into a web page, or fetch the latest
-from
+For client-side use, fetch the latest from
 <https://raw.githubusercontent.com/jgm/commonmark.js/master/dist/commonmark.js>,
 or `bower install commonmark`.
 
+Building
+--------
+
+Make sure to fetch dependencies with:
+
+    npm install
+
+To build standalone JavaScript files (`dist/commonmark.js` and
+`dist/commonmark.min.js`):
+
+    make dist
+
 To run tests for the JavaScript library:
 
-    npm install # if needed to fetch dependencies
     make test
 
 To run benchmarks against some other JavaScript converters:
 
-    npm install benchmark showdown marked markdown-it
     make bench
 
 To start an interactive dingus that you can use to try out
 the library:
 
     make dingus
-
 
 Usage
 -----
@@ -331,12 +337,9 @@ markdown-it 5.0.2, node 5.3.0.  Hardware: 1.6GHz Intel Core i5, Mac OSX.
 [inline-backticks.md]: bench/samples/inline-backticks.md
 [block-ref-flat.md]: bench/samples/block-ref-flat.md
 
-To generate this table,
+To generate this table:
 
-    npm install showdown marked markdown-it benchmark
     make bench-detailed
-
-
 
 Authors
 -------
