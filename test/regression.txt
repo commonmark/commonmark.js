@@ -102,3 +102,17 @@ destination.
 .
 <p>[link](a\ b)</p>
 ````````````````````````````````
+
+Issue #527 - meta tags in inline contexts
+
+```````````````````````````````` example
+City:
+<span itemprop="contentLocation" itemscope itemtype="https://schema.org/City">
+  <meta itemprop="name" content="Springfield">
+</span>
+.
+<p>City:
+<span itemprop="contentLocation" itemscope itemtype="https://schema.org/City">
+<meta itemprop="name" content="Springfield">
+</span></p>
+````````````````````````````````
