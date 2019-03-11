@@ -229,7 +229,20 @@ for (x = 1000; x <= 10000; x *= 10) {
           expected: repeat('<blockquote>\n', x) + '<p>a</p>\n' +
           repeat('</blockquote>\n', x) });
 }
-
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: '[\\\\... ' + x + ' deep',
+          input: '[' + repeat('\\', x) + '\n',
+          expected: '<p>' + '[' + repeat('\\', x/2) + '</p>\n'
+        });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: '[]( ' + x + ' deep',
+          input: repeat('[](', x) + '\n',
+          expected: '<p>' + repeat('[](', x) + '</p>\n'
+        });
+}
 var parse_and_render = function(z) {
     return writer.render(reader.parse(z));
 };
