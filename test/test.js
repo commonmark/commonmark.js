@@ -217,6 +217,12 @@ for (x = 1000; x <= 10000; x *= 10) {
 }
 for (x = 1000; x <= 10000; x *= 10) {
     cases.push(
+        { name: x + ' pattern [ (](',
+          input: repeat('[ (](', x),
+          expected: '<p>' + repeat('[ (](', x) + '</p>\n' });
+}
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push(
         { name: 'nested brackets ' + x + ' deep',
           input: repeat('[', x) + 'a' + repeat(']', x),
           expected: '<p>' + repeat('[', x) + 'a' + repeat(']', x) +
