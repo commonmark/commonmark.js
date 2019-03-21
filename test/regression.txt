@@ -95,8 +95,8 @@ Issue #116 - tabs before and after ATX closing heading
 <h1>foo</h1>
 ````````````````````````````````
 
-commonmark/CommonMark#493 - escaped space not allowed in link
-destination.
+commonmark/CommonMark#493 - escaped space not allowed in link destination.
+
 ```````````````````````````````` example
 [link](a\ b)
 .
@@ -115,4 +115,12 @@ City:
 <span itemprop="contentLocation" itemscope itemtype="https://schema.org/City">
 <meta itemprop="name" content="Springfield">
 </span></p>
+````````````````````````````````
+
+Double-encoding.
+
+```````````````````````````````` example
+[XSS](javascript&amp;colon;alert%28&#039;XSS&#039;%29)
+.
+<p><a href="javascript&amp;colon;alert('XSS')">XSS</a></p>
 ````````````````````````````````
