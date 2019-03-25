@@ -44,7 +44,7 @@
     "marked": "^0.4.0",
     "showdown": "^1.8.6",
     "uglify-js": "^3.4.0",
-    "cached-path-relative": ">=1.0.2",
-    "lodash": ">=4.17.11"
+    "cached-path-relative": "^1.0.2",
+    "lodash": "^4.17.11"
   }
 }
