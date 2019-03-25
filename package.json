@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "benchmark": "^2.1.4",
-    "bower": "^1.8.4",
+    "bower": "^1.8.8",
     "browserify": "^16.2.2",
     "eslint": "^4.19.1",
     "http-server": "^0.11.1",
