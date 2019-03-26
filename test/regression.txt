@@ -124,3 +124,26 @@ Double-encoding.
 .
 <p><a href="javascript&amp;colon;alert('XSS')">XSS</a></p>
 ````````````````````````````````
+
+Issue commonamrk#517 - script, pre, style close tag without
+opener.
+
+```````````````````````````````` example
+</script>
+
+</pre>
+
+</style>
+.
+</script>
+</pre>
+</style>
+````````````````````````````````
+
+Issue #289.
+
+```````````````````````````````` example
+[a](<b) c>
+.
+<p>[a](&lt;b) c&gt;</p>
+````````````````````````````````
