@@ -1,8 +1,8 @@
 ---
 title: CommonMark Spec
 author: John MacFarlane
-version: 0.28
-date: '2017-08-01'
+version: 0.29
+date: '2019-04-06'
 license: '[CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)'
 ...
 
@@ -827,7 +827,7 @@ Contents are parsed as inlines:
 ````````````````````````````````
 
 
-Leading and trailing blanks are ignored in parsing inline content:
+Leading and trailing [whitespace] is ignored in parsing inline content:
 
 ```````````````````````````````` example
 #                  foo                     
@@ -1020,6 +1020,20 @@ The content of the header may span more than one line:
 ```````````````````````````````` example
 Foo *bar
 baz*
+====
+.
+<h1>Foo <em>bar
+baz</em></h1>
+````````````````````````````````
+
+The contents are the result of parsing the headings's raw
+content as inlines.  The heading's raw content is formed by
+concatenating the lines and removing initial and final
+[whitespace].
+
+```````````````````````````````` example
+  Foo *bar
+baz*→
 ====
 .
 <h1>Foo <em>bar
@@ -3076,6 +3090,25 @@ and thematic breaks, and it need not be followed by a blank line.
 </blockquote>
 ````````````````````````````````
 
+```````````````````````````````` example
+[foo]: /url
+bar
+===
+[foo]
+.
+<h1>bar</h1>
+<p><a href="/url">foo</a></p>
+````````````````````````````````
+
+```````````````````````````````` example
+[foo]: /url
+===
+[foo]
+.
+<p>===
+<a href="/url">foo</a></p>
+````````````````````````````````
+
 
 Several [link reference definitions]
 can occur one after another, without intervening blank lines.
@@ -3111,6 +3144,17 @@ are defined:
 </blockquote>
 ````````````````````````````````
 
+
+Whether something is a [link reference definition] is
+independent of whether the link reference it defines is
+used in the document.  Thus, for example, the following
+document contains just a link reference definition, and
+no visible content:
+
+```````````````````````````````` example
+[foo]: /url
+.
+````````````````````````````````
 
 
 ## Paragraphs
@@ -5458,9 +5502,9 @@ Thus, for example, in
 <p><code>hi</code>lo`</p>
 ````````````````````````````````
 
-
 `hi` is parsed as code, leaving the backtick at the end as a literal
 backtick.
+
 
 ## Backslash escapes
 
@@ -5601,13 +5645,23 @@ foo
 
 ## Entity and numeric character references
 
-All valid HTML entity references and numeric character
-references, except those occurring in code blocks and code spans,
-are recognized as such and treated as equivalent to the
-corresponding Unicode characters.  Conforming CommonMark parsers
-need not store information about whether a particular character
-was represented in the source using a Unicode character or
-an entity reference.
+Valid HTML entity references and numeric character references
+can be used in place of the corresponding Unicode character,
+with the following exceptions:
+
+- Entity and character references are not recognized in code
+  blocks and code spans.
+
+- Entity and character references cannot stand in place of
+  special characters that define structural elements in
+  CommonMark.  For example, although `&#42;` can be used
+  in place of a literal `*` character, `&#42;` cannot replace
+  `*` in emphasis delimiters, bullet list markers, or thematic
+  breaks.
+
+Conforming CommonMark parsers need not store information about
+whether a particular character was represented in the source
+using a Unicode character or an entity reference.
 
 [Entity references](@) consist of `&` + any of the valid
 HTML5 entity names + `;`. The
@@ -5742,6 +5796,51 @@ text in code spans and code blocks:
 .
 <pre><code>f&amp;ouml;f&amp;ouml;
 </code></pre>
+````````````````````````````````
+
+
+Entity and numeric character references cannot be used
+in place of symbols indicating structure in CommonMark
+documents.
+
+```````````````````````````````` example
+&#42;foo&#42;
+*foo*
+.
+<p>*foo*
+<em>foo</em></p>
+````````````````````````````````
+
+```````````````````````````````` example
+&#42; foo
+
+* foo
+.
+<p>* foo</p>
+<ul>
+<li>foo</li>
+</ul>
+````````````````````````````````
+
+```````````````````````````````` example
+foo&#10;&#10;bar
+.
+<p>foo
+
+bar</p>
+````````````````````````````````
+
+```````````````````````````````` example
+&#9;foo
+.
+<p>→foo</p>
+````````````````````````````````
+
+
+```````````````````````````````` example
+[a](url &quot;tit&quot;)
+.
+<p>[a](url &quot;tit&quot;)</p>
 ````````````````````````````````
 
 
@@ -7464,6 +7563,15 @@ bar>)
 bar>)</p>
 ````````````````````````````````
 
+The destination can contain `)` if it is enclosed
+in pointy brackets:
+
+```````````````````````````````` example
+[a](<b)c>)
+.
+<p><a href="b)c">a</a></p>
+````````````````````````````````
+
 Pointy brackets that enclose links must be unescaped:
 
 ```````````````````````````````` example
@@ -7472,6 +7580,18 @@ Pointy brackets that enclose links must be unescaped:
 <p>[link](&lt;foo&gt;)</p>
 ````````````````````````````````
 
+These are not links, because the opening pointy bracket
+is not matched properly:
+
+```````````````````````````````` example
+[a](<b)c
+[a](<b)c>
+[a](<b>c)
+.
+<p>[a](&lt;b)c
+[a](&lt;b)c&gt;
+[a](<b>c)</p>
+````````````````````````````````
 
 Parentheses inside the link destination may be escaped:
 
@@ -8580,7 +8700,7 @@ If you want a link after a literal `!`, backslash-escape the
 as the link label.
 
 A [URI autolink](@) consists of `<`, followed by an
-[absolute URI] not containing `<`, followed by `>`.  It is parsed as
+[absolute URI] followed by `>`.  It is parsed as
 a link to the URI, with the URI as the link's label.
 
 An [absolute URI](@),
