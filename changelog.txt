@@ -1,3 +1,64 @@
+[0.29.0]
+
+  * Update spec to 0.29.
+  * Fix parsing of setext headers after reference link definitions.
+  * Fix code span normalization to conform to spec change.
+  * Allow empty destinations in link refs.  See commonmark/commonmark#172.
+  * Update link destination parsing.
+  * dingus: add dependency version requirements (#159, Vas Sudanagunta).
+    Dingus was rendering incorrectly with Bootstrap 4. Added a bower.json
+    which requires Bootstrap, jQuery and Lodash with major version equal
+    to what's currently live. Likewise the minimum patch version.
+  * package.json: Add version for bower in devDependencies.
+  * package.json - use `^` operator for versions.
+  * Allow internal delim runs to match if both have lengths that
+    are multiples of 3. See commonmark/commonmark#528.
+  * Remove now unused 'preserve_entities' option on escapeXml.
+    This was formerly used (incorrectly) in the HTML renderer.
+    It isn't needed any more.  [API change]
+  * html renderer: Don't preserve entities when rendering
+    href, src, title, info string.  This gives rise to double-encoding errors,
+    when the original markdown is e.g. `&amp;colon;`, since the commonmark
+    reader already unescapes entities.  Thanks to Sebastiaan Knijnenburg for
+    noticing this.
+  * More efficient checking for loose lists.
+    This fixes a case like commonmark/cmark#284.
+  * Disallow unescaped `(` in parenthesized link title.
+  * Add pathological test (commonmark/cmark#285).
+  * Comment out failing pathological test for now.
+  * Add pathological tests for #157.
+  * Fix two exponential regex backtracking vulnerabilities (#157,
+    Anders Kaseorg).  ESCAPED_CHAR already matches `\\`, so matching it again
+    in another alternative was causing exponential complexity explosion.
+    This makes the following behavior changes:
+    `[foo\\\]` is no longer incorrectly accepted as a link reference.
+    `<foo\>` is no longer incorrectly accepted as an angle-bracketed
+    link destination.
+  * package.json: require lodash >= 4.17.11.
+  * Require cached-path-relative >= 1.0.2.
+    This fixes a security vulnerability, but it's only
+    in the dev dependencies.
+  * Update fenced block parsing for spec change.
+  * Require space before title in reference link.
+    See commonmark/cmark#263.
+  * Update code span normalization for spec change.
+  * Removed meta from list of block tags.  See commonmark/CommonMark#527.
+  * make dist: ensure that comment line is included in dist files (#144).
+    Also change URL to CommonMark/commonmark.js.
+  * Use local development dependencies (#142, Lynn Kirby).
+    Packages used during development are now listed in devDependencies of
+    package.json. Makefiles are updated to use those local versions.
+    References to manually installing packages are removed from README.md
+    and bench/bench.js. The package-lock.json file used in newer NPM
+    versions is also added.
+  * Allow spaces in pointy-bracket link destinations.
+  * Adjust max length for decimal/numeric entities.
+    See commonmark/CommonMark#487.
+  * Don't allow escaped spaces in link destination.
+    Closes commonmark/CommonMark#493.
+  * Don't allow list items that are indented >= 4 spaces.
+    See commonmark/CommonMark#497.
+
 [0.28.1]
 
   * Update changelog (omitted from 0.28.0 release).
