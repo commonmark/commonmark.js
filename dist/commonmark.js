@@ -1,4 +1,5 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.commonmark = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* commonmark 0.29 https://github.com/CommonMark/commonmark.js @license BSD3 */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.commonmark = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 
 var Node = require('./node');
@@ -24,7 +25,7 @@ var reHtmlBlockOpen = [
    /^<[?]/,
    /^<![A-Z]/,
    /^<!\[CDATA\[/,
-   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[123456]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|section|source|title|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
+   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[123456]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|title|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
     new RegExp('^(?:' + OPENTAG + '|' + CLOSETAG + ')\\s*$', 'i')
 ];
 
@@ -49,7 +50,7 @@ var reOrderedListMarker = /^(\d{1,9})([.)])/;
 
 var reATXHeadingMarker = /^#{1,6}(?:[ \t]+|$)/;
 
-var reCodeFence = /^`{3,}(?!.*`)|^~{3,}(?!.*~)/;
+var reCodeFence = /^`{3,}(?!.*`)|^~{3,}/;
 
 var reClosingCodeFence = /^(?:`{3,}|~{3,})(?= *$)/;
 
@@ -86,9 +87,12 @@ var endsWithBlankLine = function(block) {
             return true;
         }
         var t = block.type;
-        if (t === 'list' || t === 'item') {
+        if (!block._lastLineChecked &&
+            (t === 'list' || t === 'item')) {
+            block._lastLineChecked = true;
             block = block._lastChild;
         } else {
+            block._lastLineChecked = true;
             break;
         }
     }
@@ -138,6 +142,9 @@ var parseListMarker = function(parser, container) {
                  delimiter: null,
                  padding: null,
                  markerOffset: parser.indent };
+    if (parser.indent >= 4) {
+        return null;
+    }
     if ((match = rest.match(reBulletListMarker))) {
         data.type = 'bullet';
         data.bulletChar = match[0][0];
@@ -492,14 +499,27 @@ var blockStarts = [
             container.type === 'paragraph' &&
                    ((match = parser.currentLine.slice(parser.nextNonspace).match(reSetextHeadingLine)))) {
             parser.closeUnmatchedBlocks();
-            var heading = new Node('heading', container.sourcepos);
-            heading.level = match[0][0] === '=' ? 1 : 2;
-            heading._string_content = container._string_content;
-            container.insertAfter(heading);
-            container.unlink();
-            parser.tip = heading;
-            parser.advanceOffset(parser.currentLine.length - parser.offset, false);
-            return 2;
+            // resolve reference link definitiosn
+            var pos;
+            while (peek(container._string_content, 0) === C_OPEN_BRACKET &&
+                   (pos =
+                    parser.inlineParser.parseReference(
+                        container._string_content, parser.refmap))) {
+                container._string_content =
+                    container._string_content.slice(pos);
+            }
+            if (container._string_content.length > 0) {
+              var heading = new Node('heading', container.sourcepos);
+              heading.level = match[0][0] === '=' ? 1 : 2;
+              heading._string_content = container._string_content;
+              container.insertAfter(heading);
+              container.unlink();
+              parser.tip = heading;
+              parser.advanceOffset(parser.currentLine.length - parser.offset, false);
+              return 2;
+            } else {
+              return 0;
+            }
         } else {
             return 0;
         }
@@ -883,7 +903,7 @@ var C_BACKSLASH = 92;
 
 var decodeHTML = require('entities').decodeHTML;
 
-var ENTITY = "&(?:#x[a-f0-9]{1,8}|#[0-9]{1,8}|[a-z][a-z0-9]{1,31});";
+var ENTITY = "&(?:#x[a-f0-9]{1,6}|#[0-9]{1,7}|[a-z][a-z0-9]{1,31});";
 
 var TAGNAME = '[A-Za-z][A-Za-z0-9-]*';
 var ATTRIBUTENAME = '[a-zA-Z_:][a-zA-Z0-9:._-]*';
@@ -912,8 +932,6 @@ var reEntityOrEscapedChar = new RegExp('\\\\' + ESCAPABLE + '|' + ENTITY, 'gi');
 var XMLSPECIAL = '[&<>"]';
 
 var reXmlSpecial = new RegExp(XMLSPECIAL, 'g');
-
-var reXmlSpecialOrEntity = new RegExp(ENTITY + '|' + XMLSPECIAL, 'gi');
 
 var unescapeChar = function(s) {
     if (s.charCodeAt(0) === C_BACKSLASH) {
@@ -956,13 +974,9 @@ var replaceUnsafeChar = function(s) {
     }
 };
 
-var escapeXml = function(s, preserve_entities) {
+var escapeXml = function(s) {
     if (reXmlSpecial.test(s)) {
-        if (preserve_entities) {
-            return s.replace(reXmlSpecialOrEntity, replaceUnsafeChar);
-        } else {
-            return s.replace(reXmlSpecial, replaceUnsafeChar);
-        }
+        return s.replace(reXmlSpecial, replaceUnsafeChar);
     } else {
         return s;
     }
@@ -1104,10 +1118,9 @@ var reLinkTitle = new RegExp(
         '|' +
         '\'(' + ESCAPED_CHAR + '|[^\'\\x00])*\'' +
         '|' +
-        '\\((' + ESCAPED_CHAR + '|[^)\\x00])*\\))');
+        '\\((' + ESCAPED_CHAR + '|[^()\\x00])*\\))');
 
-var reLinkDestinationBraces = new RegExp(
-    '^(?:[<](?:[^ <>\\t\\n\\\\\\x00]' + '|' + ESCAPED_CHAR + '|' + '\\\\)*[>])');
+var reLinkDestinationBraces = /^(?:<(?:[^<>\n\\\x00]|\\.)*>)/;
 
 var reEscapable = new RegExp('^' + ESCAPABLE);
 
@@ -1139,8 +1152,7 @@ var reInitialSpace = /^ */;
 
 var reSpaceAtEndOfLine = /^ *(?:\n|$)/;
 
-var reLinkLabel = new RegExp('^\\[(?:[^\\\\\\[\\]]|' + ESCAPED_CHAR +
-  '|\\\\){0,1000}\\]');
+var reLinkLabel = /^\[(?:[^\\\[\]]|\\.){0,1000}\]/;
 
 // Matches a string of non-special characters.
 var reMain = /^[^\n`\[\]\\!<&*_'"]+/m;
@@ -1199,12 +1211,21 @@ var parseBackticks = function(block) {
     var afterOpenTicks = this.pos;
     var matched;
     var node;
+    var contents;
     while ((matched = this.match(reTicks)) !== null) {
         if (matched === ticks) {
             node = new Node('code');
-            node._literal = this.subject.slice(afterOpenTicks,
+            contents = this.subject.slice(afterOpenTicks,
                                         this.pos - ticks.length)
-                          .trim().replace(reWhitespace, ' ');
+                          .replace(/\n/gm, ' ');
+            if (contents.length > 0 &&
+                contents.match(/[^ ]/) !== null &&
+                contents[0] == ' ' &&
+                contents[contents.length - 1] == ' ') {
+                node._literal = contents.slice(1, contents.length - 1);
+            } else {
+                node._literal = contents;
+            }
             block.appendChild(node);
             return true;
         }
@@ -1425,7 +1446,8 @@ var processEmphasis = function(stack_bottom) {
             while (opener !== null && opener !== stack_bottom &&
                    opener !== openers_bottom[closercc]) {
                 odd_match = (closer.can_open || opener.can_close) &&
-                    (opener.origdelims + closer.origdelims) % 3 === 0;
+                     closer.origdelims % 3 !== 0 &&
+                     (opener.origdelims + closer.origdelims) % 3 === 0;
                 if (opener.cc === closer.cc && opener.can_open && !odd_match) {
                     opener_found = true;
                     break;
@@ -1541,12 +1563,16 @@ var parseLinkTitle = function() {
 var parseLinkDestination = function() {
     var res = this.match(reLinkDestinationBraces);
     if (res === null) {
+        if (this.peek() === C_LESSTHAN) {
+            return null;
+        }
         // TODO handrolled parser; res should be null or the string
         var savepos = this.pos;
         var openparens = 0;
         var c;
         while ((c = this.peek()) !== -1) {
-            if (c === C_BACKSLASH) {
+            if (c === C_BACKSLASH
+                && reEscapable.test(this.subject.charAt(this.pos + 1))) {
                 this.pos += 1;
                 if (this.peek() !== -1) {
                     this.pos += 1;
@@ -1567,6 +1593,9 @@ var parseLinkDestination = function() {
                 this.pos += 1;
             }
         }
+        if (this.pos === savepos && c !== C_CLOSE_PAREN) {
+          return null;
+        }
         res = this.subject.substr(savepos, this.pos - savepos);
         return normalizeURI(unescapeString(res));
     } else {  // chop off surrounding <..>:
@@ -1577,9 +1606,7 @@ var parseLinkDestination = function() {
 // Attempt to parse a link label, returning number of characters parsed.
 var parseLinkLabel = function() {
     var m = this.match(reLinkLabel);
-    // Note:  our regex will allow something of form [..\];
-    // we disallow it here rather than using lookahead in the regex:
-    if (m === null || m.length > 1001 || /[^\\]\\\]$/.exec(m)) {
+    if (m === null || m.length > 1001) {
         return 0;
     } else {
         return m.length;
@@ -1854,14 +1881,16 @@ var parseReference = function(s, refmap) {
     this.spnl();
 
     dest = this.parseLinkDestination();
-    if (dest === null || dest.length === 0) {
+    if (dest === null) {
         this.pos = startpos;
         return 0;
     }
 
     var beforetitle = this.pos;
     this.spnl();
-    title = this.parseLinkTitle();
+    if (this.pos !== beforetitle) {
+        title = this.parseLinkTitle();
+    }
     if (title === null) {
         title = '';
         // rewind before spaces
@@ -2088,6 +2117,7 @@ var Node = function(nodeType, sourcepos) {
     this._next = null;
     this._sourcepos = sourcepos;
     this._lastLineBlank = false;
+    this._lastLineChecked = false;
     this._open = true;
     this._string_content = null;
     this._literal = null;
@@ -2391,10 +2421,10 @@ function link(node, entering) {
   var attrs = this.attrs(node);
   if (entering) {
     if (!(this.options.safe && potentiallyUnsafe(node.destination))) {
-      attrs.push(['href', this.esc(node.destination, true)]);
+      attrs.push(['href', this.esc(node.destination, false)]);
     }
     if (node.title) {
-      attrs.push(['title', this.esc(node.title, true)]);
+      attrs.push(['title', this.esc(node.title, false)]);
     }
     this.tag('a', attrs);
   } else {
@@ -2408,7 +2438,7 @@ function image(node, entering) {
       if (this.options.safe && potentiallyUnsafe(node.destination)) {
         this.lit('<img src="" alt="');
       } else {
-        this.lit('<img src="' + this.esc(node.destination, true) +
+        this.lit('<img src="' + this.esc(node.destination, false) +
             '" alt="');
       }
     }
@@ -2417,7 +2447,7 @@ function image(node, entering) {
     this.disableTags -= 1;
     if (this.disableTags === 0) {
       if (node.title) {
-        this.lit('" title="' + this.esc(node.title, true));
+        this.lit('" title="' + this.esc(node.title, false));
       }
       this.lit('" />');
     }
@@ -2472,7 +2502,7 @@ function code_block(node) {
   var info_words = node.info ? node.info.split(/\s+/) : []
     , attrs = this.attrs(node);
   if (info_words.length > 0 && info_words[0].length > 0) {
-    attrs.push(['class', 'language-' + this.esc(info_words[0], true)]);
+    attrs.push(['class', 'language-' + this.esc(info_words[0], false)]);
   }
   this.cr();
   this.tag('pre');
