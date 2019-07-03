@@ -10,7 +10,7 @@ var args = process.argv.slice(2);
 var argv = parseArgs(args,
   {boolean: ["ast", "xml", "time", "smart",
              "safe", "sourcepos", "help", "version"],
-   string: ["to", "t"],
+   string: ["_", "to", "t"],
    unknown: function(o) {
      if (/^-/.test(o)) {
       process.stderr.write("Unknown option " + o + "\n");
