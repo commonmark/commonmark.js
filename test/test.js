@@ -197,6 +197,12 @@ for (x=1000; x <= 10000; x *= 10) {
           input: "a**b" + repeat("c* ", x),
           expected: '<p>a**b' + repeat('c* ', x - 1) + 'c*</p>\n' });
 }
+for (x=1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' #172',
+          input: repeat('*_* _ ', x),
+          expected: '<p>' + repeat('<em>_</em> _ ', x - 1) + '<em>_</em> _</p>\n' });
+}
 for (x = 1000; x <= 10000; x *= 10) {
     cases.push(
         { name: x + ' link closers with no openers',
