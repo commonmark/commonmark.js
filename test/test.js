@@ -191,6 +191,12 @@ for (x = 1000; x <= 10000; x *= 10) {
           input: repeat('_a ', x),
           expected: '<p>' + repeat('_a ', x - 1) + '_a</p>\n' });
 }
+for (x=1000; x <= 10000; x *= 10) {
+    cases.push(
+        { name: x + ' openers and closers multiple of 3',
+          input: "a**b" + repeat("c* ", 50000),
+          expected: '<p>a**b' + repeat('c* ', x) + '<p>' });
+}
 for (x = 1000; x <= 10000; x *= 10) {
     cases.push(
         { name: x + ' link closers with no openers',
