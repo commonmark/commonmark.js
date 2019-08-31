@@ -45,6 +45,7 @@
     "markdown-it": "^8.4.1",
     "marked": "^0.7.0",
     "showdown": "^1.8.6",
-    "uglify-js": "^3.4.0"
+    "uglify-js": "^3.4.0",
+    "mem": ">=4.0.0"
   }
 }
