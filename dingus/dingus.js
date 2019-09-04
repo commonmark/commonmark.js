@@ -46,7 +46,6 @@ var syncScroll = function() {
     var elt = preview.find("*[data-sourcepos^='" + lineNumber + ":']").last();
     if (elt.length > 0) {
         if (elt.offset()) {
-            console.log("Moving scrollTop to ", elt.offset().top - 100);
             preview.animate({
                 scrollTop: elt.offset().top - 100
             }, 50);
