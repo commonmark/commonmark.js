@@ -38,13 +38,14 @@
     "benchmark": "^2.1.4",
     "bower": "^1.8.8",
     "browserify": "^16.2.2",
+    "cached-path-relative": "^1.0.2",
     "eslint": "^4.19.1",
     "http-server": "^0.11.1",
+    "lodash": "^4.17.13",
     "markdown-it": "^8.4.1",
-    "marked": "^0.4.0",
+    "marked": "^0.7.0",
     "showdown": "^1.8.6",
     "uglify-js": "^3.4.0",
-    "cached-path-relative": "^1.0.2",
-    "lodash": "^4.17.11"
+    "mem": ">=4.0.0"
   }
 }
