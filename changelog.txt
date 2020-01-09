@@ -1,3 +1,29 @@
+[0.29.1]
+
+  * Export `Renderer` (#162, Federico Ramirez).  Export the `Renderer`
+    class so consumers can use it as a base class for their own custom
+    `Renderer`'s. [API change]
+  * Fix end source position for fenced code and raw HTML (#141).
+  * Ensure that `\` is treated as punctuation character (#161).
+  * Remove redundant token from `reHtmlBlockOpen` (Vas Sudanagunta).
+  * Remove unused variable `reWhitespace`.
+  * Don't decode url before encoding it again (Daniel Berndt).
+  * Don't allow link destinations with unbalanced unescaped parens (#177).
+  * Don't put quote delims on stack if not `--smart`.
+  * Don't add to delim stack if `!can_open && !can_close` (#172).
+  * Remove no longer used argument to `escapeXml` (#169, Robin Stocker).
+  * Avoid numerical conversion for file names in argv (#164, Alex Kocharin).
+  * Adapt existing encoding-based regression test and add `%25`-based
+    regression test (Daniel Berndt).
+  * Add pathological test for #172 illustrating quadratic time bug.
+  * Fix pathological case commonmark/cmark#178.
+  * Add pathological test for cmark#178.
+  * Dingus: remove debugging console.log.
+  * Sync `.editorconfig` `indent_size` to actual (#178, Vas Sudanagunta).
+  * Add lint rule for unused variables
+  * Apply npm audit suggestions.
+  * Fixed invalid package.json dependency entries (Vas Sudanagunta).
+
 [0.29.0]
 
   * Update spec to 0.29.
