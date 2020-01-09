@@ -122,7 +122,15 @@ Double-encoding.
 ```````````````````````````````` example
 [XSS](javascript&amp;colon;alert%28&#039;XSS&#039;%29)
 .
-<p><a href="javascript&amp;colon;alert('XSS')">XSS</a></p>
+<p><a href="javascript&amp;colon;alert%28'XSS'%29">XSS</a></p>
+````````````````````````````````
+
+PR #179
+
+```````````````````````````````` example
+[link](https://www.example.com/home/%25batty)
+.
+<p><a href="https://www.example.com/home/%25batty">link</a></p>
 ````````````````````````````````
 
 Issue commonamrk#517 - script, pre, style close tag without
