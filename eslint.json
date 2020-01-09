@@ -4,6 +4,10 @@
         "node": true
     },
     "rules": {
+        "no-unused-vars": ["error",
+                            { "vars": "all",
+                              "args": "after-used",
+                              "ignoreRestSiblings": false }],
         "no-constant-condition": 0,
         "no-underscore-dangle": 0,
         "camelcase": 0,
