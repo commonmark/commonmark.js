@@ -42,8 +42,8 @@
     "eslint": "^4.19.1",
     "http-server": "^0.11.1",
     "lodash": "^4.17.13",
-    "markdown-it": "^8.4.1",
-    "marked": "^0.7.0",
+    "markdown-it": "^10.0",
+    "marked": "^0.8.0",
     "mem": ">=4.0.0",
     "showdown": "^1.9.1",
     "uglify-js": "^3.4.0"
