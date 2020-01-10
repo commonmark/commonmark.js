@@ -1,5 +1,7 @@
 language: node_js
 node_js:
+  - "13"
+  - "12"
   - "5"
   - "4"
   - "0.12"
