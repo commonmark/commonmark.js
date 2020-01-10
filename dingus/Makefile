@@ -1,6 +1,6 @@
 ALL=commonmark.js
 COMPONENTS=lodash.min.js jquery.min.js jquery.min.map bootstrap.min.js bootstrap.min.css
-LIBFILES=../lib/blocks.js ../lib/common.js ../lib/from-code-point.js ../lib/inlines.js ../lib/index.js ../lib/node.js ../lib/normalize-reference.js ../lib/render/xml.js ../lib/render/html.js ../lib/render/renderer.js
+LIBFILES=../lib/blocks.js ../lib/common.js ../lib/from-code-point.js ../lib/inlines.js ../lib/index.js ../lib/node.js ../lib/render/xml.js ../lib/render/html.js ../lib/render/renderer.js
 BOWER=../node_modules/.bin/bower
 BROWSERIFY=../node_modules/.bin/browserify
 HTTPSERVER=../node_modules/.bin/http-server
