@@ -15,16 +15,22 @@
     "url": "https://github.com/commonmark/commonmark.js/issues"
   },
   "license": "BSD-2-Clause",
-  "type": "module",
-  "module": "./lib/index.js",
+  "type": "commonjs",
   "main": "./dist/commonmark.js",
+  "module": "./lib/index.js",
+  "exports": {
+    ".": {
+      "require": "./dist/commonmark.js",
+      "default": "./lib/index.js"
+    }
+  },
   "bin": {
     "commonmark": "./bin/commonmark"
   },
   "scripts": {
     "build": "rollup -c",
     "lint": "eslint .",
-    "test": "node ./test/test.js"
+    "test": "node ./test/test"
   },
   "dependencies": {
     "@rollup/plugin-commonjs": "^11.0.1",
