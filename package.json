@@ -16,7 +16,8 @@
   },
   "license": "BSD-2-Clause",
   "type": "module",
-  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "main": "./dist/commonmark.js",
   "bin": {
     "commonmark": "./bin/commonmark"
   },
