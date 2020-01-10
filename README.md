@@ -33,7 +33,7 @@ This package includes the commonmark library and a
 command-line executable, `commonmark`.
 
 For client-side use, fetch the latest from
-<https://raw.githubusercontent.com/jgm/commonmark.js/master/dist/commonmark.js>,
+<https://raw.githubusercontent.com/commonmark/commonmark.js/master/dist/commonmark.js>,
 or `bower install commonmark`.
 
 Building

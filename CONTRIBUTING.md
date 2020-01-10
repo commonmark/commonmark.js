@@ -6,7 +6,7 @@ Submitting bug reports
 
 There is a [forum for discussing CommonMark](http://talk.commonmark.org);
 use it for questions and discussions that might be open-ended. Use the
-[github issue tracker](http://github.com/jgm/commonmark.js/issues)
+[github issue tracker](http://github.com/commonmark/commonmark.js/issues)
 only for simple, clear, actionable issues.
 
 Submitting pull requests

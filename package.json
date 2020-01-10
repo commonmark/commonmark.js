@@ -9,10 +9,10 @@
     "md",
     "stmd"
   ],
-  "repository": "jgm/commonmark.js",
+  "repository": "commonmark/commonmark.js",
   "author": "John MacFarlane",
   "bugs": {
-    "url": "https://github.com/jgm/commonmark.js/issues"
+    "url": "https://github.com/commonmark/commonmark.js/issues"
   },
   "license": "BSD-2-Clause",
   "main": "./lib/index.js",
