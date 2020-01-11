@@ -33,7 +33,7 @@ clean:
 	rm -r bower_components
 
 commonmark.js: ../lib/index.js $(LIBFILES)
-	npm run build; \
+	make -C .. dist ;\
 	cp ../dist/commonmark.js commonmark.js
 
 dingus: all
