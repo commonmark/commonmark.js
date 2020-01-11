@@ -4,6 +4,7 @@ BENCHINP?=bench/samples/README.md
 VERSION?=$(SPECVERSION)
 JSMODULES=$(wildcard lib/*.js)
 UGLIFYJS=node_modules/.bin/uglifyjs
+LICENSETEXT="/* commonmark $(VERSION) https://github.com/commonmark/commonmark.js @license BSD3 */"
 
 .PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
 
@@ -13,12 +14,11 @@ lint:
 dist: dist/commonmark.js dist/commonmark.min.js
 
 dist/commonmark.js: lib/index.js ${JSMODULES}
-	echo '/* commonmark $(VERSION) https://github.com/CommonMark/commonmark.js @license BSD3 */' > $@
-	npm run build >> $@
+	npm run build
+	(echo $(LICENSETEXT) && cat $@) > $@.tmp  && mv $@.tmp $@
 
 dist/commonmark.min.js: dist/commonmark.js
-	$(UGLIFYJS) --version  # version should be at least 2.5.0
-	$(UGLIFYJS) $< --compress keep_fargs=true,pure_getters=true --comments > $@
+	(echo $(LICENSETEXT) && cat $@) > $@.tmp  && mv $@.tmp $@
 
 update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
