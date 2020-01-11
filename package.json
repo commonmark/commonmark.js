@@ -35,7 +35,8 @@
   "dependencies": {
     "entities": "~1.1.1",
     "mdurl": "~1.0.1",
-    "string.prototype.repeat": "^0.2.0"
+    "string.prototype.repeat": "^0.2.0",
+    "minimist": "~1.2.0"
   },
   "directories": {
     "lib": "./lib"
@@ -50,7 +51,6 @@
     "rollup-plugin-uglify": "^6.0.4",
     "@rollup/plugin-json": "^4.0.1",
     "rollup": "^1.29.0",
-    "minimist": "~1.2.0",
     "benchmark": "^2.1.4",
     "bower": "^1.8.8",
     "cached-path-relative": "^1.0.2",
