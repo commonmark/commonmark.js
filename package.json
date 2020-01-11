@@ -30,7 +30,7 @@
   "scripts": {
     "build": "rollup -c",
     "lint": "eslint .",
-    "test": "node ./test/test"
+    "test": "node -r esm ./test/test"
   },
   "dependencies": {
     "entities": "~1.1.1",
@@ -44,6 +44,7 @@
     "node": "*"
   },
   "devDependencies": {
+    "esm": "^3.2.25",
     "@rollup/plugin-commonjs": "^11.0.1",
     "@rollup/plugin-node-resolve": "^7.0.0",
     "rollup-plugin-uglify": "^6.0.4",

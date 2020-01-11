@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
-// Using commonjs here so CI can run the test file on older Node.js versions
-var fs = require("fs");
-var commonmark = require("..");
+import fs from "fs";
+import * as commonmark from "../lib/index.js";
 
 // Home made mini-version of the npm ansi module:
 var escSeq = function(s) {

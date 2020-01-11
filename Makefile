@@ -27,11 +27,11 @@ test: $(SPEC)
 	npm test
 
 bench:
-	node bench/bench.js ${BENCHINP}
+	node -r esm bench/bench.js ${BENCHINP}
 
 bench-detailed:
 	sudo renice -10 $$$$; \
-	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
+	for x in bench/samples/*.md; do echo $$x; node -r esm bench/bench.js $$x; done | \
 	awk -f bench/format_benchmarks.awk
 
 npm:
