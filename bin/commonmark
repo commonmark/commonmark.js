@@ -1,11 +1,13 @@
-#!/usr/bin/env node
+#!/usr/bin/env node -r esm
 "use strict";
 
-var util = require('util');
-var fs = require('fs');
-var commonmark = require('../lib/index.js');
+import util from "util";
+import fs from "fs";
+import os from "os";
+import * as commonmark from "../lib/index.js";
 var version = require('../package.json').version;
-var parseArgs = require('minimist');
+import parseArgs from "minimist";
+
 var args = process.argv.slice(2);
 var argv = parseArgs(args,
   {boolean: ["ast", "xml", "time", "smart",
@@ -75,12 +77,16 @@ if (format === 'html') {
 }
 
 if (files.length === 0) {
-  files = ['/dev/stdin'];
-}
-
-for (i = 0; i < files.length; i++) {
-  var file = files[i];
-  inps.push(fs.readFileSync(file, 'utf8'));
+   if (os.platform() === "win32") {
+     inps.push(fs.readFileSync(0, 'utf-8'));
+   } else {
+     inps.push(fs.readFileSync('/dev/tty', 'utf-8'));
+   }
+} else {
+  for (i = 0; i < files.length; i++) {
+    var file = files[i];
+    inps.push(fs.readFileSync(file, 'utf8'));
+  }
 }
 
 var inp = inps.join('\n');
