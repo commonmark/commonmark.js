@@ -427,6 +427,12 @@
 
     var encode_1 = encode;
 
+    var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+    function unwrapExports (x) {
+    	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+    }
+
     function createCommonjsModule(fn, module) {
     	return module = { exports: {} }, fn(module, module.exports), module.exports;
     }
@@ -434,29 +440,6 @@
     function getCjsExportFromNamespace (n) {
     	return n && n['default'] || n;
     }
-
-    var amp = "&";
-    var apos = "'";
-    var gt = ">";
-    var lt = "<";
-    var quot = "\"";
-    var xml = {
-    	amp: amp,
-    	apos: apos,
-    	gt: gt,
-    	lt: lt,
-    	quot: quot
-    };
-
-    var xml$1 = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        amp: amp,
-        apos: apos,
-        gt: gt,
-        lt: lt,
-        quot: quot,
-        'default': xml
-    });
 
     var Aacute = "Á";
     var aacute = "á";
@@ -484,7 +467,7 @@
     var Amacr = "Ā";
     var amacr = "ā";
     var amalg = "⨿";
-    var amp$1 = "&";
+    var amp = "&";
     var AMP = "&";
     var andand = "⩕";
     var And = "⩓";
@@ -519,7 +502,7 @@
     var apE = "⩰";
     var ape = "≊";
     var apid = "≋";
-    var apos$1 = "'";
+    var apos = "'";
     var ApplyFunction = "⁡";
     var approx = "≈";
     var approxeq = "≊";
@@ -1106,7 +1089,7 @@
     var gsiml = "⪐";
     var gtcc = "⪧";
     var gtcir = "⩺";
-    var gt$1 = ">";
+    var gt = ">";
     var GT = ">";
     var Gt = "≫";
     var gtdot = "⋗";
@@ -1463,7 +1446,7 @@
     var lstrok = "ł";
     var ltcc = "⪦";
     var ltcir = "⩹";
-    var lt$1 = "<";
+    var lt = "<";
     var LT = "<";
     var Lt = "≪";
     var ltdot = "⋖";
@@ -1933,7 +1916,7 @@
     var quatint = "⨖";
     var quest = "?";
     var questeq = "≟";
-    var quot$1 = "\"";
+    var quot = "\"";
     var QUOT = "\"";
     var rAarr = "⇛";
     var race = "∽̱";
@@ -2608,7 +2591,7 @@
     	Amacr: Amacr,
     	amacr: amacr,
     	amalg: amalg,
-    	amp: amp$1,
+    	amp: amp,
     	AMP: AMP,
     	andand: andand,
     	And: And,
@@ -2643,7 +2626,7 @@
     	apE: apE,
     	ape: ape,
     	apid: apid,
-    	apos: apos$1,
+    	apos: apos,
     	ApplyFunction: ApplyFunction,
     	approx: approx,
     	approxeq: approxeq,
@@ -3230,7 +3213,7 @@
     	gsiml: gsiml,
     	gtcc: gtcc,
     	gtcir: gtcir,
-    	gt: gt$1,
+    	gt: gt,
     	GT: GT,
     	Gt: Gt,
     	gtdot: gtdot,
@@ -3588,7 +3571,7 @@
     	lstrok: lstrok,
     	ltcc: ltcc,
     	ltcir: ltcir,
-    	lt: lt$1,
+    	lt: lt,
     	LT: LT,
     	Lt: Lt,
     	ltdot: ltdot,
@@ -4059,7 +4042,7 @@
     	quatint: quatint,
     	quest: quest,
     	questeq: questeq,
-    	quot: quot$1,
+    	quot: quot,
     	QUOT: QUOT,
     	rAarr: rAarr,
     	race: race,
@@ -4737,7 +4720,7 @@
         Amacr: Amacr,
         amacr: amacr,
         amalg: amalg,
-        amp: amp$1,
+        amp: amp,
         AMP: AMP,
         andand: andand,
         And: And,
@@ -4772,7 +4755,7 @@
         apE: apE,
         ape: ape,
         apid: apid,
-        apos: apos$1,
+        apos: apos,
         ApplyFunction: ApplyFunction,
         approx: approx,
         approxeq: approxeq,
@@ -5359,7 +5342,7 @@
         gsiml: gsiml,
         gtcc: gtcc,
         gtcir: gtcir,
-        gt: gt$1,
+        gt: gt,
         GT: GT,
         Gt: Gt,
         gtdot: gtdot,
@@ -5716,7 +5699,7 @@
         lstrok: lstrok,
         ltcc: ltcc,
         ltcir: ltcir,
-        lt: lt$1,
+        lt: lt,
         LT: LT,
         Lt: Lt,
         ltdot: ltdot,
@@ -6186,7 +6169,7 @@
         quatint: quatint,
         quest: quest,
         questeq: questeq,
-        quot: quot$1,
+        quot: quot,
         QUOT: QUOT,
         rAarr: rAarr,
         race: race,
@@ -6837,90 +6820,6 @@
         'default': entities
     });
 
-    var xmlMap = getCjsExportFromNamespace(xml$1);
-
-    var entityMap = getCjsExportFromNamespace(entities$1);
-
-    var inverseXML = getInverseObj(xmlMap),
-        xmlReplacer = getInverseReplacer(inverseXML);
-
-    var XML = getInverse(inverseXML, xmlReplacer);
-
-    var inverseHTML = getInverseObj(entityMap),
-        htmlReplacer = getInverseReplacer(inverseHTML);
-
-    var HTML = getInverse(inverseHTML, htmlReplacer);
-
-    function getInverseObj(obj){
-    	return Object.keys(obj).sort().reduce(function(inverse, name){
-    		inverse[obj[name]] = "&" + name + ";";
-    		return inverse;
-    	}, {});
-    }
-
-    function getInverseReplacer(inverse){
-    	var single = [],
-    	    multiple = [];
-
-    	Object.keys(inverse).forEach(function(k){
-    		if(k.length === 1){
-    			single.push("\\" + k);
-    		} else {
-    			multiple.push(k);
-    		}
-    	});
-
-    	//TODO add ranges
-    	multiple.unshift("[" + single.join("") + "]");
-
-    	return new RegExp(multiple.join("|"), "g");
-    }
-
-    var re_nonASCII = /[^\0-\x7F]/g,
-        re_astralSymbols = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
-
-    function singleCharReplacer(c){
-    	return "&#x" + c.charCodeAt(0).toString(16).toUpperCase() + ";";
-    }
-
-    function astralReplacer(c){
-    	// http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-    	var high = c.charCodeAt(0);
-    	var low  = c.charCodeAt(1);
-    	var codePoint = (high - 0xD800) * 0x400 + low - 0xDC00 + 0x10000;
-    	return "&#x" + codePoint.toString(16).toUpperCase() + ";";
-    }
-
-    function getInverse(inverse, re){
-    	function func(name){
-    		return inverse[name];
-    	}
-
-    	return function(data){
-    		return data
-    				.replace(re, func)
-    				.replace(re_astralSymbols, astralReplacer)
-    				.replace(re_nonASCII, singleCharReplacer);
-    	};
-    }
-
-    var re_xmlChars = getInverseReplacer(inverseXML);
-
-    function escapeXML(data){
-    	return data
-    			.replace(re_xmlChars, singleCharReplacer)
-    			.replace(re_astralSymbols, astralReplacer)
-    			.replace(re_nonASCII, singleCharReplacer);
-    }
-
-    var escape = escapeXML;
-
-    var encode$1 = {
-    	XML: XML,
-    	HTML: HTML,
-    	escape: escape
-    };
-
     var Aacute$1 = "Á";
     var aacute$1 = "á";
     var Acirc$1 = "Â";
@@ -6930,7 +6829,7 @@
     var aelig$1 = "æ";
     var Agrave$1 = "À";
     var agrave$1 = "à";
-    var amp$2 = "&";
+    var amp$1 = "&";
     var AMP$1 = "&";
     var Aring$1 = "Å";
     var aring$1 = "å";
@@ -6961,7 +6860,7 @@
     var frac12$1 = "½";
     var frac14$1 = "¼";
     var frac34$1 = "¾";
-    var gt$2 = ">";
+    var gt$1 = ">";
     var GT$1 = ">";
     var Iacute$1 = "Í";
     var iacute$1 = "í";
@@ -6974,7 +6873,7 @@
     var Iuml$1 = "Ï";
     var iuml$1 = "ï";
     var laquo$1 = "«";
-    var lt$2 = "<";
+    var lt$1 = "<";
     var LT$1 = "<";
     var macr$1 = "¯";
     var micro$1 = "µ";
@@ -7000,7 +6899,7 @@
     var para$1 = "¶";
     var plusmn$1 = "±";
     var pound$1 = "£";
-    var quot$2 = "\"";
+    var quot$1 = "\"";
     var QUOT$1 = "\"";
     var raquo$1 = "»";
     var reg$1 = "®";
@@ -7037,7 +6936,7 @@
     	aelig: aelig$1,
     	Agrave: Agrave$1,
     	agrave: agrave$1,
-    	amp: amp$2,
+    	amp: amp$1,
     	AMP: AMP$1,
     	Aring: Aring$1,
     	aring: aring$1,
@@ -7068,7 +6967,7 @@
     	frac12: frac12$1,
     	frac14: frac14$1,
     	frac34: frac34$1,
-    	gt: gt$2,
+    	gt: gt$1,
     	GT: GT$1,
     	Iacute: Iacute$1,
     	iacute: iacute$1,
@@ -7081,7 +6980,7 @@
     	Iuml: Iuml$1,
     	iuml: iuml$1,
     	laquo: laquo$1,
-    	lt: lt$2,
+    	lt: lt$1,
     	LT: LT$1,
     	macr: macr$1,
     	micro: micro$1,
@@ -7107,7 +7006,7 @@
     	para: para$1,
     	plusmn: plusmn$1,
     	pound: pound$1,
-    	quot: quot$2,
+    	quot: quot$1,
     	QUOT: QUOT$1,
     	raquo: raquo$1,
     	reg: reg$1,
@@ -7147,7 +7046,7 @@
         aelig: aelig$1,
         Agrave: Agrave$1,
         agrave: agrave$1,
-        amp: amp$2,
+        amp: amp$1,
         AMP: AMP$1,
         Aring: Aring$1,
         aring: aring$1,
@@ -7178,7 +7077,7 @@
         frac12: frac12$1,
         frac14: frac14$1,
         frac34: frac34$1,
-        gt: gt$2,
+        gt: gt$1,
         GT: GT$1,
         Iacute: Iacute$1,
         iacute: iacute$1,
@@ -7191,7 +7090,7 @@
         Iuml: Iuml$1,
         iuml: iuml$1,
         laquo: laquo$1,
-        lt: lt$2,
+        lt: lt$1,
         LT: LT$1,
         macr: macr$1,
         micro: micro$1,
@@ -7217,7 +7116,7 @@
         para: para$1,
         plusmn: plusmn$1,
         pound: pound$1,
-        quot: quot$2,
+        quot: quot$1,
         QUOT: QUOT$1,
         raquo: raquo$1,
         reg: reg$1,
@@ -7245,6 +7144,29 @@
         yen: yen$1,
         yuml: yuml$1,
         'default': legacy
+    });
+
+    var amp$2 = "&";
+    var apos$1 = "'";
+    var gt$2 = ">";
+    var lt$2 = "<";
+    var quot$2 = "\"";
+    var xml = {
+    	amp: amp$2,
+    	apos: apos$1,
+    	gt: gt$2,
+    	lt: lt$2,
+    	quot: quot$2
+    };
+
+    var xml$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        amp: amp$2,
+        apos: apos$1,
+        gt: gt$2,
+        lt: lt$2,
+        quot: quot$2,
+        'default': xml
     });
 
     var decode = {
@@ -7283,151 +7205,230 @@
         'default': decode
     });
 
-    var decodeMap = getCjsExportFromNamespace(decode$1);
+    var require$$0 = getCjsExportFromNamespace(decode$1);
 
-    var decode_codepoint = decodeCodePoint;
-
+    var decode_codepoint = createCommonjsModule(function (module, exports) {
+    var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
+        return (mod && mod.__esModule) ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var decode_json_1 = __importDefault(require$$0);
     // modified version of https://github.com/mathiasbynens/he/blob/master/src/he.js#L94-L119
-    function decodeCodePoint(codePoint){
-
-    	if((codePoint >= 0xD800 && codePoint <= 0xDFFF) || codePoint > 0x10FFFF){
-    		return "\uFFFD";
-    	}
-
-    	if(codePoint in decodeMap){
-    		codePoint = decodeMap[codePoint];
-    	}
-
-    	var output = "";
-
-    	if(codePoint > 0xFFFF){
-    		codePoint -= 0x10000;
-    		output += String.fromCharCode(codePoint >>> 10 & 0x3FF | 0xD800);
-    		codePoint = 0xDC00 | codePoint & 0x3FF;
-    	}
-
-    	output += String.fromCharCode(codePoint);
-    	return output;
+    function decodeCodePoint(codePoint) {
+        if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint > 0x10ffff) {
+            return "\uFFFD";
+        }
+        if (codePoint in decode_json_1.default) {
+            // @ts-ignore
+            codePoint = decode_json_1.default[codePoint];
+        }
+        var output = "";
+        if (codePoint > 0xffff) {
+            codePoint -= 0x10000;
+            output += String.fromCharCode(((codePoint >>> 10) & 0x3ff) | 0xd800);
+            codePoint = 0xdc00 | (codePoint & 0x3ff);
+        }
+        output += String.fromCharCode(codePoint);
+        return output;
     }
-
-    var legacyMap = getCjsExportFromNamespace(legacy$1);
-
-    var decodeXMLStrict  = getStrictDecoder(xmlMap),
-        decodeHTMLStrict = getStrictDecoder(entityMap);
-
-    function getStrictDecoder(map){
-    	var keys = Object.keys(map).join("|"),
-    	    replace = getReplacer(map);
-
-    	keys += "|#[xX][\\da-fA-F]+|#\\d+";
-
-    	var re = new RegExp("&(?:" + keys + ");", "g");
-
-    	return function(str){
-    		return String(str).replace(re, replace);
-    	};
-    }
-
-    var decodeHTML = (function(){
-    	var legacy = Object.keys(legacyMap)
-    		.sort(sorter);
-
-    	var keys = Object.keys(entityMap)
-    		.sort(sorter);
-
-    	for(var i = 0, j = 0; i < keys.length; i++){
-    		if(legacy[j] === keys[i]){
-    			keys[i] += ";?";
-    			j++;
-    		} else {
-    			keys[i] += ";";
-    		}
-    	}
-
-    	var re = new RegExp("&(?:" + keys.join("|") + "|#[xX][\\da-fA-F]+;?|#\\d+;?)", "g"),
-    	    replace = getReplacer(entityMap);
-
-    	function replacer(str){
-    		if(str.substr(-1) !== ";") str += ";";
-    		return replace(str);
-    	}
-
-    	//TODO consider creating a merged map
-    	return function(str){
-    		return String(str).replace(re, replacer);
-    	};
-    }());
-
-    function sorter(a, b){
-    	return a < b ? 1 : -1;
-    }
-
-    function getReplacer(map){
-    	return function replace(str){
-    		if(str.charAt(1) === "#"){
-    			if(str.charAt(2) === "X" || str.charAt(2) === "x"){
-    				return decode_codepoint(parseInt(str.substr(3), 16));
-    			}
-    			return decode_codepoint(parseInt(str.substr(2), 10));
-    		}
-    		return map[str.slice(1, -1)];
-    	};
-    }
-
-    var decode$2 = {
-    	XML: decodeXMLStrict,
-    	HTML: decodeHTML,
-    	HTMLStrict: decodeHTMLStrict
-    };
-
-    var entities$2 = createCommonjsModule(function (module, exports) {
-    exports.decode = function(data, level){
-    	return (!level || level <= 0 ? decode$2.XML : decode$2.HTML)(data);
-    };
-
-    exports.decodeStrict = function(data, level){
-    	return (!level || level <= 0 ? decode$2.XML : decode$2.HTMLStrict)(data);
-    };
-
-    exports.encode = function(data, level){
-    	return (!level || level <= 0 ? encode$1.XML : encode$1.HTML)(data);
-    };
-
-    exports.encodeXML = encode$1.XML;
-
-    exports.encodeHTML4 =
-    exports.encodeHTML5 =
-    exports.encodeHTML  = encode$1.HTML;
-
-    exports.decodeXML =
-    exports.decodeXMLStrict = decode$2.XML;
-
-    exports.decodeHTML4 =
-    exports.decodeHTML5 =
-    exports.decodeHTML = decode$2.HTML;
-
-    exports.decodeHTML4Strict =
-    exports.decodeHTML5Strict =
-    exports.decodeHTMLStrict = decode$2.HTMLStrict;
-
-    exports.escape = encode$1.escape;
+    exports.default = decodeCodePoint;
     });
-    var entities_1 = entities$2.decode;
-    var entities_2 = entities$2.decodeStrict;
-    var entities_3 = entities$2.encode;
-    var entities_4 = entities$2.encodeXML;
-    var entities_5 = entities$2.encodeHTML4;
-    var entities_6 = entities$2.encodeHTML5;
-    var entities_7 = entities$2.encodeHTML;
-    var entities_8 = entities$2.decodeXML;
-    var entities_9 = entities$2.decodeXMLStrict;
-    var entities_10 = entities$2.decodeHTML4;
-    var entities_11 = entities$2.decodeHTML5;
-    var entities_12 = entities$2.decodeHTML;
-    var entities_13 = entities$2.decodeHTML4Strict;
-    var entities_14 = entities$2.decodeHTML5Strict;
-    var entities_15 = entities$2.decodeHTMLStrict;
-    var entities_16 = entities$2.escape;
+
+    unwrapExports(decode_codepoint);
+
+    var require$$1 = getCjsExportFromNamespace(entities$1);
+
+    var require$$1$1 = getCjsExportFromNamespace(legacy$1);
+
+    var require$$0$1 = getCjsExportFromNamespace(xml$1);
+
+    var decode$2 = createCommonjsModule(function (module, exports) {
+    var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
+        return (mod && mod.__esModule) ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var entities_json_1 = __importDefault(require$$1);
+    var legacy_json_1 = __importDefault(require$$1$1);
+    var xml_json_1 = __importDefault(require$$0$1);
+    var decode_codepoint_1 = __importDefault(decode_codepoint);
+    exports.decodeXML = getStrictDecoder(xml_json_1.default);
+    exports.decodeHTMLStrict = getStrictDecoder(entities_json_1.default);
+    function getStrictDecoder(map) {
+        var keys = Object.keys(map).join("|");
+        var replace = getReplacer(map);
+        keys += "|#[xX][\\da-fA-F]+|#\\d+";
+        var re = new RegExp("&(?:" + keys + ");", "g");
+        return function (str) { return String(str).replace(re, replace); };
+    }
+    var sorter = function (a, b) { return (a < b ? 1 : -1); };
+    exports.decodeHTML = (function () {
+        var legacy = Object.keys(legacy_json_1.default).sort(sorter);
+        var keys = Object.keys(entities_json_1.default).sort(sorter);
+        for (var i = 0, j = 0; i < keys.length; i++) {
+            if (legacy[j] === keys[i]) {
+                keys[i] += ";?";
+                j++;
+            }
+            else {
+                keys[i] += ";";
+            }
+        }
+        var re = new RegExp("&(?:" + keys.join("|") + "|#[xX][\\da-fA-F]+;?|#\\d+;?)", "g");
+        var replace = getReplacer(entities_json_1.default);
+        function replacer(str) {
+            if (str.substr(-1) !== ";")
+                str += ";";
+            return replace(str);
+        }
+        //TODO consider creating a merged map
+        return function (str) {
+            return String(str).replace(re, replacer);
+        };
+    })();
+    function getReplacer(map) {
+        return function replace(str) {
+            if (str.charAt(1) === "#") {
+                if (str.charAt(2) === "X" || str.charAt(2) === "x") {
+                    return decode_codepoint_1.default(parseInt(str.substr(3), 16));
+                }
+                return decode_codepoint_1.default(parseInt(str.substr(2), 10));
+            }
+            return map[str.slice(1, -1)];
+        };
+    }
+    });
+
+    unwrapExports(decode$2);
+    var decode_1 = decode$2.decodeXML;
+    var decode_2 = decode$2.decodeHTMLStrict;
+    var decode_3 = decode$2.decodeHTML;
+
+    var encode$1 = createCommonjsModule(function (module, exports) {
+    var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
+        return (mod && mod.__esModule) ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var xml_json_1 = __importDefault(require$$0$1);
+    var inverseXML = getInverseObj(xml_json_1.default);
+    var xmlReplacer = getInverseReplacer(inverseXML);
+    exports.encodeXML = getInverse(inverseXML, xmlReplacer);
+    var entities_json_1 = __importDefault(require$$1);
+    var inverseHTML = getInverseObj(entities_json_1.default);
+    var htmlReplacer = getInverseReplacer(inverseHTML);
+    exports.encodeHTML = getInverse(inverseHTML, htmlReplacer);
+    function getInverseObj(obj) {
+        return Object.keys(obj)
+            .sort()
+            .reduce(function (inverse, name) {
+            inverse[obj[name]] = "&" + name + ";";
+            return inverse;
+        }, {});
+    }
+    function getInverseReplacer(inverse) {
+        var single = [];
+        var multiple = [];
+        Object.keys(inverse).forEach(function (k) {
+            return k.length === 1
+                ? // Add value to single array
+                    single.push("\\" + k)
+                : // Add value to multiple array
+                    multiple.push(k);
+        });
+        //TODO add ranges
+        multiple.unshift("[" + single.join("") + "]");
+        return new RegExp(multiple.join("|"), "g");
+    }
+    var reNonASCII = /[^\0-\x7F]/g;
+    var reAstralSymbols = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+    function singleCharReplacer(c) {
+        return "&#x" + c
+            .charCodeAt(0)
+            .toString(16)
+            .toUpperCase() + ";";
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    function astralReplacer(c, _) {
+        // http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        var high = c.charCodeAt(0);
+        var low = c.charCodeAt(1);
+        var codePoint = (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
+        return "&#x" + codePoint.toString(16).toUpperCase() + ";";
+    }
+    function getInverse(inverse, re) {
+        return function (data) {
+            return data
+                .replace(re, function (name) { return inverse[name]; })
+                .replace(reAstralSymbols, astralReplacer)
+                .replace(reNonASCII, singleCharReplacer);
+        };
+    }
+    var reXmlChars = getInverseReplacer(inverseXML);
+    function escape(data) {
+        return data
+            .replace(reXmlChars, singleCharReplacer)
+            .replace(reAstralSymbols, astralReplacer)
+            .replace(reNonASCII, singleCharReplacer);
+    }
+    exports.escape = escape;
+    });
+
+    unwrapExports(encode$1);
+    var encode_1$1 = encode$1.encodeXML;
+    var encode_2 = encode$1.encodeHTML;
+    var encode_3 = encode$1.escape;
+
+    var lib = createCommonjsModule(function (module, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+
+    function decode(data, level) {
+        return (!level || level <= 0 ? decode$2.decodeXML : decode$2.decodeHTML)(data);
+    }
+    exports.decode = decode;
+    function decodeStrict(data, level) {
+        return (!level || level <= 0 ? decode$2.decodeXML : decode$2.decodeHTMLStrict)(data);
+    }
+    exports.decodeStrict = decodeStrict;
+    function encode(data, level) {
+        return (!level || level <= 0 ? encode$1.encodeXML : encode$1.encodeHTML)(data);
+    }
+    exports.encode = encode;
+    var encode_2 = encode$1;
+    exports.encodeXML = encode_2.encodeXML;
+    exports.encodeHTML = encode_2.encodeHTML;
+    exports.escape = encode_2.escape;
+    // Legacy aliases
+    exports.encodeHTML4 = encode_2.encodeHTML;
+    exports.encodeHTML5 = encode_2.encodeHTML;
+    var decode_2 = decode$2;
+    exports.decodeXML = decode_2.decodeXML;
+    exports.decodeHTML = decode_2.decodeHTML;
+    exports.decodeHTMLStrict = decode_2.decodeHTMLStrict;
+    // Legacy aliases
+    exports.decodeHTML4 = decode_2.decodeHTML;
+    exports.decodeHTML5 = decode_2.decodeHTML;
+    exports.decodeHTML4Strict = decode_2.decodeHTMLStrict;
+    exports.decodeHTML5Strict = decode_2.decodeHTMLStrict;
+    exports.decodeXMLStrict = decode_2.decodeXML;
+    });
+
+    var entities$2 = unwrapExports(lib);
+    var lib_1 = lib.decode;
+    var lib_2 = lib.decodeStrict;
+    var lib_3 = lib.encode;
+    var lib_4 = lib.encodeXML;
+    var lib_5 = lib.encodeHTML;
+    var lib_6 = lib.escape;
+    var lib_7 = lib.encodeHTML4;
+    var lib_8 = lib.encodeHTML5;
+    var lib_9 = lib.decodeXML;
+    var lib_10 = lib.decodeHTML;
+    var lib_11 = lib.decodeHTMLStrict;
+    var lib_12 = lib.decodeHTML4;
+    var lib_13 = lib.decodeHTML5;
+    var lib_14 = lib.decodeHTML4Strict;
+    var lib_15 = lib.decodeHTML5Strict;
+    var lib_16 = lib.decodeXMLStrict;
 
     var C_BACKSLASH = 92;
 

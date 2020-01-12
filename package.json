@@ -33,7 +33,7 @@
     "test": "node -r esm ./test/test"
   },
   "dependencies": {
-    "entities": "~1.1.1",
+    "entities": "~2.0",
     "mdurl": "~1.0.1",
     "string.prototype.repeat": "^0.2.0",
     "minimist": "~1.2.0"
