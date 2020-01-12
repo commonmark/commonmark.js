@@ -14,8 +14,6 @@ jobs:
           - node: '12.x'
           - node: '11.x'
           - node: '10.x'
-          - node: '9.x'
-          - node: '8.x'
     steps:
       - uses: actions/checkout@v1
       - name: Use Node.js
