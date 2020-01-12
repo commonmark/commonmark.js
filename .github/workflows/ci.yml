@@ -17,12 +17,12 @@ jobs:
           - node: '9.x'
           - node: '8.x'
           - node: '7.x'
-    uses: actions/checkout@v1
-- name: Use Node.js
-  uses: actions/setup-node@v1
-  with:
-    node-version: ${{ matrix.versions.node }}
     steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.versions.node }}
       - run: npm install
       - run: npm run build --if-present
       - run: npm test
