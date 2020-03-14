@@ -7412,7 +7412,7 @@
     exports.decodeXMLStrict = decode_2.decodeXML;
     });
 
-    var entities$2 = unwrapExports(lib);
+    unwrapExports(lib);
     var lib_1 = lib.decode;
     var lib_2 = lib.decodeStrict;
     var lib_3 = lib.encode;
@@ -7485,7 +7485,7 @@
         if (s.charCodeAt(0) === C_BACKSLASH) {
             return s.charAt(1);
         } else {
-            return entities$2.decodeHTML(s);
+            return lib_10(s);
         }
     };
 
@@ -8393,7 +8393,7 @@
     var parseEntity = function(block) {
         var m;
         if ((m = this.match(reEntityHere))) {
-            block.appendChild(text(entities$2.decodeHTML(m)));
+            block.appendChild(text(lib_10(m)));
             return true;
         } else {
             return false;
