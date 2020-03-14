@@ -1,3 +1,30 @@
+[0.30.1]
+
+  * Use ES modules (Iddan Aaronsohn).
+  * Improve and simplify reference link normalization (#168).
+    We now use the built in `str.toLowerCase().toUpperCase()`, which
+    @rlidwka has shown does an accurate unicode case fold.
+    This allows us to remove a huge lookup table and should
+    both decrease the size of the library and speed things up.
+  * Fix end source position for nested or indented fenrced code blocks.
+    Improves on earlier fix to #141, which only worked for code blocks
+    flush with the left margin.
+  * Upgrade to entities 2.0+.
+  * Fix generation of dist files for dingus.
+  * Use esm for bin/commonmark, bench, test.
+  * Use rollup uglify plugin to create minified dist.
+  * Move dev dependencies to proper place in package.json.
+  * Use rollup instead of browserify (Iddan Aaronsohn).
+  * Reformat code with prettier (Iddan Aaronsohn).
+  * Replace travis CI with GitHub Actions CI.
+  * Bump versions of software to benchmark against.
+  * Change jgm/commonmark.js to commonmark/commonmark.js (#126).
+  * Security audit fixes.
+  * Remove obsolete spec2js.js script
+  * Remove test on node 9 and under.  Only support actively maintained
+    versions.
+  * Run npm lint in ci.
+
 [0.29.1]
 
   * Export `Renderer` (#162, Federico Ramirez).  Export the `Renderer`
