@@ -26,7 +26,7 @@
     "entities": "~1.1.1",
     "mdurl": "~1.0.1",
     "string.prototype.repeat": "^0.2.0",
-    "minimist": "~1.2.0"
+    "minimist": ">=1.2.2"
   },
   "directories": {
     "lib": "./lib"
@@ -35,13 +35,13 @@
     "node": "*"
   },
   "devDependencies": {
+    "acorn": ">=5.7.4",
     "benchmark": "^2.1.4",
     "bower": "^1.8.8",
     "browserify": "^16.2.2",
     "cached-path-relative": "^1.0.2",
     "eslint": "^4.19.1",
-    "acorn": ">=5.7.4",
-    "http-server": "^0.11.1",
+    "http-server": "^0.12.1",
     "lodash": "^4.17.13",
     "markdown-it": "^10.0",
     "marked": "^0.8.0",
