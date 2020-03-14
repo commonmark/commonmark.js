@@ -15,15 +15,25 @@
     "url": "https://github.com/commonmark/commonmark.js/issues"
   },
   "license": "BSD-2-Clause",
-  "main": "./lib/index.js",
+  "type": "commonjs",
+  "main": "./dist/commonmark.js",
+  "module": "./lib/index.js",
+  "exports": {
+    ".": {
+      "require": "./dist/commonmark.js",
+      "default": "./lib/index.js"
+    }
+  },
   "bin": {
     "commonmark": "./bin/commonmark"
   },
   "scripts": {
-    "test": "node ./test/test.js"
+    "build": "rollup -c",
+    "lint": "eslint .",
+    "test": "node -r esm ./test/test"
   },
   "dependencies": {
-    "entities": "~1.1.1",
+    "entities": "~2.0",
     "mdurl": "~1.0.1",
     "string.prototype.repeat": "^0.2.0",
     "minimist": ">=1.2.2"
@@ -36,9 +46,14 @@
   },
   "devDependencies": {
     "acorn": ">=5.7.4",
+    "esm": "^3.2.25",
+    "@rollup/plugin-commonjs": "^11.0.1",
+    "@rollup/plugin-node-resolve": "^7.0.0",
+    "rollup-plugin-uglify": "^6.0.4",
+    "@rollup/plugin-json": "^4.0.1",
+    "rollup": "^1.29.0",
     "benchmark": "^2.1.4",
     "bower": "^1.8.8",
-    "browserify": "^16.2.2",
     "cached-path-relative": "^1.0.2",
     "eslint": "^4.19.1",
     "http-server": "^0.12.1",
