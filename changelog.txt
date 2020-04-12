@@ -1,4 +1,4 @@
-[0.30.1]
+[0.29.2]
 
   * Use ES modules (Iddan Aaronsohn).
   * Improve and simplify reference link normalization (#168).
