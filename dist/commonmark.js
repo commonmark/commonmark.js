@@ -7966,7 +7966,7 @@
         // Add entry to stack for this opener
         if (
             (res.can_open || res.can_close) &&
-            (this.options.smart || cc !== C_SINGLEQUOTE || cc !== C_DOUBLEQUOTE)
+            (this.options.smart || (cc !== C_SINGLEQUOTE && cc !== C_DOUBLEQUOTE))
         ) {
             this.delimiters = {
                 cc: cc,
@@ -8660,7 +8660,7 @@
 
     var reHtmlBlockOpen = [
         /./, // dummy for 0
-        /^<(?:script|pre|style)(?:\s|>|$)/i,
+        /^<(?:script|pre|textarea|style)(?:\s|>|$)/i,
         /^<!--/,
         /^<[?]/,
         /^<![A-Z]/,
@@ -8671,7 +8671,7 @@
 
     var reHtmlBlockClose = [
         /./, // dummy for 0
-        /<\/(?:script|pre|style)>/i,
+        /<\/(?:script|pre|textarea|style)>/i,
         /-->/,
         /\?>/,
         />/,
