@@ -64,6 +64,18 @@ the library:
 Usage
 -----
 
+Importing:
+
+``` js
+var commonmark = require('commonmark');
+```
+
+or with ES6 modules:
+
+``` js
+import commonmark from 'commonmark';
+```
+
 Instead of converting Markdown directly to HTML, as most converters
 do, `commonmark.js` parses Markdown to an AST (abstract syntax tree),
 and then renders this AST as HTML.  This opens up the possibility of
