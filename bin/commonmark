@@ -4,6 +4,7 @@
 import util from "util";
 import fs from "fs";
 import os from "os";
+import readline from "readline";
 import * as commonmark from "../lib/index.js";
 var version = require('../package.json').version;
 import parseArgs from "minimist";
@@ -77,11 +78,27 @@ if (format === 'html') {
 }
 
 if (files.length === 0) {
-   if (os.platform() === "win32") {
-     inps.push(fs.readFileSync(0, 'utf-8'));
-   } else {
-     inps.push(fs.readFileSync('/dev/tty', 'utf-8'));
-   }
+  if (process.stdin.isTTY) {
+    if (os.platform() === 'win32') {
+      // Windows does not have a PTY that Node relies on.
+      // Instead, we read lines explicitly, tracking ^Z for EOF.
+      (async () => {
+        const rl = readline.createInterface({ input: process.stdin });
+        let inp = '';
+        for await (const line of rl) {
+          if (line === '\x1a') { break; }
+          inp += line;
+        }
+        const doc = parser.parse(inp);
+        const rendered = renderer.render(doc);
+        if (!options.time) { process.stdout.write(rendered); }
+      })();
+    } else {
+      inps.push(fs.readFileSync('/dev/tty', 'utf-8'));
+    }
+  } else {
+    inps.push(fs.readFileSync(0, 'utf-8'));
+  }
 } else {
   for (i = 0; i < files.length; i++) {
     var file = files[i];
