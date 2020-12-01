@@ -10,6 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         versions:
+          - node: '15.x
+          - node: '14.x'
           - node: '13.x'
           - node: '12.x'
           - node: '11.x'
