@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "entities": "~2.0",
+    "esm": "^3.2.25",
     "mdurl": "~1.0.1",
     "string.prototype.repeat": "^0.2.0",
     "minimist": ">=1.2.2"
@@ -53,7 +54,6 @@
     "bower": "^1.8.8",
     "cached-path-relative": "^1.0.2",
     "eslint": "^7.4.0",
-    "esm": "^3.2.25",
     "http-server": "^0.12.3",
     "lodash": "^4.17.19",
     "markdown-it": "^10.0",
