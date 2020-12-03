@@ -3,7 +3,7 @@
 
 var util = require('util');
 var fs = require('fs');
-var commonmark = require('../lib/index.js');
+var commonmark = require('../');
 var version = require('../package.json').version;
 var parseArgs = require('minimist');
 var args = process.argv.slice(2);
