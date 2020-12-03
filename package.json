@@ -30,14 +30,13 @@
   "scripts": {
     "build": "rollup -c",
     "lint": "eslint .",
-    "test": "node -r esm ./test/test"
+    "test": "node ./test/test"
   },
   "dependencies": {
     "entities": "~2.0",
-    "esm": "^3.2.25",
     "mdurl": "~1.0.1",
-    "string.prototype.repeat": "^0.2.0",
-    "minimist": ">=1.2.2"
+    "minimist": ">=1.2.2",
+    "string.prototype.repeat": "^0.2.0"
   },
   "directories": {
     "lib": "./lib"
