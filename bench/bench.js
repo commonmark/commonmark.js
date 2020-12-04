@@ -1,11 +1,11 @@
 "use strict";
 
-import benchmark from "benchmark";
-import fs from "fs";
-import * as commonmark from "../lib/index.js";
-import Showdown from "showdown";
-import marked from "marked";
-import _markdownit from "markdown-it";
+var benchmark = require("benchmark");
+var fs = require("fs");
+var commonmark = require("commonmark");
+var Showdown = require("showdown");
+var marked = require("marked");
+var _markdownit = require("markdown-it");
 
 var suite = new benchmark.Suite();
 var markdownit = _markdownit("commonmark");
