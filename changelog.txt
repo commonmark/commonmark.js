@@ -1,43 +1,36 @@
 [0.29.3]
 
+  * Fix some rough edges around ES modules (Kyle E. Mitchell)
+    (#195, #201, #203):
+    + Set module types via package.json files in subdirectories.
+      A number of JavaScript files were rewritten as ES
+      Modules, but their extensions remained `.js`. That
+      extension is ambiguous to newer version of the Node.js
+      runtime, which can load both CommonJS modules and ES
+      Modules.  To fix this, we add `package.json` files with
+      `type` properties to the various subdirectories.  Setting
+      `type` to `"module"` tells Node.js to interpret `.js`
+      files in that directory and below as ES Modules.
+      Otherwise, Node.js falls back on the `package.json` at
+      root, which currently sets `type` to `"commonjs"`.
+    + Make benchmark and test use commonjs again.
+    + bin: remove use of ESM and use `require('../')`.
+      Node.js version 14, which supports ES Modules without any flag or the
+      `esm` package, is currently in long-term support. But a great many
+      folks still run older version of Node.js that either don't support ES
+      Modules at all or hide that support behind a feature flag.
+    + Import specific functions from `entities` package.
+    + Update "Basic Usage" comment in `lib/index.js`.
+  * Remove package-lock.json (Kyle E. Mitchell).
   * Fix 'make test' target so that dist is built.
-  * reHtmlTag: don't use case-insensitive matching (#193).
+  * `reHtmlTag`: don't use case-insensitive matching (#193).
     The spec specifies uppercase for declarations and CDATA.
   * Handle piped input from stdin in windows.  Use file descriptor 0
     instead of '/dev/stdin'.  Note that this allows piping but doesn't
     handle the case where users run `bin/commonmark` and enter input
     directly.  See #198 for some relevant discussion.
-  * Remove package-lock.json (Kyle E. Mitchell).
-  * Make benchmark and test use commonjs again (Kyle E. Mitchell).
-  * bin: Use `require('../')` (Kyle E. Mitchell).
-    `lib/index.js` is now specifically the loading entry point for
-    loading as an ES Module via `import`. Using `require('../')` instead
-    will ensure that Node.js follows the loading configuration in
-    `package.json` (Kyle E. Mitchell).
-  * Import specific functions from `entities` package (Kyle E. Mitchell).
-  * Drop the esm loader package (Kyle E. Mitchell).
-  * Drop use of esm in `bin/commonmark` (Kyle E. Mitchell).
-    Node.js version 14, which supports ES Modules without any flag or the
-    `esm` package, is currently in long-term support. But a great many
-    folks still run older version of Node.js that either don't support ES
-    Modules at all or hide that support behind a feature flag.
-  * Set module types via package.json files in subdirectories
-    (Kyle E. Mitchell).  A number of JavaScript files were rewritten as
-    ES Modules, but their extensions remained `.js`. That extension is
-    ambiguous to newer version of the Node.js runtime, which can load
-    both CommonJS modules and ES Modules.  We could disambiguate by
-    renaming CommonJS modules to `.cjs` files and ES Modules to `.mjs`
-    files, per Node.js convention.  Alternatively, we can add
-    `package.json` files with `type` properties to the various
-    subdirectories.  Setting `type` to `"module"` tells Node.js to
-    interpret `.js` files in that directory and below as ES Modules.
-    Otherwise, Node.js falls back on the `package.json` at root, which
-    currently sets `type` to `"commonjs"`. I've done the latter here, to
-    avoid renames in Git history.
-  * Update "Basic Usage" comment in lib/index.js (Kyle E. Mitchell).
   * Configure GitHub Actions to test on Node.js 14 and 15 (Kyle E. Mitchell).
   * Allow EOL in processing instructions (#196).
-
 
 [0.29.2]
 
