@@ -11,20 +11,11 @@ LICENSETEXT="/* commonmark $(VERSION) https://github.com/commonmark/commonmark.j
 lint:
 	npm run lint
 
-dist: dist/commonmark.js dist/commonmark.min.js
-
-dist/commonmark.js: lib/index.js ${JSMODULES}
-	npm run build
-	(echo $(LICENSETEXT) && cat $@) > $@.tmp  && mv $@.tmp $@
-
-dist/commonmark.min.js: dist/commonmark.js
-	(echo $(LICENSETEXT) && cat $@) > $@.tmp  && mv $@.tmp $@
-
 update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
 
 test: $(SPEC)
-	npm build && npm test
+	npm test
 
 bench:
 	node bench/bench.js ${BENCHINP}
@@ -33,9 +24,6 @@ bench-detailed:
 	sudo renice -10 $$$$; \
 	for x in bench/samples/*.md; do echo $$x; node bench/bench.js $$x; done | \
 	awk -f bench/format_benchmarks.awk
-
-npm:
-	cd js; npm publish
 
 dingus:
 	make -C dingus dingus
