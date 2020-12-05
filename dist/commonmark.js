@@ -7452,7 +7452,7 @@
     var OPENTAG = "<" + TAGNAME + ATTRIBUTE + "*" + "\\s*/?>";
     var CLOSETAG = "</" + TAGNAME + "\\s*[>]";
     var HTMLCOMMENT = "<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->";
-    var PROCESSINGINSTRUCTION = "[<][?].*?[?][>]";
+    var PROCESSINGINSTRUCTION = "[<][?][\\s\\S]*?[?][>]";
     var DECLARATION = "<![A-Z]+" + "\\s+[^>]*>";
     var CDATA = "<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";
     var HTMLTAG =
@@ -7469,7 +7469,7 @@
         "|" +
         CDATA +
         ")";
-    var reHtmlTag = new RegExp("^" + HTMLTAG, "i");
+    var reHtmlTag = new RegExp("^" + HTMLTAG);
 
     var reBackslashOrAmp = /[\\&]/;
 
