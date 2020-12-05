@@ -24,7 +24,7 @@ update-spec:
 	curl 'https://raw.githubusercontent.com/jgm/CommonMark/master/spec.txt' > $(SPEC)
 
 test: $(SPEC)
-	npm test
+	npm build && npm test
 
 bench:
 	node bench/bench.js ${BENCHINP}
