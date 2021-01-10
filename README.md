@@ -42,6 +42,10 @@ Alternatively, `bower install commonmark` will install
 the needed distribution files in
 `bower_components/commonmark/dist`.
 
+You can also use the version hosted by unpkg: for example,
+<https://unpkg.com/commonmark@0.29.3/dist/commonmark.js>
+for the unminimized version 0.29.3.
+
 
 Building
 --------
