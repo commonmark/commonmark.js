@@ -32,9 +32,11 @@ You can install the library using `npm`:
 This package includes the commonmark library and a
 command-line executable, `commonmark`.
 
-For client-side use, fetch the latest from
-<https://raw.githubusercontent.com/commonmark/commonmark.js/master/dist/commonmark.js>,
-or `bower install commonmark`.
+For client-side use, you can use one of the single-file
+distributions provided in the `dist/` subdirectory
+of the node installation (`node_modules/commonmark/dist/`).
+Use either `commonmark.js` (readable source) or
+`commonmark.min.js` (minimized source).
 
 Building
 --------
@@ -43,14 +45,12 @@ Make sure to fetch dependencies with:
 
     npm install
 
-To build standalone JavaScript files (`dist/commonmark.js` and
-`dist/commonmark.min.js`):
-
-    make dist
-
 To run tests for the JavaScript library:
 
     make test
+
+(Running the tests will also rebuild distribution files in
+`dist/`.)
 
 To run benchmarks against some other JavaScript converters:
 

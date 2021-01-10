@@ -6,7 +6,7 @@ JSMODULES=$(wildcard lib/*.js)
 UGLIFYJS=node_modules/.bin/uglifyjs
 LICENSETEXT="/* commonmark $(VERSION) https://github.com/commonmark/commonmark.js @license BSD3 */"
 
-.PHONY: dingus dist test bench bench-detailed npm lint clean update-spec
+.PHONY: dingus test bench bench-detailed npm lint clean update-spec
 
 lint:
 	npm run lint
