@@ -3,7 +3,6 @@ SPECVERSION=$(shell perl -ne 'print $$1 if /^version: *([0-9.]+)/' $(SPEC))
 BENCHINP?=bench/samples/README.md
 VERSION?=$(SPECVERSION)
 JSMODULES=$(wildcard lib/*.js)
-UGLIFYJS=node_modules/.bin/uglifyjs
 LICENSETEXT="/* commonmark $(VERSION) https://github.com/commonmark/commonmark.js @license BSD3 */"
 
 .PHONY: dingus test bench bench-detailed npm lint clean update-spec
