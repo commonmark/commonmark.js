@@ -38,6 +38,11 @@ of the node installation (`node_modules/commonmark/dist/`).
 Use either `commonmark.js` (readable source) or
 `commonmark.min.js` (minimized source).
 
+Alternatively, `bower install commonmark` will install
+the needed distribution files in
+`bower_components/commonmark/dist`.
+
+
 Building
 --------
 
@@ -47,7 +52,7 @@ Make sure to fetch dependencies with:
 
 To run tests for the JavaScript library:
 
-    make test
+    npm test
 
 (Running the tests will also rebuild distribution files in
 `dist/`.)
