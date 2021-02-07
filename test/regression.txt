@@ -188,3 +188,23 @@ foo]
 <p><a href="/uri"><br />
 foo</a></p>
 ````````````````````````````````
+
+Issue #213 - type 7 blocks can't interrupt
+paragraph
+
+```````````````````````````````` example
+- <script>
+- some text
+some other text
+</script>
+.
+<ul>
+<li>
+<script>
+</li>
+<li>some text
+some other text
+</script></li>
+</ul>
+````````````````````````````````
+
