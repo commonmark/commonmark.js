@@ -160,7 +160,7 @@ The parser returns a Node.  The following public properties are defined
 - `title`: link or image title (String) or null.
 - `info`: fenced code block info string (String) or null.
 - `level`: heading level (Number).
-- `listType`: a String, either `Bullet` or `Ordered`.
+- `listType`: a String, either `bullet` or `ordered`.
 - `listTight`: `true` if list is tight.
 - `listStart`: a Number, the starting number of an ordered list.
 - `listDelimiter`: a String, either `)` or `.` for an ordered list.
