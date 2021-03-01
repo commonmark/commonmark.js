@@ -93,47 +93,59 @@ var parseAndRender = function() {
     markSelection();
 };
 
-$(document).ready(function() {
-    $("iframe").on("load", function() {
-        var textarea = $("#text");
-        var initial_text = getQueryVariable("text");
-        var smartSelected = getQueryVariable("smart") === "1";
-        $("#smart").prop("checked", smartSelected);
-        reader.options.smart = smartSelected;
-        if (initial_text) {
-            textarea.val(initial_text);
-        }
+var onIframeLoad = function() {
+    var textarea = $("#text");
+    var initial_text = getQueryVariable("text");
+    var smartSelected = getQueryVariable("smart") === "1";
+    $("#smart").prop("checked", smartSelected);
+    reader.options.smart = smartSelected;
+    if (initial_text) {
+        textarea.val(initial_text);
+    }
 
+    parseAndRender();
+
+    $("#clear-text-box").click(function() {
+        textarea.val("");
         parseAndRender();
-
-        $("#clear-text-box").click(function() {
-            textarea.val("");
-            parseAndRender();
-        });
-
-        $("#permalink").click(function() {
-            var smart = $("#smart").prop("checked");
-            window.location.pathname = "/index.html";
-            window.location.search =
-                "text=" +
-                encodeURIComponent(textarea.val()) +
-                (smart ? "&smart=1" : "");
-        });
-
-        textarea.bind(
-            "input propertychange",
-            _.debounce(parseAndRender, 50, { maxWait: 100 })
-        );
-        //textarea.on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
-        textarea.on("scroll", syncScroll);
-        textarea.on(
-            "keydown click focus",
-            _.debounce(markSelection, 50, { maxWait: 100 })
-        );
-
-        $("#smart").click(function() {
-            reader.options.smart = $("#smart").prop("checked");
-            parseAndRender();
-        });
     });
+
+    $("#permalink").click(function() {
+        var smart = $("#smart").prop("checked");
+        window.location.pathname = "/index.html";
+        window.location.search =
+            "text=" +
+            encodeURIComponent(textarea.val()) +
+            (smart ? "&smart=1" : "");
+    });
+
+    textarea.bind(
+        "input propertychange",
+        _.debounce(parseAndRender, 50, { maxWait: 100 })
+    );
+    //textarea.on('scroll', _.debounce(syncScroll, 50, { maxWait: 50 }));
+    textarea.on("scroll", syncScroll);
+    textarea.on(
+        "keydown click focus",
+        _.debounce(markSelection, 50, { maxWait: 100 })
+    );
+
+    $("#smart").click(function() {
+        reader.options.smart = $("#smart").prop("checked");
+        parseAndRender();
+    });
+};
+
+var iframeLoaded = false;
+
+$("iframe").on("load", function() {
+    iframeLoaded = true;
+});
+
+$(document).ready(function() {
+    if (iframeLoaded) {
+        onIframeLoad();
+    } else {
+        $("iframe").on("load", onIframeLoad);
+    }
 });
