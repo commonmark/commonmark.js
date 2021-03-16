@@ -114,10 +114,8 @@ Both `HtmlRenderer` and `XmlRenderer` (see below) support these options:
   `vbscript:`, `file:`, and with a few exceptions `data:`) will
   be replaced with empty strings.
 - `softbreak`: specify raw string to be used for a softbreak.
-- `esc`: specify a function to be used to escape strings.  Its
-  first argument is the string to be escaped, the second argument
-  is a boolean indicating whether to preserves entities in that
-  string.
+- `esc`: specify a function to be used to escape strings.  Its 
+  argument is the string.
 
 For example, to make soft breaks render as hard breaks in HTML:
 
