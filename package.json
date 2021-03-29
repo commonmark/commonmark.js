@@ -35,7 +35,7 @@
     "pretest": "npm run build"
   },
   "dependencies": {
-    "html-entities": "^2.2.0",
+    "html-entities": "^2.3.2",
     "mdurl": "~1.0.1",
     "minimist": ">=1.2.2",
     "string.prototype.repeat": "^0.2.0"
