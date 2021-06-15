@@ -213,6 +213,6 @@ Issue cmark/#383 - emphasis parsing.
 ```````````````````````````````` example
 *****Hello*world****
 .
-<p>*<strong><strong>Hello*world</strong></strong></p>
+<p>**<em><strong>Hello<em>world</em></strong></em></p>
 ````````````````````````````````
 
