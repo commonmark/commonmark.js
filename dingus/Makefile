@@ -4,14 +4,12 @@ LIBFILES=../lib/blocks.js ../lib/common.js ../lib/from-code-point.js ../lib/inli
 BOWER=../node_modules/.bin/bower
 HTTPSERVER=../node_modules/.bin/http-server
 
-all: $(ALL) components
+all: $(ALL) components $(COMPONENTS)
 
 .PHONY: all dingus components clean
 
-components: $(COMPONENTS)
-
-bower_components/%:
-	$(BOWER) install $(notdir $@)
+components:
+	$(BOWER) install
 
 lodash.min.js: bower_components/lodash
 	cp $</dist/lodash.min.js $@
