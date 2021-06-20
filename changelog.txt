@@ -1,3 +1,28 @@
+[0.30.0]
+
+  * Update tests to 0.30 spec.txt.
+  * Fix commonmark/cmark#383.  Our optimization for emphasis parsing
+    was flawed, leading to some corner cases where nested emphasis was
+    parsed incorrectly.
+  * Allow user to specify a function to escape the output (#217, newfivefour).
+  * Simplify `reThematicBreak`.
+  * Fix documentation for `node.listType` (TheWastl).  The parser produces
+    lowercase strings, but the README said the strings are capitalized.
+  * Fix handling of type 7 HTML blocks (#213).
+    They can't interrupt paragraphs (even with laziness).
+  * Fix link label normalization with backslash before newline (#211).
+  * Only match punctuation at the beginning of the string (Vladimir Pouzanov).
+    This makes the punctuation use match `reUnicodeWhitespaceChar` usage
+    in `scanDelims`. It's effectively a no-op, as `char_after` is expected
+    to only contain a single character anyways.
+  * Recognize '01' as start number 1 (#207).
+  * Use rollup `--banner` to include license info.
+  * Remove dist files from the repository.  Instead we now generate them
+    with pretest and prepublish scripts.
+  * Simplify dingus Makefile.
+  * Fix an iframe loading timing issue in the dingus (icyrockcom).
+    Closes commonmark/commonmark-spec-web#15.
+
 [0.29.3]
 
   * Fix some rough edges around ES modules (Kyle E. Mitchell)
