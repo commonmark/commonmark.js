@@ -216,3 +216,14 @@ Issue cmark/#383 - emphasis parsing.
 <p>**<em><strong>Hello<em>world</em></strong></em></p>
 ````````````````````````````````
 
+Issue reported at
+https://talk.commonmark.org/t/link-label-collapse-all-internal-whitespace/3919/5
+
+```````````````````````````````` example
+[foo][one two
+  three]
+
+[one two three]: /url "title"
+.
+<p><a href="/url" title="title">foo</a></p>
+````````````````````````````````
