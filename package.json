@@ -50,20 +50,20 @@
     "@rollup/plugin-commonjs": "^11.0.1",
     "@rollup/plugin-json": "^4.0.1",
     "@rollup/plugin-node-resolve": "^7.0.0",
-    "acorn": ">=5.7.4",
+    "acorn": ">=8.7.0",
     "benchmark": "^2.1.4",
-    "bower": "^1.8.8",
+    "bower": "^1.8.13",
     "cached-path-relative": "^1.0.2",
-    "eslint": "^7.4.0",
+    "eslint": "^8.6.0",
     "http-server": "^14.1.0",
     "lodash": "^4.17.21",
     "markdown-it": ">= 12.3",
     "marked": ">=4.0.10",
     "mem": ">=4.0.0",
     "rollup": "^1.29.0",
-    "rollup-plugin-uglify": "^5.0.2",
-    "serialize-javascript": ">=3.1.0",
+    "rollup-plugin-uglify": "^6.0.4",
+    "serialize-javascript": "^6.0.0",
     "showdown": "^1.9.1",
-    "uglify-js": "^3.4.0"
+    "uglify-js": "^3.14.5"
   }
 }
