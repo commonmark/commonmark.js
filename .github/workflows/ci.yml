@@ -10,12 +10,12 @@ jobs:
       fail-fast: false
       matrix:
         versions:
+          - node: '17.x'
+          - node: '16.x'
           - node: '15.x'
           - node: '14.x'
           - node: '13.x'
           - node: '12.x'
-          - node: '11.x'
-          - node: '10.x'
     steps:
       - uses: actions/checkout@v1
       - name: Use Node.js
