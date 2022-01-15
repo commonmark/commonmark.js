@@ -4,7 +4,7 @@ var benchmark = require("benchmark");
 var fs = require("fs");
 var commonmark = require("commonmark");
 var Showdown = require("showdown");
-var marked = require("marked");
+const { marked } = require("marked");
 var _markdownit = require("markdown-it");
 
 var suite = new benchmark.Suite();
@@ -37,7 +37,7 @@ suite
     })
 
     .add("marked.js", function() {
-        marked(contents);
+        marked.parse(contents);
     })
 
     .add("markdown-it", function() {
