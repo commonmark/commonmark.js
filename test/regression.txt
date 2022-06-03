@@ -227,3 +227,14 @@ https://talk.commonmark.org/t/link-label-collapse-all-internal-whitespace/3919/5
 .
 <p><a href="/url" title="title">foo</a></p>
 ````````````````````````````````
+
+Issue #258
+
+```````````````````````````````` example
+```
+abc
+```     
+.
+<pre><code>abc
+</code></pre>
+````````````````````````````````
