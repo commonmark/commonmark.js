@@ -238,3 +238,10 @@ abc
 <pre><code>abc
 </code></pre>
 ````````````````````````````````
+
+`<!doctype` is case-insensitive
+```````````````````````````````` example
+<!docType html>
+.
+<!docType html>
+````````````````````````````````
