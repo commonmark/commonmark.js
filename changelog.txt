@@ -1,3 +1,26 @@
+[0.31.0]
+
+  * Update to 0.31 spec.txt.
+  * Treat unicode symbols like punctuation for purposes of flankingness.
+   This updates the library to conform to the 0.31 spec.
+  * Do not process `&`-entities that don't end in `;` (#278, Michael Howell).
+  * Html renderer: don't add `language-` to code block class
+    if the info string already starts with `language-` (#277).
+  * Fix pathological regex for HTML comments (#273).
+  * Track underscore bottom separately mod 3, like asterisk (Michael Howell).
+  * Fix list tightness (taku0).
+  * Fix "CommomMark" typo (#270, Martin Geisler).
+  * Declarations do not need a space, per the spec (commonmark/cmark#456).
+  * Allow `<!doctype` to be case-insensitive.
+  * Fix HTML comment regex.
+  * Fix HTML comment regex to conform to commonmark/commonmark-spec#713.
+  * Fix a pathological performance case in link titles.
+    Thanks to Stefan Dobre for reporting.
+  * Allow closing fence to be followed by tabs (#258).
+  * Replace deprecated String.prototype.substr() (#254, CommanderRoot).
+  * Fix bug with reference link normalization. We were only collapsing the
+    first group of consecutive whitespace, not following ones.
+
 [0.30.0]
 
   * Update tests to 0.30 spec.txt.
