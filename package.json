@@ -37,8 +37,7 @@
   "dependencies": {
     "entities": "~3.0.1",
     "mdurl": "~1.0.1",
-    "minimist": "~1.2.5",
-    "string.prototype.repeat": "^1.0.0"
+    "minimist": "~1.2.5"
   },
   "directories": {
     "lib": "./lib"
