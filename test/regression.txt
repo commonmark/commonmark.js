@@ -510,8 +510,11 @@ foo <!-- test --->
 foo <!-- test ---->
 
 foo <!----->
+
+foo <!-- test --> more -->
 .
 <p>foo <!-- test ---></p>
 <p>foo <!-- test ----></p>
 <p>foo <!-----></p>
+<p>foo <!-- test --> more --&gt;</p>
 ````````````````````````````````
