@@ -1,3 +1,14 @@
+[0.31.1]
+
+  * Fix HTML comment parsing with `-` before closing `-->`
+    (#285, Robin Stocker).
+  * Accept lowercase inline HTML declarations (Michael Howell).
+  * Fix title-related backtracking with empty string (#281,
+    Michael Howell).
+  * Remove `string.prototype.repeat` polyfill (Steven).
+  * Remove `source`, add `search` to list of recognized block tags.
+    (a spec 0.31 change we forgot in last release).
+
 [0.31.0]
 
   * Update to 0.31 spec.txt.
