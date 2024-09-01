@@ -518,3 +518,31 @@ foo <!-- test --> more -->
 <p>foo <!-----></p>
 <p>foo <!-- test --> more --&gt;</p>
 ````````````````````````````````
+
+#261
+```````````````````````````````` example
+Vertical Tab
+
+Form Feed
+
+ NBSP (U+00A0) NBSP 
+
+ Em Space (U+2003) Em Space 
+
+ Line Separator (U+2028) Line Separator 
+
+ Paragraph Separator (U+2029) Paragraph Separator 
+
+　全角スペース (U+3000) 全形空白　
+
+﻿ZWNBSP (U+FEFF) ZWNBSP﻿
+.
+<p>Vertical Tab</p>
+<p>Form Feed</p>
+<p> NBSP (U+00A0) NBSP </p>
+<p> Em Space (U+2003) Em Space </p>
+<p> Line Separator (U+2028) Line Separator </p>
+<p> Paragraph Separator (U+2029) Paragraph Separator </p>
+<p>　全角スペース (U+3000) 全形空白　</p>
+<p>﻿ZWNBSP (U+FEFF) ZWNBSP﻿</p>
+````````````````````````````````
