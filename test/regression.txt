@@ -60,7 +60,7 @@ Issue #108 - Chinese punctuation not recognized
 ```````````````````````````````` example
 **。**话
 .
-<p>**。**话</p>
+<p><strong>。</strong>话</p>
 ````````````````````````````````
 
 Issue jgm/cmark#177 - incorrect emphasis parsing
