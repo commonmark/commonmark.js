@@ -60,7 +60,7 @@ Issue #108 - Chinese punctuation not recognized
 ```````````````````````````````` example
 **。**话
 .
-<p>**。**话</p>
+<p><strong>。</strong>话</p>
 ````````````````````````````````
 
 Issue jgm/cmark#177 - incorrect emphasis parsing
@@ -517,4 +517,19 @@ foo <!-- test --> more -->
 <p>foo <!-- test ----></p>
 <p>foo <!-----></p>
 <p>foo <!-- test --> more --&gt;</p>
+````````````````````````````````
+
+```````````````````````````````` example
+𠮷**(U+20BB7)**
+
+禰󠄀**(ね)**豆子
+
+福︀**(福)**祉︀**(祉)**
+
+**㊙︎**Top Secret**㊙︎**
+.
+<p>𠮷<strong>(U+20BB7)</strong></p>
+<p>禰󠄀<strong>(ね)</strong>豆子</p>
+<p>福︀<strong>(福)</strong>祉︀<strong>(祉)</strong></p>
+<p><strong>㊙︎</strong>Top Secret<strong>㊙︎</strong></p>
 ````````````````````````````````
