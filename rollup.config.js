@@ -2,7 +2,7 @@
 import nodeResolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
-import { uglify } from "rollup-plugin-uglify";
+import { minify } from 'rollup-plugin-esbuild-minify'
 import { version } from './package.json';
 
 var banner = "/* commonmark " + version + " https://github.com/commonmark/commonmark.js @license BSD3 */";
@@ -21,7 +21,7 @@ export default {
         format: "umd",
         name: "commonmark",
         banner: banner,
-        plugins: [uglify()]
+        plugins: [minify()]
       }
     ],
     plugins: [nodeResolve(), commonjs(), json()]
