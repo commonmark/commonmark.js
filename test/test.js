@@ -314,6 +314,71 @@ for (var j = 0; j < cases.length; j++) {
 }
 cursor.write("\n");
 
+// safe mode
+cursor.write("Safe mode:\n");
+
+var writerSafe = new commonmark.HtmlRenderer({ safe: true });
+
+var safeCases = [
+    {
+        name: "leading javascript: link is blocked",
+        input: "[link](javascript:alert(1))\n",
+        expected: "<p><a>link</a></p>\n"
+    },
+    {
+        name: "leading JAVASCRIPT: link is blocked",
+        input: "[link](JAVASCRIPT:alert(1))\n",
+        expected: "<p><a>link</a></p>\n"
+    },
+    {
+        name: "leading vbscript: link is blocked",
+        input: "[link](vbscript:msgbox(1))\n",
+        expected: "<p><a>link</a></p>\n"
+    },
+    {
+        name: "leading file: link is blocked",
+        input: "[link](file:///etc/passwd)\n",
+        expected: "<p><a>link</a></p>\n"
+    },
+    {
+        name: "leading data:text/html image is blocked",
+        input: "![img](data:text/html,x)\n",
+        expected: '<p><img src="" alt="img" /></p>\n'
+    },
+    {
+        name: "data: image is allowed",
+        input: "![img](data:image/png;base64,aaaa)\n",
+        expected: '<p><img src="data:image/png;base64,aaaa" alt="img" /></p>\n'
+    },
+    {
+        name: "https link containing data: is allowed",
+        input: "[link](https://example.com/view?src=data:image/png)\n",
+        expected:
+            '<p><a href="https://example.com/view?src=data:image/png">link</a></p>\n'
+    },
+    {
+        name: "https link containing file: is allowed",
+        input: "[link](https://example.com/download?to=file:report)\n",
+        expected:
+            '<p><a href="https://example.com/download?to=file:report">link</a></p>\n'
+    },
+    {
+        name: "https image containing vbscript: is allowed",
+        input: "![img](https://example.com/wiki/vbscript:_basics)\n",
+        expected:
+            '<p><img src="https://example.com/wiki/vbscript:_basics" alt="img" /></p>\n'
+    }
+];
+
+var safe_parse_and_render = function(z) {
+    return writerSafe.render(reader.parse(z));
+};
+
+for (var k = 0; k < safeCases.length; k++) {
+    pathologicalTest(safeCases[k], results, safe_parse_and_render);
+}
+cursor.write("\n");
+
 cursor.write(
     results.passed.toString() +
         " tests passed, " +
