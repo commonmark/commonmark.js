@@ -570,3 +570,24 @@ a**𝜵a**a
 .
 <p><img src="asdf.gif" alt="asdf  asdf" /></p>
 ````````````````````````````````
+
+Issue #212 - Non-empty blank lines in fenced code ignored when in lists
+
+```````````````````````````````` example
+- ```
+    
+  ```
+
+```
+  
+```
+.
+<ul>
+<li>
+<pre><code>  
+</code></pre>
+</li>
+</ul>
+<pre><code>  
+</code></pre>
+````````````````````````````````
