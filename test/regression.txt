@@ -591,3 +591,37 @@ Issue #212 - Non-empty blank lines in fenced code ignored when in lists
 <pre><code>  
 </code></pre>
 ````````````````````````````````
+
+Dotless i (U+0131) is not folded to ASCII i
+
+```````````````````````````````` example
+[I]: /a
+
+[ı]: /b
+
+[a][i] [b][ı]
+.
+<p><a href="/a">a</a> <a href="/b">b</a></p>
+````````````````````````````````
+
+Labels containing dotless i still fold their other characters
+
+```````````````````````````````` example
+[FIQ]: /a
+
+[Fıq]: /b
+
+[a][fiq] [b][fıQ]
+.
+<p><a href="/a">a</a> <a href="/b">b</a></p>
+````````````````````````````````
+
+A dotless i reference does not resolve against an ASCII I definition
+
+```````````````````````````````` example
+[I]: /a
+
+[ı]
+.
+<p>[ı]</p>
+````````````````````````````````
