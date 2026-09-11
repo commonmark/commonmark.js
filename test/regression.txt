@@ -632,3 +632,36 @@ Entities inside autolinks (#263).
 .
 <p><a href="http://%3E">http://&gt;</a></p>
 ````````````````````````````````
+
+#255
+
+```````````````````````````````` example
+```&#x9;js
+```
+```&#x20;js
+```
+``` js
+```
+```js&#x9;
+```
+```js&#x20;
+```
+```js 
+```
+```js&#x9;a
+```
+```js&#x20;a
+```
+```js a
+```
+.
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+<pre><code class="language-js"></code></pre>
+````````````````````````````````
