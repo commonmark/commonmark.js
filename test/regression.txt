@@ -625,6 +625,21 @@ A dotless i reference does not resolve against an ASCII I definition
 .
 <p>[ı]</p>
 ````````````````````````````````
+Inline HTML attribute whitespace is not stripped as paragraph indent (#303).
+
+```````````````````````````````` example
+<div class="abc
+    d  e f">text</dev>
+
+<a class="abc
+    d  e f">text</a>
+.
+<div class="abc
+    d  e f">text</dev>
+<p><a class="abc
+    d  e f">text</a></p>
+````````````````````````````````
+
 Entities inside autolinks (#263).
 
 ```````````````````````````````` example
