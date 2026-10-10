@@ -182,6 +182,31 @@ var cases = [
         expected: "<p>abc\ufffdxyz\ufffd</p>\n"
     },
     {
+        name: "Issue #127 U+0001 in unbracketed link destination",
+        input: "[a](\x01)\n",
+        expected: "<p>[a](\x01)</p>\n"
+    },
+    {
+        name: "Issue #127 U+007F in unbracketed link destination",
+        input: "[a](\x7f)\n",
+        expected: "<p>[a](\x7f)</p>\n"
+    },
+    {
+        name: "Issue #127 control character inside unbracketed link destination",
+        input: "[a](foo\x07bar)\n",
+        expected: "<p>[a](foo\x07bar)</p>\n"
+    },
+    {
+        name: "Issue #127 U+0001 in unbracketed image destination",
+        input: "![a](\x01)\n",
+        expected: "<p>![a](\x01)</p>\n"
+    },
+    {
+        name: "Issue #127 control character in link reference destination",
+        input: "[foo]: /url\x01\n\n[foo]\n",
+        expected: "<p>[foo]: /url\x01</p>\n<p>[foo]</p>\n"
+    },
+    {
         name: "alternate line endings",
         input: "- a\n- b\r- c\r\n- d",
         expected:
