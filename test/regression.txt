@@ -665,3 +665,40 @@ Entities inside autolinks (#263).
 <pre><code class="language-js"></code></pre>
 <pre><code class="language-js"></code></pre>
 ````````````````````````````````
+Link reference definitions in setext headings do not take precedence
+over earlier definitions in ordinary paragraphs (#298).
+
+```````````````````````````````` example
+[x]: fizz
+
+[x]: buzz
+===
+[x]
+.
+<p>===
+<a href="fizz">x</a></p>
+````````````````````````````````
+
+The definition is still resolved, in document order (#298).
+
+```````````````````````````````` example
+[x]: fizz
+
+[x]: buzz
+Title
+===
+[x]
+.
+<h1>Title</h1>
+<p><a href="fizz">x</a></p>
+````````````````````````````````
+
+A paragraph containing only link reference definitions before a
+thematic break leaves no empty paragraph (#262).
+
+```````````````````````````````` example
+[a]: b
+---
+.
+<hr />
+````````````````````````````````
