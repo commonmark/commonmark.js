@@ -665,3 +665,42 @@ Entities inside autolinks (#263).
 <pre><code class="language-js"></code></pre>
 <pre><code class="language-js"></code></pre>
 ````````````````````````````````
+
+Issue #262 - link reference definition followed by a setext underline
+must not leave an empty paragraph behind.
+
+```````````````````````````````` example
+[a]: b
+---
+.
+<hr />
+````````````````````````````````
+
+```````````````````````````````` example
+[a]: b
+===
+.
+<p>===</p>
+````````````````````````````````
+
+```````````````````````````````` example
+[a]: b
+---
+
+[a]: b
+===
+.
+<hr />
+<p>===</p>
+````````````````````````````````
+
+```````````````````````````````` example
+[a]: b
+Foo
+---
+
+[a]
+.
+<h2>Foo</h2>
+<p><a href="b">a</a></p>
+````````````````````````````````
