@@ -702,3 +702,39 @@ thematic break leaves no empty paragraph (#262).
 .
 <hr />
 ````````````````````````````````
+
+A link reference definition alone cannot form a setext heading (#262).
+
+```````````````````````````````` example
+[a]: b
+===
+.
+<p>===</p>
+````````````````````````````````
+
+Link reference definitions around a thematic break leave no empty
+paragraph or setext heading (#262).
+
+```````````````````````````````` example
+[a]: b
+---
+
+[a]: b
+===
+.
+<hr />
+<p>===</p>
+````````````````````````````````
+
+A link reference definition before a setext heading remains available (#262).
+
+```````````````````````````````` example
+[a]: b
+Foo
+---
+
+[a]
+.
+<h2>Foo</h2>
+<p><a href="b">a</a></p>
+````````````````````````````````
