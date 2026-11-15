@@ -738,3 +738,42 @@ Foo
 <h2>Foo</h2>
 <p><a href="b">a</a></p>
 ````````````````````````````````
+
+Only spaces, tabs and line endings separate the parts of an HTML tag;
+a non-breaking space does not (#315).
+
+```````````````````````````````` example
+<a x=1>
+
+foo <a x=1> bar
+.
+<p>&lt;a x=1&gt;</p>
+<p>foo &lt;a x=1&gt; bar</p>
+````````````````````````````````
+
+A non-breaking space can be part of an unquoted attribute value (#315).
+
+```````````````````````````````` example
+<a x= >
+
+foo <a x= > bar
+.
+<a x= >
+<p>foo <a x= > bar</p>
+````````````````````````````````
+
+An unfinished tag followed by non-breaking spaces is a paragraph (#315).
+
+```````````````````````````````` example
+<a x=   
+.
+<p>&lt;a x=   </p>
+````````````````````````````````
+
+A type 7 HTML block start may be followed only by spaces and tabs (#315).
+
+```````````````````````````````` example
+<a> 
+.
+<p><a> </p>
+````````````````````````````````

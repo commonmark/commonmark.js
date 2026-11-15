@@ -296,6 +296,13 @@ for (x = 10; x <= 1000; x *= 10) {
         expected: "<p>[test](\\url &quot;" + repeat("\\", x / 2) + "</p>\n"
     });
 }
+for (x = 1000; x <= 10000; x *= 10) {
+    cases.push({
+        name: "unclosed tag with " + x + " NBSP after attribute =",
+        input: "<a x=" + repeat(" ", x),
+        expected: "<p>&lt;a x=" + repeat(" ", x) + "</p>\n"
+    });
+}
 
 // Commented out til we have a fix... see #129
 // for (x = 1000; x <= 10000; x *= 10) {
