@@ -340,6 +340,35 @@ is `!`, `"`, `#`, `$`, `%`, `&`, `'`, `(`, `)`,
 A [Unicode punctuation character](@) is a character in the Unicode `P`
 (puncuation) or `S` (symbol) general categories.
 
+```````````````````````````````` example
+## head2 without rtl
+‏## head2 with rtl
+_underscore emph without rtl_
+‏_underscore emph with rtl_
+__underscore strong without rtl__
+‏__underscore strong with rtl__
+*asterisk emph without rtl*
+‏*asterisk emph with rtl*
+**astesirk strong without rtl**
+‏**asterisk strong with rtl**
+some text ‏_preceded with rtl_ another text
+some text ‏*preceded with rtl* another text
+.
+<h2>head2 without rtl</h2>
+<h2>head2 with rtl</h2>
+<em>underscore emph without rtl</em>
+<em>underscore emph with rtl</em>
+<strong>underscore strong without rtl</strong>
+<strong>underscore strong with rtl</strong>
+<em>asterisk emph without rtl</em>
+<em>asterisk emph with rtl</em>
+<strong>astesirk strong without rtl</strong>
+<strong>asterisk strong with rtl</strong>
+some text <em>preceded with rtl</em> another text
+some text <em>preceded with rtl</em> another text
+
+````````````````````````````````
+
 ## Tabs
 
 Tabs in lines are not expanded to [spaces].  However,
