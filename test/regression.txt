@@ -738,3 +738,26 @@ Foo
 <h2>Foo</h2>
 <p><a href="b">a</a></p>
 ````````````````````````````````
+
+Tabs are allowed wherever spaces are in links and link reference
+definitions.
+
+```````````````````````````````` example
+[a]: /url→
+[b]: /url "title"→
+
+[a] [b]
+.
+<p><a href="/url">a</a> <a href="/url" title="title">b</a></p>
+````````````````````````````````
+
+```````````````````````````````` example
+[a](→/url→"title"→)
+
+[b]:→/url→"title"
+
+[b]
+.
+<p><a href="/url" title="title">a</a></p>
+<p><a href="/url" title="title">b</a></p>
+````````````````````````````````
